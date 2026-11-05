@@ -1,0 +1,37 @@
+{
+	"schemaVersion": 1,
+	"id": "novaimod",
+	"version": "${version}",
+	"name": "Novai Mod: Криперы, МФО и Заведения",
+	"description": "Улучшенный ИИ криперов, виртуальный счёт и микрокредитная организация с коллекторами, продуктовый магазин, шахтёрская лавка, лавовый курорт и биомные казино с таинственной небесной локацией.",
+	"authors": [
+		"Novai"
+	],
+	"contact": {
+		"sources": "https://github.com/BaraAoi/NovaiRepoz"
+	},
+	"license": "CC0-1.0",
+	"icon": "assets/novaimod/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"com.novaimod.NovaiMod"
+		],
+		"client": [
+			"com.novaimod.client.NovaiModClient"
+		]
+	},
+	"mixins": [
+		"novaimod.mixins.json",
+		{
+			"config": "novaimod.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.15.11",
+		"minecraft": "~1.21.1",
+		"java": ">=21",
+		"fabric-api": "*"
+	}
+}

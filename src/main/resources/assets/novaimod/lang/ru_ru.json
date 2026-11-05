@@ -1,0 +1,9 @@
+{
+	"itemGroup.novaimod.novai_group": "Novai Mod: МФО и Заведения",
+	"block.novaimod.trade_machine": "Торговый аппарат",
+	"block.novaimod.fate_machine": "Автомат судьбы",
+	"block.novaimod.repair_station": "Ремонтный станок",
+	"item.novaimod.revival_token": "Жетон возрождения",
+	"item.novaimod.drunken_oblivion": "Коктейль «Пьяное забвение»",
+	"entity.novaimod.mod_npc": "Житель заведения"
+}

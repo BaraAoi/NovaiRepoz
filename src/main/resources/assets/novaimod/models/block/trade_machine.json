@@ -1,0 +1,8 @@
+{
+	"parent": "minecraft:block/orientable",
+	"textures": {
+		"top": "novaimod:block/trade_machine_top",
+		"front": "novaimod:block/trade_machine_front",
+		"side": "novaimod:block/trade_machine_side"
+	}
+}
