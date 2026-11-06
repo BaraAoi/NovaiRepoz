@@ -47,7 +47,7 @@ public class NovaiModClient implements ClientModInitializer {
 		// Экран Торгового аппарата
 		HandledScreens.register(ModScreenHandlers.VENDING_SCREEN_HANDLER, VendingScreen::new);
 
-		// Отрисовка Счёта и Долга сверху слева
+		// Отрисовка виртуального Счёта в верхнем углу экрана
 		HudRenderCallback.EVENT.register(new AccountHudOverlay());
 
 		// S2C пакеты

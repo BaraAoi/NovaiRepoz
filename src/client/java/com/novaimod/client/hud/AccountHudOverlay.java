@@ -12,7 +12,7 @@ import net.minecraft.util.Formatting;
 
 /**
  * Отрисовывает:
- * 1) Виртуальный Счёт и Долг (плюс таймер СИЗО) сверху слева.
+ * 1) Виртуальный Счёт (без отображения долга на экране, чтобы не мозолить глаза игроку) и таймер СИЗО при аресте.
  * 2) Мимолётный силуэт и тень в углу экрана, когда за спиной или сбоку подкрадывается моб.
  */
 public class AccountHudOverlay implements HudRenderCallback {
@@ -29,20 +29,13 @@ public class AccountHudOverlay implements HudRenderCallback {
 
 		TextRenderer tr = client.textRenderer;
 		long balance = ClientAccountData.getBalance();
-		long debt = ClientAccountData.getDebt();
 		int sizoSec = ClientAccountData.getSizoSecondsLeft();
 
 		Text balanceText = Text.literal("Счёт: ").formatted(Formatting.GRAY)
 				.append(Text.literal(balance + " ₽").formatted(Formatting.GREEN, Formatting.BOLD));
 
-		Text debtText = Text.literal("Долг: ").formatted(Formatting.GRAY)
-				.append(Text.literal(debt + " ₽").formatted(
-						debt > 0L ? Formatting.RED : Formatting.DARK_GRAY,
-						debt > 0L ? Formatting.BOLD : Formatting.RESET
-				));
-
-		int width = Math.max(tr.getWidth(balanceText), tr.getWidth(debtText)) + 14;
-		int height = sizoSec > 0 ? 38 : 26;
+		int width = tr.getWidth(balanceText) + 14;
+		int height = sizoSec > 0 ? 28 : 17;
 
 		Text sizoText = null;
 		if (sizoSec > 0) {
@@ -57,13 +50,11 @@ public class AccountHudOverlay implements HudRenderCallback {
 		int y = 8;
 
 		context.fill(x, y, x + width, y + height, 0xAA101218);
-		int borderColor = debt > 0L ? 0xFFCC3333 : 0xFF3A8F52;
-		context.drawBorder(x, y, width, height, borderColor);
+		context.drawBorder(x, y, width, height, 0xFF3A8F52);
 
 		context.drawText(tr, balanceText, x + 6, y + 5, 0xFFFFFF, true);
-		context.drawText(tr, debtText, x + 6, y + 15, 0xFFFFFF, true);
 		if (sizoText != null) {
-			context.drawText(tr, sizoText, x + 6, y + 26, 0xFF5555, true);
+			context.drawText(tr, sizoText, x + 6, y + 16, 0xFF5555, true);
 		}
 	}
 
