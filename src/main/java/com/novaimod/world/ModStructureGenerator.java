@@ -31,7 +31,7 @@ import net.minecraft.world.biome.Biome;
  * На входе каждого заведения стоит Торговый аппарат.
  */
 public final class ModStructureGenerator {
-	private static final int FLAGS = Block.NOTIFY_CLIENTS | Block.FORCE_STATE;
+	private static final int FLAGS = Block.NOTIFY_LISTENERS | Block.FORCE_STATE;
 
 	private ModStructureGenerator() {
 	}

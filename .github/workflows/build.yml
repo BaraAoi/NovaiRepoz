@@ -31,7 +31,7 @@ jobs:
           CODE=$?
           cat build_out.log
           if [ $CODE -ne 0 ]; then
-            MSG=$(grep -E "error:|FAILED|Exception|Caused by:|What went wrong|> " build_out.log | tail -n 45 | sed 's/%/%25/g; s/\r/%0D/g' | tr '\n' '|' )
+            MSG=$(grep -A 3 -E "error:|FAILED" build_out.log | head -n 60 | sed 's/%/%25/g; s/\r/%0D/g' | tr '\n' '|' )
             echo "::error title=GradleBuildError::${MSG}"
             TAIL_MSG=$(tail -n 40 build_out.log | sed 's/%/%25/g; s/\r/%0D/g' | tr '\n' '|')
             echo "::error title=GradleBuildTail::${TAIL_MSG}"

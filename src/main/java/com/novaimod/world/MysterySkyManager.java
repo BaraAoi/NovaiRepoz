@@ -44,7 +44,7 @@ import net.minecraft.world.World;
 public final class MysterySkyManager {
 	private static final int PLATFORM_RADIUS = 100;
 	private static final int SKY_BASE_Y = 272;
-	private static final int FAST_BLOCK_FLAGS = Block.NOTIFY_CLIENTS | Block.FORCE_STATE;
+	private static final int FAST_BLOCK_FLAGS = Block.NOTIFY_LISTENERS | Block.FORCE_STATE;
 
 	private static final Block[] STAINED_GLASS_COLORS = new Block[]{
 			Blocks.WHITE_STAINED_GLASS,

@@ -48,7 +48,7 @@ import net.minecraft.world.Heightmap;
  */
 public final class DetentionManager {
 	public static final int SIZO_DURATION_TICKS = 20 * 60 * 10; // 10 реальных минут = 12000 тиков
-	private static final int FAST_FLAGS = Block.NOTIFY_CLIENTS | Block.FORCE_STATE;
+	private static final int FAST_FLAGS = Block.NOTIFY_LISTENERS | Block.FORCE_STATE;
 
 	private DetentionManager() {
 	}
