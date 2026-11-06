@@ -4,6 +4,7 @@ import com.novaimod.NovaiMod;
 import com.novaimod.item.DrunkenOblivionItem;
 import com.novaimod.item.OddsConfiguratorItem;
 import com.novaimod.item.RevivalTokenItem;
+import com.novaimod.item.StrangeMeatItem;
 
 import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
 import net.minecraft.item.BlockItem;
@@ -42,6 +43,16 @@ public final class ModItems {
 			new BlockItem(ModBlocks.ROULETTE_TABLE, new Item.Settings().rarity(Rarity.UNCOMMON))
 	);
 
+	public static final Item JACUZZI_SEAT_ITEM = register(
+			"jacuzzi_seat",
+			new BlockItem(ModBlocks.JACUZZI_SEAT, new Item.Settings())
+	);
+
+	public static final Item DJ_CONSOLE_ITEM = register(
+			"dj_console",
+			new BlockItem(ModBlocks.DJ_CONSOLE, new Item.Settings().rarity(Rarity.RARE))
+	);
+
 	public static final Item REVIVAL_TOKEN = register(
 			"revival_token",
 			new RevivalTokenItem(new Item.Settings().maxCount(16).rarity(Rarity.EPIC).fireproof())
@@ -57,6 +68,11 @@ public final class ModItems {
 			new OddsConfiguratorItem(new Item.Settings().maxCount(1).rarity(Rarity.EPIC))
 	);
 
+	public static final Item STRANGE_MEAT = register(
+			"strange_meat",
+			new StrangeMeatItem(new Item.Settings().maxCount(64).rarity(Rarity.UNCOMMON))
+	);
+
 	public static final ItemGroup NOVAI_ITEM_GROUP = Registry.register(
 			Registries.ITEM_GROUP,
 			Identifier.of(NovaiMod.MOD_ID, "novai_group"),
@@ -68,9 +84,12 @@ public final class ModItems {
 						entries.add(REPAIR_STATION_ITEM);
 						entries.add(COINFLIP_TABLE_ITEM);
 						entries.add(ROULETTE_TABLE_ITEM);
+						entries.add(JACUZZI_SEAT_ITEM);
+						entries.add(DJ_CONSOLE_ITEM);
 						entries.add(FATE_MACHINE_ITEM);
 						entries.add(REVIVAL_TOKEN);
 						entries.add(DRUNKEN_OBLIVION);
+						entries.add(STRANGE_MEAT);
 						entries.add(ODDS_CONFIGURATOR);
 					})
 					.build()

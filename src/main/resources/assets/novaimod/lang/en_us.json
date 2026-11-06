@@ -5,8 +5,12 @@
 	"block.novaimod.repair_station": "Ремонтный станок",
 	"block.novaimod.coinflip_table": "Стол «Монетка»",
 	"block.novaimod.roulette_table": "Стол «Рулетка»",
+	"block.novaimod.jacuzzi_seat": "Сиденье джакузи",
+	"block.novaimod.dj_console": "Диджейский пульт",
 	"item.novaimod.revival_token": "Жетон возрождения",
 	"item.novaimod.drunken_oblivion": "Пьяное забвение",
 	"item.novaimod.odds_configurator": "Пульт вероятностей",
-	"entity.novaimod.mod_npc": "NPC"
+	"item.novaimod.strange_meat": "Странное мясо",
+	"entity.novaimod.mod_npc": "NPC",
+	"entity.novaimod.seat": "Seat"
 }

@@ -15,6 +15,7 @@ import com.novaimod.registry.ModEntities;
 import com.novaimod.registry.ModItems;
 import com.novaimod.registry.ModScreenHandlers;
 import com.novaimod.world.DetentionManager;
+import com.novaimod.world.EgoPartyManager;
 import com.novaimod.world.ModStructureGenerator;
 import com.novaimod.world.MysterySkyManager;
 
@@ -99,6 +100,7 @@ public class NovaiMod implements ModInitializer {
 			DetentionManager.tickDebtAndDetentions(server);
 			CasinoGamesManager.tickPendingResolutions(server);
 			MobEvolutionManager.tickServer(server);
+			EgoPartyManager.tickRaves(server);
 
 			structureCheckTicker++;
 			if (structureCheckTicker >= 40) {
@@ -142,6 +144,7 @@ public class NovaiMod implements ModInitializer {
 											case "grocery" -> ModStructureGenerator.buildGroceryStore(world, pos);
 											case "miner" -> ModStructureGenerator.buildMinerShop(world, pos);
 											case "resort" -> ModStructureGenerator.buildLavaResort(world, pos);
+											case "ego_island" -> ModStructureGenerator.buildEgoIsland(world, pos);
 											case "casino_cave" -> ModStructureGenerator.buildBiomeCasino(world, pos, "cave");
 											case "casino_desert" -> ModStructureGenerator.buildBiomeCasino(world, pos, "desert");
 											case "casino_snowy" -> ModStructureGenerator.buildBiomeCasino(world, pos, "snowy");

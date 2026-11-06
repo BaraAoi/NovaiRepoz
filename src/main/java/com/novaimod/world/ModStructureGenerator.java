@@ -1,15 +1,21 @@
 package com.novaimod.world;
 
+import com.novaimod.block.JacuzziSeatBlock;
 import com.novaimod.block.TradeMachineBlock;
 import com.novaimod.data.ModPersistentState;
 import com.novaimod.entity.ModNpcEntity;
 import com.novaimod.entity.NpcRole;
 import com.novaimod.registry.ModBlocks;
 import com.novaimod.registry.ModEntities;
+import com.novaimod.registry.ModItems;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
+import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.block.entity.ChestBlockEntity;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -22,13 +28,15 @@ import net.minecraft.world.World;
 import net.minecraft.world.biome.Biome;
 
 /**
- * Генерирует все заведения мода в мире:
- * 1) Микрокредитная организация (МФО) — сразу в начале игры рядом со спавном мира.
+ * Генерирует все заведения и локации мода:
+ * 1) Микрокредитная организация (МФО) — рядом со спавном мира.
  * 2) Продуктовый магазин — на поверхности.
- * 3) Шахтёрская лавка — под землёй (с проверкой и расчисткой свободного места перед входом!).
- * 4) Лавовый курорт — в Аду (Незере).
- * 5) Казино — в разных биомах со своим архитектурным стилем, включая подземные пещеры
- *    (со столами «Монетка» и «Рулетка», а также проверкой свободного прохода перед входом под землёй!).
+ * 3) Шахтёрская лавка — под землёй (с проверкой и расчисткой прохода у входа).
+ * 4) Лавовый курорт с Адольфом Гидлером — строго на берегу настоящего лавового озера в Незере!
+ * 5) Биомные и пещерные Казино — со столами «Монетка» и «Рулетка».
+ * 6) «Эго-остров» — тусовочный тропический остров в океане/воде с кухней и сундуками «Странного мяса»,
+ *    Шеф-поваром, Эйнштейном, Сталиным, Свити Фиком, Тусовщицами, переливающимся Танцполом с диджейским пультом,
+ *    Бассейном и Джакузи с пузырьками, в котором можно сидеть!
  */
 public final class ModStructureGenerator {
 	private static final int FLAGS = Block.NOTIFY_LISTENERS | Block.FORCE_STATE;
@@ -63,7 +71,7 @@ public final class ModStructureGenerator {
 			if (world.getRegistryKey() == World.OVERWORLD) {
 				tryGenerateOverworldRegion(world, state, regionX, regionZ);
 			} else if (world.getRegistryKey() == World.NETHER) {
-				tryGenerateNetherRegion(world, state, regionX, regionZ);
+				tryGenerateNetherRegion(world, state, player, regionX, regionZ);
 			}
 		}
 	}
@@ -78,29 +86,50 @@ public final class ModStructureGenerator {
 		int baseX = rx * 224 + 48 + rng.nextInt(112);
 		int baseZ = rz * 224 + 48 + rng.nextInt(112);
 
-		if (state.getMfoPos() != null && state.getMfoPos().getSquaredDistance(baseX, state.getMfoPos().getY(), baseZ) < 48.0D * 48.0D) {
-			baseX += 64;
+		if (state.getMfoPos() != null && state.getMfoPos().getSquaredDistance(baseX, state.getMfoPos().getY(), baseZ) < 56.0D * 56.0D) {
+			baseX += 72;
 		}
-		if (!world.isChunkLoaded(baseX >> 4, baseZ >> 4)) {
+		// Для крупного острова проверяем загрузку соседних чанков
+		if (!world.isChunkLoaded((baseX - 24) >> 4, (baseZ - 24) >> 4)
+				|| !world.isChunkLoaded((baseX + 24) >> 4, (baseZ + 24) >> 4)) {
 			return;
 		}
 
 		state.markRegionGenerated(key);
 
-		int roll = Math.floorMod(rx * 31 + rz * 17, 3);
-		int surfY = findSurfaceY(world, baseX, baseZ);
-		BlockPos surfacePos = new BlockPos(baseX, surfY, baseZ);
-
-		if (roll == 0) {
-			buildGroceryStore(world, surfacePos);
-			state.recordStructure("grocery", "minecraft:overworld", surfacePos);
+		BlockPos checkPos = new BlockPos(baseX, world.getSeaLevel(), baseZ);
+		if (isOceanOrOpenWaterSpot(world, checkPos)) {
+			// В океанах и крупных водоёмах генерируем тусовочный «Эго-остров»!
+			BlockPos islandOrigin = new BlockPos(baseX, world.getSeaLevel() + 1, baseZ);
+			buildEgoIsland(world, islandOrigin);
+			state.recordStructure("ego_island", "minecraft:overworld", islandOrigin);
 		} else {
-			String biomeStyle = detectBiomeCasinoStyle(world, surfacePos);
-			buildBiomeCasino(world, surfacePos, biomeStyle);
-			state.recordStructure("casino_" + biomeStyle, "minecraft:overworld", surfacePos);
+			int roll = Math.floorMod(rx * 31 + rz * 17, 4);
+			int surfY = findSurfaceY(world, baseX, baseZ);
+			BlockPos surfacePos = new BlockPos(baseX, surfY, baseZ);
+
+			if (roll == 0) {
+				buildGroceryStore(world, surfacePos);
+				state.recordStructure("grocery", "minecraft:overworld", surfacePos);
+			} else if (roll == 3) {
+				// Иногда генерируем Эго-остров с собственной лагуной даже у побережья/рек
+				BlockPos waterSpot = findNearbyWaterOrCoast(world, baseX, baseZ);
+				if (waterSpot != null) {
+					buildEgoIsland(world, waterSpot);
+					state.recordStructure("ego_island", "minecraft:overworld", waterSpot);
+				} else {
+					String biomeStyle = detectBiomeCasinoStyle(world, surfacePos);
+					buildBiomeCasino(world, surfacePos, biomeStyle);
+					state.recordStructure("casino_" + biomeStyle, "minecraft:overworld", surfacePos);
+				}
+			} else {
+				String biomeStyle = detectBiomeCasinoStyle(world, surfacePos);
+				buildBiomeCasino(world, surfacePos, biomeStyle);
+				state.recordStructure("casino_" + biomeStyle, "minecraft:overworld", surfacePos);
+			}
 		}
 
-		// Подземные структуры: подбираем точку рядом с пещерной полостью И проверяем/обеспечиваем свободный проход перед входом!
+		// Подземные структуры: Шахтёрская лавка или Пещерное казино со свободным входом
 		int ugX = baseX + (rng.nextBoolean() ? 24 : -24);
 		int ugZ = baseZ + (rng.nextBoolean() ? 24 : -24);
 		if (world.isChunkLoaded(ugX >> 4, (ugZ - 16) >> 4) && world.isChunkLoaded(ugX >> 4, ugZ >> 4)) {
@@ -115,9 +144,141 @@ public final class ModStructureGenerator {
 		}
 	}
 
+	private static boolean isOceanOrOpenWaterSpot(ServerWorld world, BlockPos center) {
+		RegistryEntry<Biome> entry = world.getBiome(center);
+		String biomeId = entry.getKey().map(k -> k.getValue().getPath()).orElse("");
+		if (biomeId.contains("ocean")) {
+			return true;
+		}
+		int sea = world.getSeaLevel();
+		int waterCols = 0;
+		BlockPos.Mutable m = new BlockPos.Mutable();
+		for (int dx = -12; dx <= 12; dx += 6) {
+			for (int dz = -12; dz <= 12; dz += 6) {
+				m.set(center.getX() + dx, sea - 1, center.getZ() + dz);
+				if (world.getBlockState(m).isOf(Blocks.WATER)) {
+					waterCols++;
+				}
+			}
+		}
+		return waterCols >= 14;
+	}
+
+	private static BlockPos findNearbyWaterOrCoast(ServerWorld world, int cx, int cz) {
+		int sea = world.getSeaLevel();
+		BlockPos.Mutable m = new BlockPos.Mutable();
+		for (int dx = -36; dx <= 36; dx += 18) {
+			for (int dz = -36; dz <= 36; dz += 18) {
+				int x = cx + dx;
+				int z = cz + dz;
+				if (!world.isChunkLoaded((x - 20) >> 4, (z - 20) >> 4)
+						|| !world.isChunkLoaded((x + 20) >> 4, (z + 20) >> 4)) {
+					continue;
+				}
+				m.set(x, sea - 1, z);
+				if (world.getBlockState(m).isOf(Blocks.WATER) && world.getBlockState(m.up(2)).isAir()) {
+					return new BlockPos(x, sea + 1, z);
+				}
+			}
+		}
+		return null;
+	}
+
 	/**
-	 * Ищет подземную позицию так, чтобы перед входом (в сторону -Z) было свободное пещерное пространство для прохода.
+	 * Генерирует Лавовый курорт в Незере СТРОГО на берегу настоящего открытого лавового озера (Y ≈ 31),
+	 * а не в случайных замкнутых пещерах!
 	 */
+	private static void tryGenerateNetherRegion(
+			ServerWorld nether,
+			ModPersistentState state,
+			ServerPlayerEntity nearPlayer,
+			int rx,
+			int rz
+	) {
+		String key = "nether:" + rx + ":" + rz;
+		if (state.hasGeneratedRegion(key)) {
+			return;
+		}
+
+		// Ищем настоящий берег открытого лавового озера среди загруженных чанков вокруг игрока в этом регионе
+		BlockPos shoreOrigin = findNetherLavaLakeShore(nether, nearPlayer.getBlockX(), nearPlayer.getBlockZ());
+		if (shoreOrigin == null) {
+			// Пока рядом нет настоящего озера с лавой — НЕ спавним курорт в скале, ждём выхода к озеру лавы!
+			return;
+		}
+
+		state.markRegionGenerated(key);
+		buildLavaResort(nether, shoreOrigin);
+		state.recordStructure("lava_resort", "minecraft:the_nether", shoreOrigin);
+	}
+
+	/**
+	 * Находит точку прямо на берегу открытого лавового озера в Аду:
+	 * с южной стороны (+Z) должно простираться настоящее открытое озеро лавы (Y = 31..35 с воздухом сверху),
+	 * а сама площадка стоит у кромки берега на 1 блок выше уровня лавы!
+	 */
+	private static BlockPos findNetherLavaLakeShore(ServerWorld nether, int searchCenterX, int searchCenterZ) {
+		BlockPos.Mutable m = new BlockPos.Mutable();
+
+		for (int radius = 8; radius <= 56; radius += 8) {
+			for (int dx = -radius; dx <= radius; dx += 8) {
+				for (int dz = -radius; dz <= radius; dz += 8) {
+					if (Math.abs(dx) != radius && Math.abs(dz) != radius) {
+						continue;
+					}
+					int cx = searchCenterX + dx;
+					int cz = searchCenterZ + dz;
+					if (!nether.isChunkLoaded((cx - 10) >> 4, (cz - 10) >> 4)
+							|| !nether.isChunkLoaded((cx + 10) >> 4, (cz + 14) >> 4)) {
+						continue;
+					}
+
+					// Проверяем уровень лавового моря (Y = 31) и чуть более высокие озёра (до Y = 36)
+					for (int lavaY = 31; lavaY <= 36; lavaY++) {
+						// На месте самого пляжа (dz = -2..0) должен быть твёрдый берег у кромки, а не глубокая лава
+						m.set(cx, lavaY, cz - 1);
+						BlockState shoreGround = nether.getBlockState(m);
+						if (shoreGround.isAir() || shoreGround.isOf(Blocks.LAVA) || shoreGround.isOf(Blocks.BEDROCK)) {
+							continue;
+						}
+
+						// Над берегом должен быть воздух открытого грота (не монолитный камень!)
+						m.set(cx, lavaY + 2, cz - 1);
+						if (!nether.getBlockState(m).isAir()) {
+							continue;
+						}
+
+						// А спереди (dz = +4 .. +11) должно лежать настоящее открытое озеро с лавой и свободным пространством над ним!
+						int openLavaCount = 0;
+						for (int lx = -4; lx <= 4; lx += 2) {
+							for (int lz = 4; lz <= 10; lz += 2) {
+								m.set(cx + lx, lavaY, cz + lz);
+								if (nether.getBlockState(m).isOf(Blocks.LAVA)) {
+									boolean openAirAbove = true;
+									for (int ay = 1; ay <= 4; ay++) {
+										m.set(cx + lx, lavaY + ay, cz + lz);
+										if (!nether.getBlockState(m).isAir()) {
+											openAirAbove = false;
+											break;
+										}
+									}
+									if (openAirAbove) {
+										openLavaCount++;
+									}
+								}
+							}
+						}
+
+						if (openLavaCount >= 12) {
+							return new BlockPos(cx, lavaY + 1, cz);
+						}
+					}
+				}
+			}
+		}
+		return null;
+	}
+
 	private static BlockPos findAccessibleUndergroundSpot(ServerWorld world, int centerX, int centerZ, Random rng) {
 		BlockPos.Mutable m = new BlockPos.Mutable();
 		BlockPos bestPos = null;
@@ -131,7 +292,6 @@ public final class ModStructureGenerator {
 			}
 
 			for (int y = 26; y >= -30; y -= 4) {
-				// Проверяем наличие твёрдого пола и свободного места перед предполагаемым входом (dz = -7..-10)
 				m.set(cx, y, cz - 7);
 				BlockState floor = world.getBlockState(m);
 				if (floor.isAir() || floor.isOf(Blocks.LAVA) || floor.isOf(Blocks.WATER) || floor.isOf(Blocks.BEDROCK)) {
@@ -151,9 +311,6 @@ public final class ModStructureGenerator {
 		return bestPos != null ? bestPos : new BlockPos(centerX, rng.nextBetween(-20, 18), centerZ);
 	}
 
-	/**
-	 * Подсчитывает количество свободных воздушных блоков перед входом в подземную структуру.
-	 */
 	private static int countOpenEntranceSpace(ServerWorld world, BlockPos entranceFrontFloor) {
 		BlockPos.Mutable m = new BlockPos.Mutable();
 		int airCount = 0;
@@ -170,10 +327,6 @@ public final class ModStructureGenerator {
 		return airCount;
 	}
 
-	/**
-	 * Проверяет и гарантирует свободное безопасное место перед входом подземной структуры,
-	 * чтобы игрок всегда мог свободно подойти и войти внутрь (расчищает завалы, укрепляет пол над пропастями/лавой и ставит освещение).
-	 */
 	private static void ensureUndergroundEntrancePassage(
 			ServerWorld world,
 			BlockPos doorFloorCenter,
@@ -181,35 +334,26 @@ public final class ModStructureGenerator {
 			Block supportWallBlock
 	) {
 		BlockPos.Mutable m = new BlockPos.Mutable();
-
-		// 1. Всегда расчищаем просторную входную площадку перед дверью (5 блоков в ширину, 4 в высоту, 5 в глубину)
 		for (int step = 1; step <= 12; step++) {
 			int z = doorFloorCenter.getZ() - step;
 			if (!world.isChunkLoaded(doorFloorCenter.getX() >> 4, z >> 4)) {
 				break;
 			}
-
-			// Проверяем, вышли ли уже в достаточно просторную пещеру после обязательного предбанника (step > 5)
 			if (step > 5 && countOpenEntranceSpace(world, new BlockPos(doorFloorCenter.getX(), doorFloorCenter.getY(), z)) >= 22) {
 				break;
 			}
 
 			for (int dx = -2; dx <= 2; dx++) {
 				int x = doorFloorCenter.getX() + dx;
-				// Надёжный пол под ногами (чтобы перед входом не было обрыва или лавы)
 				m.set(x, doorFloorCenter.getY(), z);
 				if (world.getBlockState(m).isAir() || world.getBlockState(m).isReplaceable()
 						|| world.getBlockState(m).isOf(Blocks.LAVA) || world.getBlockState(m).isOf(Blocks.WATER)) {
 					world.setBlockState(m, floorBlock.getDefaultState(), FLAGS);
 				}
-
-				// Проход высотой 4 блока (свободное место перед входом)
 				for (int dy = 1; dy <= 4; dy++) {
 					m.set(x, doorFloorCenter.getY() + dy, z);
 					world.setBlockState(m, Blocks.AIR.getDefaultState(), FLAGS);
 				}
-
-				// Защита потолка и боковых стен от вытекания лавы/воды в проход
 				m.set(x, doorFloorCenter.getY() + 5, z);
 				BlockState above = world.getBlockState(m);
 				if (above.isOf(Blocks.LAVA) || above.isOf(Blocks.WATER) || above.isOf(Blocks.GRAVEL) || above.isOf(Blocks.SAND)) {
@@ -238,44 +382,9 @@ public final class ModStructureGenerator {
 		}
 	}
 
-	private static void tryGenerateNetherRegion(ServerWorld nether, ModPersistentState state, int rx, int rz) {
-		String key = "nether:" + rx + ":" + rz;
-		if (state.hasGeneratedRegion(key)) {
-			return;
-		}
-		Random rng = Random.create(((long) rx * 918273645L) ^ ((long) rz * 192837465L) ^ nether.getSeed());
-		int bx = rx * 224 + 64 + rng.nextInt(96);
-		int bz = rz * 224 + 64 + rng.nextInt(96);
-		if (!nether.isChunkLoaded(bx >> 4, bz >> 4)) {
-			return;
-		}
-		state.markRegionGenerated(key);
-
-		int by = findNetherFloorY(nether, bx, bz);
-		BlockPos resortPos = new BlockPos(bx, by, bz);
-		buildLavaResort(nether, resortPos);
-		state.recordStructure("lava_resort", "minecraft:the_nether", resortPos);
-	}
-
 	private static int findSurfaceY(ServerWorld world, int x, int z) {
 		int y = world.getTopY(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, x, z);
 		return Math.max(world.getSeaLevel(), Math.min(200, y));
-	}
-
-	private static int findNetherFloorY(ServerWorld nether, int x, int z) {
-		BlockPos.Mutable m = new BlockPos.Mutable();
-		for (int y = 33; y <= 95; y++) {
-			m.set(x, y - 1, z);
-			BlockState below = nether.getBlockState(m);
-			m.set(x, y, z);
-			BlockState at = nether.getBlockState(m);
-			m.set(x, y + 1, z);
-			BlockState above = nether.getBlockState(m);
-			if (!below.isAir() && !below.isOf(Blocks.BEDROCK) && at.isAir() && above.isAir()) {
-				return y;
-			}
-		}
-		return 34;
 	}
 
 	public static String detectBiomeCasinoStyle(ServerWorld world, BlockPos pos) {
@@ -405,7 +514,7 @@ public final class ModStructureGenerator {
 	}
 
 	// =========================================================================
-	// 3. ШАХТЁРСКАЯ ЛАВКА (под землёй + проверка и расчистка входа!)
+	// 3. ШАХТЁРСКАЯ ЛАВКА
 	// =========================================================================
 	public static void buildMinerShop(ServerWorld world, BlockPos origin) {
 		for (int dx = -5; dx <= 5; dx++) {
@@ -431,7 +540,6 @@ public final class ModStructureGenerator {
 			}
 		}
 
-		// Проверяем и расчищаем свободный проход перед входом в подземную лавку!
 		ensureUndergroundEntrancePassage(world, origin.add(0, 0, -6), Blocks.COBBLED_DEEPSLATE, Blocks.DEEPSLATE_BRICKS);
 
 		setBlock(world, origin.add(-3, 4, -2), Blocks.LANTERN.getDefaultState());
@@ -457,23 +565,34 @@ public final class ModStructureGenerator {
 	}
 
 	// =========================================================================
-	// 4. ЛАВОВЫЙ КУРОРТ В АДУ
+	// 4. ЛАВОВЫЙ КУРОРТ НА БЕРЕГУ НАСТОЯЩЕГО ОЗЕРА ЛАВЫ В НЕЗЕРЕ
 	// =========================================================================
 	public static void buildLavaResort(ServerWorld nether, BlockPos origin) {
-		fillBox(nether, origin.add(-7, 1, -7), origin.add(7, 8, 7), Blocks.AIR.getDefaultState());
-		fillBox(nether, origin.add(-7, -2, -7), origin.add(7, -1, 7), Blocks.SANDSTONE.getDefaultState());
+		// Расчищаем береговой пляж с видом прямо на естественное озеро лавы спереди (+Z)
+		fillBox(nether, origin.add(-8, 1, -6), origin.add(8, 7, 3), Blocks.AIR.getDefaultState());
 
-		for (int dx = -7; dx <= 7; dx++) {
-			for (int dz = -7; dz <= 7; dz++) {
-				BlockPos p = origin.add(dx, 0, dz);
-				if (dz >= 3 && Math.abs(dx) <= 5) {
-					setBlock(nether, p, Blocks.LAVA.getDefaultState());
+		for (int dx = -8; dx <= 8; dx++) {
+			for (int dz = -6; dz <= 4; dz++) {
+				// Естественная полукруглая береговая линия песчаного пляжа
+				if (dx * dx + dz * dz > 76) {
+					continue;
+				}
+				if (dz <= 2) {
+					fillBox(nether, origin.add(dx, -2, dz), origin.add(dx, -1, dz), Blocks.SANDSTONE.getDefaultState());
+					Block sand = ((dx + dz) % 3 == 0) ? Blocks.RED_SAND : Blocks.SAND;
+					setBlock(nether, origin.add(dx, 0, dz), sand.getDefaultState());
 				} else {
-					setBlock(nether, p, ((dx + dz) % 3 == 0 ? Blocks.RED_SAND : Blocks.SAND).getDefaultState());
+					// Плавный спуск песчаной отмели прямо в настоящее озеро с лавой на уровне origin.getY() - 1!
+					setBlock(nether, origin.add(dx, -2, dz), Blocks.SANDSTONE.getDefaultState());
+					if (!nether.getBlockState(origin.add(dx, -1, dz)).isOf(Blocks.LAVA)) {
+						setBlock(nether, origin.add(dx, -1, dz), Blocks.LAVA.getDefaultState());
+					}
+					setBlock(nether, origin.add(dx, 0, dz), Blocks.AIR.getDefaultState());
 				}
 			}
 		}
 
+		// Шезлонги и пляжные зонтики у кромки лавового озера
 		setBlock(nether, origin.add(-2, 1, 0), Blocks.SANDSTONE_SLAB.getDefaultState());
 		setBlock(nether, origin.add(-2, 1, -1), Blocks.SANDSTONE_STAIRS.getDefaultState());
 		setBlock(nether, origin.add(2, 1, 0), Blocks.SANDSTONE_SLAB.getDefaultState());
@@ -483,14 +602,14 @@ public final class ModStructureGenerator {
 		buildBeachUmbrella(nether, origin.add(-5, 1, -2), Blocks.YELLOW_WOOL, Blocks.ORANGE_WOOL);
 
 		for (int dy = 1; dy <= 4; dy++) {
-			setBlock(nether, origin.add(5, dy, -3), Blocks.CRIMSON_STEM.getDefaultState());
+			setBlock(nether, origin.add(5, dy, -2), Blocks.CRIMSON_STEM.getDefaultState());
 		}
-		fillBox(nether, origin.add(4, 5, -4), origin.add(6, 5, -2), Blocks.WARPED_WART_BLOCK.getDefaultState());
-		setBlock(nether, origin.add(5, 4, -2), Blocks.SHROOMLIGHT.getDefaultState());
+		fillBox(nether, origin.add(4, 5, -3), origin.add(6, 5, -1), Blocks.WARPED_WART_BLOCK.getDefaultState());
+		setBlock(nether, origin.add(5, 4, -1), Blocks.SHROOMLIGHT.getDefaultState());
 
 		setBlock(
 				nether,
-				origin.add(-5, 1, -6),
+				origin.add(-5, 1, -4),
 				ModBlocks.TRADE_MACHINE.getDefaultState().with(TradeMachineBlock.FACING, Direction.SOUTH)
 		);
 
@@ -510,7 +629,7 @@ public final class ModStructureGenerator {
 	}
 
 	// =========================================================================
-	// 5. БИОМНОЕ КАЗИНО (включая пещеры!) + Столы Монетки и Рулетки + Бармен
+	// 5. БИОМНОЕ КАЗИНО
 	// =========================================================================
 	public static void buildBiomeCasino(ServerWorld world, BlockPos origin, String style) {
 		Block wallBlock;
@@ -562,7 +681,6 @@ public final class ModStructureGenerator {
 		}
 		fillBox(world, origin.add(-6, 0, -7), origin.add(6, 6, 6), Blocks.AIR.getDefaultState());
 
-		// Пол казино
 		for (int dx = -6; dx <= 6; dx++) {
 			for (int dz = -6; dz <= 6; dz++) {
 				Block f = (Math.abs(dx) <= 2 || Math.abs(dz) <= 1) ? floorAccent : floorPrimary;
@@ -570,7 +688,6 @@ public final class ModStructureGenerator {
 			}
 		}
 
-		// Стены и потолок
 		for (int dx = -6; dx <= 6; dx++) {
 			for (int dy = 1; dy <= 5; dy++) {
 				for (int dz = -6; dz <= 6; dz++) {
@@ -592,43 +709,234 @@ public final class ModStructureGenerator {
 			}
 		}
 
-		// Для подземного казино обеспечиваем свободный безопасный проход перед входом!
 		if ("cave".equals(style)) {
 			setBlock(world, origin.add(2, 0, -7), floorPrimary.getDefaultState());
 			ensureUndergroundEntrancePassage(world, origin.add(0, 0, -7), floorPrimary, wallBlock);
 		}
 
-		// Неоновая вывеска над входом казино
 		setBlock(world, origin.add(-2, 4, -6), Blocks.SEA_LANTERN.getDefaultState());
 		setBlock(world, origin.add(0, 4, -6), Blocks.GOLD_BLOCK.getDefaultState());
 		setBlock(world, origin.add(2, 4, -6), Blocks.SEA_LANTERN.getDefaultState());
 
-		// ДВА ИГРОВЫХ СТОЛА КАЗИНО в зале:
-		// 1) Стол «Монетка» (слева)
 		setBlock(world, origin.add(-3, 1, -2), ModBlocks.COINFLIP_TABLE.getDefaultState());
 		setBlock(world, origin.add(-4, 1, -2), Blocks.RED_CARPET.getDefaultState());
 		setBlock(world, origin.add(-2, 1, -2), Blocks.RED_CARPET.getDefaultState());
 
-		// 2) Полноценный стол «Рулетка» (справа)
 		setBlock(world, origin.add(3, 1, -2), ModBlocks.ROULETTE_TABLE.getDefaultState());
 		setBlock(world, origin.add(4, 1, -2), Blocks.GREEN_CARPET.getDefaultState());
 		setBlock(world, origin.add(2, 1, -2), Blocks.GREEN_CARPET.getDefaultState());
 
-		// Барная стойка и полки с напитками
 		fillBox(world, origin.add(-3, 1, 2), origin.add(3, 1, 2), barCounterBlock.getDefaultState());
 		setBlock(world, origin.add(-2, 2, 4), Blocks.BREWING_STAND.getDefaultState());
 		setBlock(world, origin.add(2, 2, 4), Blocks.BREWING_STAND.getDefaultState());
 		fillBox(world, origin.add(-3, 1, 4), origin.add(3, 1, 4), pillarBlock.getDefaultState());
 
-		// Торговый аппарат на входе казино
 		setBlock(
 				world,
 				origin.add(2, 1, -7),
 				ModBlocks.TRADE_MACHINE.getDefaultState().with(TradeMachineBlock.FACING, Direction.NORTH)
 		);
 
-		// Бармен за стойкой
 		spawnNpcAt(world, origin.add(0, 1, 3), NpcRole.CASINO_BARTENDER, style);
+	}
+
+	// =========================================================================
+	// 6. «ЭГО-ОСТРОВ» (Тропический остров-вечеринка: Кухня со Странным мясом,
+	//    Повар, Эйнштейн, Сталин, Свити Фик, Тусовщицы, Танцпол, Бассейн и Джакузи с пузырьками!)
+	// =========================================================================
+	public static void buildEgoIsland(ServerWorld world, BlockPos origin) {
+		// Расчищаем воздух над всем островом
+		fillBox(world, origin.add(-18, 1, -20), origin.add(18, 12, 18), Blocks.AIR.getDefaultState());
+
+		// 1. Формируем естественный округлый тропический остров с песчаными пляжами (радиус ~16 блоков)
+		for (int dx = -17; dx <= 17; dx++) {
+			for (int dz = -17; dz <= 17; dz++) {
+				int r2 = dx * dx + dz * dz;
+				if (r2 > 17 * 17) {
+					continue;
+				}
+				// Подводное основание острова из песчаника и песка
+				fillBox(world, origin.add(dx, -4, dz), origin.add(dx, -2, dz), Blocks.SANDSTONE.getDefaultState());
+				if (r2 > 13 * 13) {
+					// Внешнее кольцо — пологий золотистый пляж у воды
+					setBlock(world, origin.add(dx, -1, dz), Blocks.SAND.getDefaultState());
+					if (r2 <= 15 * 15) {
+						setBlock(world, origin.add(dx, 0, dz), Blocks.SAND.getDefaultState());
+					} else {
+						setBlock(world, origin.add(dx, 0, dz), Blocks.WATER.getDefaultState());
+					}
+				} else {
+					// Внутренняя курортная терраса острова
+					setBlock(world, origin.add(dx, -1, dz), Blocks.SMOOTH_SANDSTONE.getDefaultState());
+					Block surface = ((dx + dz) % 5 == 0) ? Blocks.JUNGLE_PLANKS : Blocks.SMOOTH_SANDSTONE;
+					setBlock(world, origin.add(dx, 0, dz), surface.getDefaultState());
+				}
+			}
+		}
+
+		// Причал на северной стороне (-Z) + Торговый аппарат
+		fillBox(world, origin.add(-2, 0, -19), origin.add(2, 0, -14), Blocks.SPRUCE_PLANKS.getDefaultState());
+		setBlock(world, origin.add(-2, 1, -19), Blocks.OAK_FENCE.getDefaultState());
+		setBlock(world, origin.add(2, 1, -19), Blocks.OAK_FENCE.getDefaultState());
+		setBlock(world, origin.add(-2, 2, -19), Blocks.LANTERN.getDefaultState());
+		setBlock(world, origin.add(2, 2, -19), Blocks.LANTERN.getDefaultState());
+		setBlock(
+				world,
+				origin.add(2, 1, -15),
+				ModBlocks.TRADE_MACHINE.getDefaultState().with(TradeMachineBlock.FACING, Direction.NORTH)
+		);
+
+		// 2. КУХНЯ НА ОСТРОВЕ + СУНДУКИ СО «СТРАННЫМ МЯСОМ» + ШЕФ-ПОВАР (северо-запад: dx = -12..-5, dz = -7..0)
+		fillBox(world, origin.add(-12, 0, -7), origin.add(-5, 0, 0), Blocks.POLISHED_ANDESITE.getDefaultState());
+		// Навес кухни на деревянных опорах
+		for (int cx : new int[]{-12, -5}) {
+			for (int cz : new int[]{-7, 0}) {
+				fillBox(world, origin.add(cx, 1, cz), origin.add(cx, 3, cz), Blocks.STRIPPED_SPRUCE_LOG.getDefaultState());
+			}
+		}
+		fillBox(world, origin.add(-12, 4, -7), origin.add(-5, 4, 0), Blocks.DARK_OAK_SLAB.getDefaultState());
+		setBlock(world, origin.add(-8, 3, -3), Blocks.LANTERN.getDefaultState());
+
+		// Печи-коптильни, разделочный стол и 2 СУНДУКА у кухни со Странным мясом!
+		setBlock(world, origin.add(-11, 1, -6), Blocks.SMOKER.getDefaultState());
+		setBlock(world, origin.add(-10, 1, -6), Blocks.SMOKER.getDefaultState());
+		setBlock(world, origin.add(-9, 1, -6), Blocks.CAMPFIRE.getDefaultState());
+		fillBox(world, origin.add(-11, 1, -2), origin.add(-7, 1, -2), Blocks.QUARTZ_BRICKS.getDefaultState());
+
+		BlockPos chestPos1 = origin.add(-7, 1, -6);
+		BlockPos chestPos2 = origin.add(-6, 1, -6);
+		setBlock(world, chestPos1, Blocks.CHEST.getDefaultState());
+		setBlock(world, chestPos2, Blocks.CHEST.getDefaultState());
+		populateKitchenChestWithStrangeMeat(world, chestPos1);
+		populateKitchenChestWithStrangeMeat(world, chestPos2);
+
+		// Шеф-повар прямо на кухне у сундуков!
+		spawnNpcAt(world, origin.add(-9, 1, -4), NpcRole.EGO_CHEF, "");
+
+		// 3. СВЕТЯЩИЙСЯ ТАНЦПОЛ + ДИДЖЕЙСКИЙ ПУЛЬТ (юго-запад / центр: dx = -4..+4, dz = +2..+10)
+		Block[] discoPalette = new Block[]{
+				Blocks.MAGENTA_STAINED_GLASS,
+				Blocks.CYAN_STAINED_GLASS,
+				Blocks.YELLOW_STAINED_GLASS,
+				Blocks.LIME_STAINED_GLASS,
+				Blocks.PURPLE_STAINED_GLASS,
+				Blocks.PINK_STAINED_GLASS
+		};
+		for (int dx = -4; dx <= 4; dx++) {
+			for (int dz = 2; dz <= 10; dz++) {
+				if (Math.abs(dx) == 4 || dz == 2 || dz == 10) {
+					setBlock(world, origin.add(dx, 0, dz), Blocks.GOLD_BLOCK.getDefaultState());
+				} else {
+					setBlock(world, origin.add(dx, -1, dz), Blocks.SEA_LANTERN.getDefaultState());
+					Block glass = discoPalette[Math.floorMod(dx * 3 + dz * 5, discoPalette.length)];
+					setBlock(world, origin.add(dx, 0, dz), glass.getDefaultState());
+				}
+			}
+		}
+		// Диджейская стойка с пультом и колонками перед танцполом
+		setBlock(world, origin.add(-2, 1, 2), Blocks.NOTE_BLOCK.getDefaultState());
+		setBlock(world, origin.add(-1, 1, 2), Blocks.JUKEBOX.getDefaultState());
+		setBlock(world, origin.add(0, 1, 2), ModBlocks.DJ_CONSOLE.getDefaultState());
+		setBlock(world, origin.add(1, 1, 2), Blocks.JUKEBOX.getDefaultState());
+		setBlock(world, origin.add(2, 1, 2), Blocks.NOTE_BLOCK.getDefaultState());
+
+		// 4. БОЛЬШОЙ БИРЮЗОВЫЙ БАССЕЙН (северо-восток: dx = +4..+12, dz = -9..-1)
+		for (int dx = 4; dx <= 12; dx++) {
+			for (int dz = -9; dz <= -1; dz++) {
+				boolean rim = (dx == 4 || dx == 12 || dz == -9 || dz == -1);
+				if (rim) {
+					setBlock(world, origin.add(dx, 0, dz), Blocks.SMOOTH_QUARTZ.getDefaultState());
+				} else {
+					Block poolBottom = ((dx + dz) % 3 == 0) ? Blocks.SEA_LANTERN : Blocks.PRISMARINE_BRICKS;
+					setBlock(world, origin.add(dx, -3, dz), poolBottom.getDefaultState());
+					setBlock(world, origin.add(dx, -2, dz), Blocks.WATER.getDefaultState());
+					setBlock(world, origin.add(dx, -1, dz), Blocks.WATER.getDefaultState());
+					setBlock(world, origin.add(dx, 0, dz), Blocks.WATER.getDefaultState());
+				}
+			}
+		}
+		// Трамплин для прыжков в бассейн и зонтики
+		setBlock(world, origin.add(8, 1, -1), Blocks.QUARTZ_SLAB.getDefaultState());
+		setBlock(world, origin.add(8, 1, -2), Blocks.QUARTZ_SLAB.getDefaultState());
+		buildBeachUmbrella(world, origin.add(8, 1, -11), Blocks.CYAN_WOOL, Blocks.WHITE_WOOL);
+
+		// 5. ГОРЯЧЕЕ ДЖАКУЗИ С ПУЗЫРЬКАМИ И СИДЕНЬЯМИ, ГДЕ МОЖНО СИДЕТЬ! (юго-восток: dx = +6..+12, dz = +3..+9)
+		for (int dx = 6; dx <= 12; dx++) {
+			for (int dz = 3; dz <= 9; dz++) {
+				boolean outerWall = (dx == 6 || dx == 12 || dz == 3 || dz == 9);
+				if (outerWall) {
+					setBlock(world, origin.add(dx, 0, dz), Blocks.SMOOTH_QUARTZ.getDefaultState());
+					setBlock(world, origin.add(dx, 1, dz), Blocks.QUARTZ_SLAB.getDefaultState());
+				} else {
+					// На дне песок душ под водой — даёт настоящие бурлящие столбы пузырьков BUBBLE_COLUMN!
+					setBlock(world, origin.add(dx, -2, dz), Blocks.SOUL_SAND.getDefaultState());
+					setBlock(world, origin.add(dx, -1, dz), Blocks.WATER.getDefaultState());
+					setBlock(world, origin.add(dx, 0, dz), Blocks.WATER.getDefaultState());
+				}
+			}
+		}
+		// Ступенька входа в джакузи и 4 затопленных водой Сиденья джакузи по краям внутри бурлящей чаши!
+		setBlock(world, origin.add(6, 1, 6), Blocks.AIR.getDefaultState());
+		BlockState submergedSeat = ModBlocks.JACUZZI_SEAT.getDefaultState().with(JacuzziSeatBlock.WATERLOGGED, true);
+		setBlock(world, origin.add(7, 0, 6), submergedSeat);
+		setBlock(world, origin.add(11, 0, 6), submergedSeat);
+		setBlock(world, origin.add(9, 0, 4), submergedSeat);
+		setBlock(world, origin.add(9, 0, 8), submergedSeat);
+		// Угловые фонари вокруг джакузи
+		setBlock(world, origin.add(6, 1, 3), Blocks.LANTERN.getDefaultState());
+		setBlock(world, origin.add(12, 1, 3), Blocks.LANTERN.getDefaultState());
+		setBlock(world, origin.add(6, 1, 9), Blocks.LANTERN.getDefaultState());
+		setBlock(world, origin.add(12, 1, 9), Blocks.LANTERN.getDefaultState());
+
+		// 6. Тропические пальмы по краям острова
+		buildTropicalPalm(world, origin.add(-13, 1, 8));
+		buildTropicalPalm(world, origin.add(-13, 1, -11));
+		buildTropicalPalm(world, origin.add(13, 1, -11));
+		buildTropicalPalm(world, origin.add(13, 1, 11));
+
+		// 7. Спавним всех гостей вечеринки на Эго-острове со своими фразами!
+		spawnNpcAt(world, origin.add(5, 1, 5), NpcRole.EINSTEIN, "");
+		spawnNpcAt(world, origin.add(-6, 1, 4), NpcRole.STALIN, "");
+		spawnNpcAt(world, origin.add(2, 1, -3), NpcRole.SWEETIE_FIK, "");
+
+		// Тусовщицы (в 3 разных летних нарядах) на танцполе, у бассейна и у джакузи!
+		spawnNpcAt(world, origin.add(-2, 1, 5), NpcRole.PARTY_GIRL, "1");
+		spawnNpcAt(world, origin.add(2, 1, 7), NpcRole.PARTY_GIRL, "2");
+		spawnNpcAt(world, origin.add(6, 1, -10), NpcRole.PARTY_GIRL, "3");
+		spawnNpcAt(world, origin.add(9, 1, 2), NpcRole.PARTY_GIRL, "1");
+	}
+
+	private static void populateKitchenChestWithStrangeMeat(ServerWorld world, BlockPos chestPos) {
+		BlockEntity be = world.getBlockEntity(chestPos);
+		if (be instanceof ChestBlockEntity chest) {
+			chest.setStack(0, new ItemStack(ModItems.STRANGE_MEAT, 6));
+			chest.setStack(2, new ItemStack(ModItems.STRANGE_MEAT, 4));
+			chest.setStack(4, new ItemStack(Items.COOKED_BEEF, 5));
+			chest.setStack(11, new ItemStack(ModItems.STRANGE_MEAT, 8));
+			chest.setStack(13, new ItemStack(Items.HONEY_BOTTLE, 3));
+			chest.setStack(15, new ItemStack(ModItems.STRANGE_MEAT, 5));
+			chest.setStack(22, new ItemStack(Items.GOLDEN_CARROT, 4));
+			chest.markDirty();
+		}
+	}
+
+	private static void buildTropicalPalm(ServerWorld world, BlockPos base) {
+		for (int dy = 0; dy < 6; dy++) {
+			int lean = dy >= 3 ? 1 : 0;
+			setBlock(world, base.add(lean, dy, 0), Blocks.JUNGLE_LOG.getDefaultState());
+		}
+		BlockPos top = base.add(1, 6, 0);
+		setBlock(world, top.down(), Blocks.SHROOMLIGHT.getDefaultState());
+		for (int dx = -2; dx <= 2; dx++) {
+			for (int dz = -2; dz <= 2; dz++) {
+				if (Math.abs(dx) + Math.abs(dz) <= 3) {
+					setBlock(world, top.add(dx, 0, dz), Blocks.JUNGLE_LEAVES.getDefaultState());
+				}
+				if (Math.abs(dx) == 2 && dz == 0 || Math.abs(dz) == 2 && dx == 0) {
+					setBlock(world, top.add(dx, -1, dz), Blocks.JUNGLE_LEAVES.getDefaultState());
+				}
+			}
+		}
 	}
 
 	private static void spawnNpcAt(ServerWorld world, BlockPos pos, NpcRole role, String variant) {

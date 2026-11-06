@@ -4,6 +4,8 @@
 		"novaimod:trade_machine",
 		"novaimod:repair_station",
 		"novaimod:coinflip_table",
-		"novaimod:roulette_table"
+		"novaimod:roulette_table",
+		"novaimod:jacuzzi_seat",
+		"novaimod:dj_console"
 	]
 }

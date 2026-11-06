@@ -25,6 +25,8 @@ public class ModNpcRenderer extends MobEntityRenderer<ModNpcEntity, PlayerEntity
 			new EntityModelLayer(Identifier.of(NovaiMod.MOD_ID, "mod_npc"), "main");
 
 	private static final Map<NpcRole, Identifier> SKIN_CACHE = new EnumMap<>(NpcRole.class);
+	private static final Identifier PARTY_GIRL_2 = Identifier.of(NovaiMod.MOD_ID, "textures/entity/npc/party_girl_2.png");
+	private static final Identifier PARTY_GIRL_3 = Identifier.of(NovaiMod.MOD_ID, "textures/entity/npc/party_girl_3.png");
 
 	static {
 		for (NpcRole role : NpcRole.values()) {
@@ -42,6 +44,15 @@ public class ModNpcRenderer extends MobEntityRenderer<ModNpcEntity, PlayerEntity
 
 	@Override
 	public Identifier getTexture(ModNpcEntity entity) {
+		if (entity.getNpcRole() == NpcRole.PARTY_GIRL) {
+			String v = entity.getVariant();
+			if ("2".equals(v)) {
+				return PARTY_GIRL_2;
+			}
+			if ("3".equals(v)) {
+				return PARTY_GIRL_3;
+			}
+		}
 		return SKIN_CACHE.getOrDefault(entity.getNpcRole(), SKIN_CACHE.get(NpcRole.GROCERY_SELLER_1));
 	}
 }

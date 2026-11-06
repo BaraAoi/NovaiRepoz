@@ -12,6 +12,13 @@ public enum NpcRole {
 	MFO_BARKER("barker", "Зазывала", true),
 	MFO_LENDER("lender", "Кредитор", true),
 	MFO_ELITE_SELLER("elite_seller", "Элитный продавец", true),
+	// Персонажи вечеринки на Эго-острове
+	EGO_CHEF("ego_chef", "Шеф-повар", true),
+	EINSTEIN("einstein", "Альберт Эйнштейн", true),
+	STALIN("stalin", "Иосиф Сталин", true),
+	SWEETIE_FIK("sweetie_fik", "Свити Фик", true),
+	PARTY_GIRL("party_girl", "Тусовщица", true),
+	// Взыскатели МФО
 	VOLODYA("volodya", "Володя", false),
 	COLLECTOR("collector", "Коллектор", false),
 	ARMENIAN_BRIGADE("brigade", "Бригада армян", false),

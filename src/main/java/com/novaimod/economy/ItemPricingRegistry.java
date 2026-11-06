@@ -3,6 +3,8 @@ package com.novaimod.economy;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.novaimod.registry.ModItems;
+
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.FoodComponent;
 import net.minecraft.component.type.ItemEnchantmentsComponent;
@@ -51,6 +53,7 @@ public final class ItemPricingRegistry {
 		put(Items.FLINT, 5);
 		put(Items.OBSIDIAN, 35);
 		put(Items.CRYING_OBSIDIAN, 55);
+		put(ModItems.STRANGE_MEAT, 89);
 
 		// Древесина
 		put(Items.OAK_LOG, 6);

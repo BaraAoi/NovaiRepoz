@@ -69,11 +69,52 @@ public class ModNpcEntity extends PathAwareEntity {
 			"Даже под грохот канонады над бункером рейхсканцелярии спалось тише, чем под вечные завывания этих гастов!"
 	};
 
+	private static final String[] CHEF_LINES = new String[]{
+			"Честно тебе скажу — мясо какое-то странное! В накладной значится «фермерский люкс», но я такой анатомии у коров сроду не видал!",
+			"В сундуках у плиты лежит свежая партия... Пахнет вроде аппетитно, но мясо какое-то реально странное, аж мурашки по коже!",
+			"Когда я резал этот кусок, мне показалось, что он на секунду засветился! Короче, мясо странное — ешь на свой страх и риск!",
+			"Сталин уже дважды заходил на кухню и строго спрашивал, откуда поставщик... А я сам без понятия, что это за странное мясо!",
+			"Жарится за минуту, на вкус нежнее мраморного рибая, но клянусь колпаком — мясо какое-то очень странное!"
+	};
+
+	private static final String[] EINSTEIN_LINES = new String[]{
+			"Согласно теории относительности, пять минут в этом горячем джакузи с пузырьками длятся как две секунды на лекции!",
+			"E = mc², друг мой! Где E — это энергия этого неонового танцпола, помноженная на квадрат громкости сабвуфера!",
+			"Я пытался вывести формулу турбулентности пузырьков в джакузи, но Свити Фик случайно уронил туда микрофон!",
+			"Пространство-время явно искривляется вокруг кухни повара — особенно когда открываешь сундук с его странным мясом!",
+			"Всё в мире относительно: в бассейне вода кажется прохладной, а после джакузи — ледяной квантовой суперпозицией!"
+	};
+
+	private static final String[] STALIN_LINES = new String[]{
+			"Товарищ диджей выдаёт басы строго по пятилетнему плану — даже с перевыполнением нормы на танцполе!",
+			"Курорт, конечно, культурный: бассейн, джакузи... Но к происхождению странного мяса на кухне у нас есть серьёзные вопросы!",
+			"Эйнштейн мне тут полчаса про какие-то кванты толковал у бассейна. Сказал ему: физика физикой, а шашлык по расписанию!",
+			"Порядок на вечеринке образцовый: кто не танцует на танцполе — тот отдыхает в джакузи с пузырьками!",
+			"Хороший табак, тёплый морской бриз и музыка гремит... Но повара с его странными сундуками надо бы проверить!"
+	};
+
+	private static final String[] SWEETIE_FIK_LINES = new String[]{
+			"Всем привет, дорогие друзья, с вами Свити Фик! И сегодня мы проводим 100 ДНЕЙ на секретном Эго-острове в Майнкрафте!",
+			"Ребята, поставьте лайк прямо сейчас, если хотите увидеть, как я прыгну с крыши кухни прямо в бассейн!",
+			"Слушай, принеси мне с кухни кусок того самого «Странного мяса» из сундука для челленджа в ролике — заплачу 1500 ₽ за реквизит!",
+			"Я только что снял шортс с Эйнштейном и Сталиным на танцполе — этот ролик точно залетит в тренды!",
+			"Джакузи с пузырьками тут имбовое: садишься прямо в воду, чиллишь, и хп само регенится — топ контент!"
+	};
+
+	private static final String[] PARTY_GIRL_LINES = new String[]{
+			"Включай диджейский пульт скорее — когда танцпол начинает переливаться огнями, вся вечеринка оживает!",
+			"Мы сначала плавали в бассейне, а потом пересели в джакузи с пузырьками — там реально можно сидеть прямо в тёплой воде!",
+			"Эта вечеринка на острове просто лучшая! Тут и музыка качает, и Свити Фик свой новый ролик снимает!",
+			"Ты уже заглядывал на кухню? Повар шепчется, что в сундуках какое-то странное мясо — мы решили лучше пить лимонад!",
+			"Давай к нам на танцпол! Если запрыгать под бит диджея, гости даже чаевые за крутые движения кидают!"
+	};
+
 	private UUID targetPlayerUuid;
 	private BlockPos anchorPos;
 	private boolean fleeing = false;
 	private boolean leavingPeacefully = false;
 	private boolean gidlerTokenGiven = false;
+	private boolean sweetieQuestDone = false;
 	private int hitsFromPlayer = 0;
 	private int actionCooldown = 0;
 	private int lifeTicks = 0;
@@ -255,10 +296,65 @@ public class ModNpcEntity extends PathAwareEntity {
 				handleGidlerInteraction(serverPlayer);
 				return ActionResult.CONSUME;
 			}
+			case EGO_CHEF -> {
+				sayRandomLine(serverPlayer, "Шеф-повар", CHEF_LINES, Formatting.YELLOW);
+				return ActionResult.CONSUME;
+			}
+			case EINSTEIN -> {
+				sayRandomLine(serverPlayer, "Альберт Эйнштейн", EINSTEIN_LINES, Formatting.AQUA);
+				return ActionResult.CONSUME;
+			}
+			case STALIN -> {
+				sayRandomLine(serverPlayer, "Иосиф Сталин", STALIN_LINES, Formatting.RED);
+				return ActionResult.CONSUME;
+			}
+			case SWEETIE_FIK -> {
+				handleSweetieFikInteraction(serverPlayer);
+				return ActionResult.CONSUME;
+			}
+			case PARTY_GIRL -> {
+				sayRandomLine(serverPlayer, "Тусовщица", PARTY_GIRL_LINES, Formatting.LIGHT_PURPLE);
+				return ActionResult.CONSUME;
+			}
 			default -> {
 				return ActionResult.PASS;
 			}
 		}
+	}
+
+	private void sayRandomLine(ServerPlayerEntity player, String speaker, String[] pool, Formatting color) {
+		String line = pool[this.getRandom().nextInt(pool.length)];
+		player.sendMessage(
+				Text.literal("[" + speaker + "]: ").formatted(color, Formatting.BOLD)
+						.append(Text.literal(line).formatted(Formatting.WHITE)),
+				false
+		);
+		player.getServerWorld().playSound(null, this.getBlockPos(), SoundEvents.ENTITY_VILLAGER_AMBIENT, SoundCategory.NEUTRAL, 0.7F, 1.05F);
+	}
+
+	private void handleSweetieFikInteraction(ServerPlayerEntity player) {
+		ItemStack held = player.getMainHandStack();
+		if (!this.sweetieQuestDone && held.isOf(ModItems.STRANGE_MEAT)) {
+			if (!player.isInCreativeMode()) {
+				held.decrement(1);
+			}
+			this.sweetieQuestDone = true;
+			ModPersistentState state = ModPersistentState.get(player.getServer());
+			ModPersistentState.PlayerFinanceData acc = state.getAccount(player.getUuid());
+			acc.balance += 1500L;
+			state.markDirty();
+			ModServerNetworking.syncAccount(player);
+
+			player.getServerWorld().playSound(null, this.getBlockPos(), SoundEvents.ENTITY_PLAYER_LEVELUP, SoundCategory.PLAYERS, 0.9F, 1.2F);
+			player.sendMessage(
+					Text.literal("[Свити Фик]: ").formatted(Formatting.GOLD, Formatting.BOLD)
+							.append(Text.literal("О-О-О, РЕБЯТА, ОН ПРИНЁС СТРАННОЕ МЯСО С КУХНИ ПРЯМО В КАДР! Это 10 миллионов просмотров! Держи +1500 ₽ гонорара на счёт!").formatted(Formatting.GREEN)),
+					false
+			);
+			return;
+		}
+
+		sayRandomLine(player, "Свити Фик", SWEETIE_FIK_LINES, Formatting.GOLD);
 	}
 
 	private void handleGidlerInteraction(ServerPlayerEntity player) {
@@ -657,6 +753,7 @@ public class ModNpcEntity extends PathAwareEntity {
 		}
 		nbt.putBoolean("Fleeing", this.fleeing);
 		nbt.putBoolean("GidlerTokenGiven", this.gidlerTokenGiven);
+		nbt.putBoolean("SweetieQuestDone", this.sweetieQuestDone);
 		nbt.putInt("HitsFromPlayer", this.hitsFromPlayer);
 	}
 
@@ -679,6 +776,7 @@ public class ModNpcEntity extends PathAwareEntity {
 		}
 		this.fleeing = nbt.getBoolean("Fleeing");
 		this.gidlerTokenGiven = nbt.getBoolean("GidlerTokenGiven");
+		this.sweetieQuestDone = nbt.getBoolean("SweetieQuestDone");
 		this.hitsFromPlayer = nbt.getInt("HitsFromPlayer");
 	}
 }

@@ -2,6 +2,7 @@ package com.novaimod.registry;
 
 import com.novaimod.NovaiMod;
 import com.novaimod.entity.ModNpcEntity;
+import com.novaimod.entity.SeatEntity;
 
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
 import net.minecraft.entity.EntityType;
@@ -19,6 +20,16 @@ public final class ModEntities {
 					.makeFireImmune()
 					.maxTrackingRange(10)
 					.build("mod_npc")
+	);
+
+	public static final EntityType<SeatEntity> SEAT_ENTITY = Registry.register(
+			Registries.ENTITY_TYPE,
+			Identifier.of(NovaiMod.MOD_ID, "seat"),
+			EntityType.Builder.<SeatEntity>create(SeatEntity::new, SpawnGroup.MISC)
+					.dimensions(0.05F, 0.05F)
+					.maxTrackingRange(6)
+					.trackingTickInterval(10)
+					.build("seat")
 	);
 
 	private ModEntities() {

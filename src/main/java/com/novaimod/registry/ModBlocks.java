@@ -2,7 +2,9 @@ package com.novaimod.registry;
 
 import com.novaimod.NovaiMod;
 import com.novaimod.block.CoinflipTableBlock;
+import com.novaimod.block.DjConsoleBlock;
 import com.novaimod.block.FateMachineBlock;
+import com.novaimod.block.JacuzziSeatBlock;
 import com.novaimod.block.RepairStationBlock;
 import com.novaimod.block.RouletteTableBlock;
 import com.novaimod.block.TradeMachineBlock;
@@ -68,6 +70,29 @@ public final class ModBlocks {
 							.strength(3.0F, 10.0F)
 							.sounds(BlockSoundGroup.WOOD)
 							.luminance(state -> 6)
+			)
+	);
+
+	public static final Block JACUZZI_SEAT = register(
+			"jacuzzi_seat",
+			new JacuzziSeatBlock(
+					AbstractBlock.Settings.create()
+							.mapColor(MapColor.OFF_WHITE)
+							.strength(2.0F, 8.0F)
+							.sounds(BlockSoundGroup.STONE)
+							.nonOpaque()
+							.luminance(state -> 6)
+			)
+	);
+
+	public static final Block DJ_CONSOLE = register(
+			"dj_console",
+			new DjConsoleBlock(
+					AbstractBlock.Settings.create()
+							.mapColor(MapColor.MAGENTA)
+							.strength(3.0F, 10.0F)
+							.sounds(BlockSoundGroup.METAL)
+							.luminance(state -> 12)
 			)
 	);
 
