@@ -64,6 +64,12 @@ public class ModPersistentState extends PersistentState {
 		// Отложенный перенос после наложения Темноты от коктейля «Пьяное забвение»
 		public int pendingOblivionTicks = 0;
 
+		// Плавное развитие мобов (прогресс игрока и учёт смертей от конкретных типов мобов)
+		public long ticksLivedInWorld = 0L;
+		public int highestGearScore = 0;
+		public long lastMercyDecayTick = 0L;
+		public final Map<String, Integer> recentMobDeaths = new HashMap<>();
+
 		public NbtCompound toNbt() {
 			NbtCompound tag = new NbtCompound();
 			tag.putLong("balance", balance);
@@ -98,6 +104,15 @@ public class ModPersistentState extends PersistentState {
 			tag.putString("preSizoDim", preSizoDim);
 			tag.putBoolean("rouletteForceNextGreen", rouletteForceNextGreen);
 			tag.putInt("pendingOblivionTicks", pendingOblivionTicks);
+
+			tag.putLong("ticksLivedInWorld", ticksLivedInWorld);
+			tag.putInt("highestGearScore", highestGearScore);
+			tag.putLong("lastMercyDecayTick", lastMercyDecayTick);
+			NbtCompound deathsTag = new NbtCompound();
+			for (Map.Entry<String, Integer> e : recentMobDeaths.entrySet()) {
+				deathsTag.putInt(e.getKey(), e.getValue());
+			}
+			tag.put("recentMobDeaths", deathsTag);
 			return tag;
 		}
 
@@ -139,6 +154,16 @@ public class ModPersistentState extends PersistentState {
 			}
 			d.rouletteForceNextGreen = tag.getBoolean("rouletteForceNextGreen");
 			d.pendingOblivionTicks = tag.getInt("pendingOblivionTicks");
+
+			d.ticksLivedInWorld = tag.getLong("ticksLivedInWorld");
+			d.highestGearScore = tag.getInt("highestGearScore");
+			d.lastMercyDecayTick = tag.getLong("lastMercyDecayTick");
+			if (tag.contains("recentMobDeaths", NbtElement.COMPOUND_TYPE)) {
+				NbtCompound deathsTag = tag.getCompound("recentMobDeaths");
+				for (String key : deathsTag.getKeys()) {
+					d.recentMobDeaths.put(key, deathsTag.getInt(key));
+				}
+			}
 			return d;
 		}
 	}

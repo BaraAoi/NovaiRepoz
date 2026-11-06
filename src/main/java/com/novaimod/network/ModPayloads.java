@@ -290,6 +290,27 @@ public final class ModPayloads {
 		}
 	}
 
+	public record ShadowCuePayload(boolean leftSide, float intensity) implements CustomPayload {
+		public static final CustomPayload.Id<ShadowCuePayload> ID =
+				new CustomPayload.Id<>(Identifier.of(NovaiMod.MOD_ID, "shadow_cue"));
+		public static final PacketCodec<RegistryByteBuf, ShadowCuePayload> CODEC =
+				PacketCodec.of(ShadowCuePayload::write, ShadowCuePayload::read);
+
+		private void write(RegistryByteBuf buf) {
+			buf.writeBoolean(leftSide);
+			buf.writeFloat(intensity);
+		}
+
+		private static ShadowCuePayload read(RegistryByteBuf buf) {
+			return new ShadowCuePayload(buf.readBoolean(), buf.readFloat());
+		}
+
+		@Override
+		public Id<? extends CustomPayload> getId() {
+			return ID;
+		}
+	}
+
 	// ===================== C2S =====================
 
 	public record LoanActionPayload(boolean borrow, long amount) implements CustomPayload {
@@ -473,6 +494,7 @@ public final class ModPayloads {
 		PayloadTypeRegistry.playS2C().register(OpenRouletteScreenPayload.ID, OpenRouletteScreenPayload.CODEC);
 		PayloadTypeRegistry.playS2C().register(RouletteResultPayload.ID, RouletteResultPayload.CODEC);
 		PayloadTypeRegistry.playS2C().register(OpenOddsConfigScreenPayload.ID, OpenOddsConfigScreenPayload.CODEC);
+		PayloadTypeRegistry.playS2C().register(ShadowCuePayload.ID, ShadowCuePayload.CODEC);
 
 		PayloadTypeRegistry.playC2S().register(LoanActionPayload.ID, LoanActionPayload.CODEC);
 		PayloadTypeRegistry.playC2S().register(ShopBuyPayload.ID, ShopBuyPayload.CODEC);

@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 
 import com.mojang.brigadier.arguments.LongArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
+import com.novaimod.ai.evolution.MobEvolutionManager;
 import com.novaimod.data.ModPersistentState;
 import com.novaimod.economy.CasinoGamesManager;
 import com.novaimod.network.ModPayloads;
@@ -19,6 +20,7 @@ import com.novaimod.world.MysterySkyManager;
 
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
@@ -74,6 +76,14 @@ public class NovaiMod implements ModInitializer {
 			ModServerNetworking.syncAccount(newPlayer);
 		});
 
+		ServerLivingEntityEvents.AFTER_DEATH.register((entity, damageSource) -> {
+			if (entity instanceof ServerPlayerEntity deadPlayer) {
+				MobEvolutionManager.recordPlayerDeath(deadPlayer, damageSource);
+			} else {
+				MobEvolutionManager.onMobDeath(entity);
+			}
+		});
+
 		PlayerBlockBreakEvents.BEFORE.register((world, player, pos, state, blockEntity) -> {
 			if (!world.isClient() && DetentionManager.isPlayerRestrictedFromBreaking(player)) {
 				if (player instanceof ServerPlayerEntity sp) {
@@ -88,6 +98,7 @@ public class NovaiMod implements ModInitializer {
 			MysterySkyManager.tickSkyArenas(server);
 			DetentionManager.tickDebtAndDetentions(server);
 			CasinoGamesManager.tickPendingResolutions(server);
+			MobEvolutionManager.tickServer(server);
 
 			structureCheckTicker++;
 			if (structureCheckTicker >= 40) {

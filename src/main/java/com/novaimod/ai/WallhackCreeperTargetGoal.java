@@ -3,10 +3,14 @@ package com.novaimod.ai;
 import java.util.EnumSet;
 import java.util.List;
 
+import com.novaimod.ai.evolution.MobEvolutionManager;
+import com.novaimod.data.ModPersistentState;
+
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.ai.goal.Goal;
 import net.minecraft.entity.mob.CreeperEntity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.math.Box;
 
 /**
@@ -84,8 +88,14 @@ public class WallhackCreeperTargetGoal extends Goal {
 			if (!player.isAlive() || player.isCreative() || player.isSpectator()) {
 				continue;
 			}
+			double effectiveRange = DETECT_RANGE;
+			if (player instanceof ServerPlayerEntity sp && sp.getServer() != null) {
+				ModPersistentState state = ModPersistentState.get(sp.getServer());
+				float mercy = MobEvolutionManager.getMercyMultiplier(state.getAccount(sp.getUuid()), "creeper");
+				effectiveRange = Math.max(24.0D, DETECT_RANGE * mercy);
+			}
 			double distSq = this.creeper.squaredDistanceTo(player);
-			if (distSq <= bestSq) {
+			if (distSq <= effectiveRange * effectiveRange && distSq <= bestSq) {
 				bestSq = distSq;
 				closest = player;
 			}

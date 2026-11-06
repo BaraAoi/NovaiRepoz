@@ -33,16 +33,18 @@ import net.minecraft.world.World;
 
 /**
  * Управляет секретной локацией после выпивания коктейля «Пьяное забвение»:
- * - Сначала накладывается эффект Темноты, и только после погружения экрана во тьму происходит перенос.
- * - Вся структура наполнена обилием цветного стекла одного случайного цвета (витражные арки, обелиски, кольца и помост),
- *   а кастомные деревья расположены плотными кольцами намного ближе к центру.
- * - Шансы автомата по умолчанию 50% жетон / 25% ничего / 25% смерть, и регулируются творческим пультом вероятностей.
+ * - Сначала накладывается эффект Темноты, и только затем происходит перенос.
+ * - Пол выполнен как глубокое «туманное ничего»: на самом дне скрыт сплошной источник света,
+ *   а над ним уложено множество чередующихся слоёв цветного стекла с воздушными и оттеночными прослойками,
+ *   благодаря чему каждая грань стекла рендерится и создаёт густую светящуюся дымку без видимого дна.
+ * - Кастомные деревья со стеклянными кронами стоят плотными кольцами вблизи центра.
  */
 public final class MysterySkyManager {
-	private static final int PLATFORM_RADIUS = 100;
+	private static final int PLATFORM_RADIUS = 72;
 	private static final int SKY_BASE_Y = 272;
+	/** Глубина многослойного туманного пола под основным уровнем baseY (источник света на baseY - FOG_DEPTH). */
+	private static final int FOG_DEPTH = 9;
 	private static final int FAST_BLOCK_FLAGS = Block.NOTIFY_LISTENERS | Block.FORCE_STATE;
-	/** Сколько тиков длится погружение в Темноту ДО телепорта (~2.25 секунды). */
 	private static final int DARKNESS_PRE_TELEPORT_TICKS = 45;
 
 	private static final Block[] STAINED_GLASS_COLORS = new Block[]{
@@ -67,9 +69,6 @@ public final class MysterySkyManager {
 	private MysterySkyManager() {
 	}
 
-	/**
-	 * Шаг 1: Сначала накладываем Темноту, и только спустя DARKNESS_PRE_TELEPORT_TICKS телепортируем в локацию!
-	 */
 	public static void beginDrunkenOblivionSequence(ServerPlayerEntity player) {
 		MinecraftServer server = player.getServer();
 		if (server == null) {
@@ -84,7 +83,6 @@ public final class MysterySkyManager {
 			return;
 		}
 
-		// Сначала накладываем эффект Темноты!
 		player.addStatusEffect(new StatusEffectInstance(StatusEffects.DARKNESS, 20 * 600, 0, false, false, true));
 		player.getServerWorld().playSound(null, player.getBlockPos(), SoundEvents.BLOCK_PORTAL_TRIGGER, SoundCategory.PLAYERS, 0.7F, 0.65F);
 
@@ -127,11 +125,9 @@ public final class MysterySkyManager {
 		buildSkyPlatform(overworld, session, overworld.getRandom());
 		state.putSkyArena(session);
 
-		// Поддерживаем Темноту и переносим уже погружённого во мрак игрока к автомату
 		player.addStatusEffect(new StatusEffectInstance(StatusEffects.DARKNESS, 20 * 600, 0, false, false, true));
 		player.teleport(overworld, centerX + 0.5D, baseY + 2.0D, centerZ + 1.5D, 180.0F, 0.0F);
 
-		// Личное сообщение игроку красным жирным текстом:
 		player.sendMessage(
 				Text.literal("готов ли ты рискнуть всем ради \" шанса\"?")
 						.formatted(Formatting.RED, Formatting.BOLD),
@@ -139,40 +135,91 @@ public final class MysterySkyManager {
 		);
 	}
 
+	/**
+	 * Подбирает второй близкий дымчатый оттенок стекла для чередования слоёв тумана:
+	 * в Minecraft одинаковые соседние блоки стекла скрывают внутреннюю грань, а при чередовании
+	 * двух оттенков стекла и воздушных прослоек рендерится КАЖДЫЙ слой, создавая густое «туманное ничего»!
+	 */
+	private static Block pickFogHazeLayer(Block primaryGlass) {
+		if (primaryGlass == Blocks.LIGHT_GRAY_STAINED_GLASS) {
+			return Blocks.WHITE_STAINED_GLASS;
+		}
+		if (primaryGlass == Blocks.BLACK_STAINED_GLASS || primaryGlass == Blocks.GRAY_STAINED_GLASS) {
+			return Blocks.LIGHT_GRAY_STAINED_GLASS;
+		}
+		return Blocks.LIGHT_GRAY_STAINED_GLASS;
+	}
+
 	private static void buildSkyPlatform(ServerWorld world, ModPersistentState.SkyArenaSession s, Random random) {
 		Block chosenGlass = STAINED_GLASS_COLORS[random.nextInt(STAINED_GLASS_COLORS.length)];
+		Block hazeGlass = pickFogHazeLayer(chosenGlass);
+
 		BlockState glassState = chosenGlass.getDefaultState();
+		BlockState hazeState = hazeGlass.getDefaultState();
 		BlockState lanternState = Blocks.SEA_LANTERN.getDefaultState();
+		BlockState airState = Blocks.AIR.getDefaultState();
 
 		BlockPos.Mutable mutable = new BlockPos.Mutable();
 
-		// 1. Основная платформа 100 блоков во все стороны: снизу морские фонари, сверху цветное стекло одного случайного цвета
+		// 1. Пол «Туманное ничего»:
+		// На самом дне (baseY - 9) — сплошной ковёр морских фонарей (источник света),
+		// а над ним 10 уровней чередующегося цветного стекла и тонких прослоек до уровня пола (baseY + 1):
+		// каждая грань преломляет и затуманивает свет снизу, создавая бездонную светящуюся дымку!
 		for (int dx = -s.radius; dx <= s.radius; dx++) {
 			for (int dz = -s.radius; dz <= s.radius; dz++) {
 				int x = s.centerX + dx;
 				int z = s.centerZ + dz;
-				mutable.set(x, s.baseY, z);
+
+				// Скрытый глубоко внизу источник света
+				mutable.set(x, s.baseY - FOG_DEPTH, z);
 				world.setBlockState(mutable, lanternState, FAST_BLOCK_FLAGS);
+
+				// Многослойный пирог стекла над источником света (чередование слоёв для максимальной плотности тумана)
+				mutable.set(x, s.baseY - 8, z);
+				world.setBlockState(mutable, glassState, FAST_BLOCK_FLAGS);
+
+				mutable.set(x, s.baseY - 7, z);
+				world.setBlockState(mutable, hazeState, FAST_BLOCK_FLAGS);
+
+				mutable.set(x, s.baseY - 6, z);
+				world.setBlockState(mutable, glassState, FAST_BLOCK_FLAGS);
+
+				mutable.set(x, s.baseY - 5, z);
+				world.setBlockState(mutable, airState, FAST_BLOCK_FLAGS);
+
+				mutable.set(x, s.baseY - 4, z);
+				world.setBlockState(mutable, glassState, FAST_BLOCK_FLAGS);
+
+				mutable.set(x, s.baseY - 3, z);
+				world.setBlockState(mutable, hazeState, FAST_BLOCK_FLAGS);
+
+				mutable.set(x, s.baseY - 2, z);
+				world.setBlockState(mutable, glassState, FAST_BLOCK_FLAGS);
+
+				mutable.set(x, s.baseY - 1, z);
+				world.setBlockState(mutable, airState, FAST_BLOCK_FLAGS);
+
+				mutable.set(x, s.baseY, z);
+				world.setBlockState(mutable, hazeState, FAST_BLOCK_FLAGS);
+
+				// Верхний ходовой слой цветного стекла
 				mutable.set(x, s.baseY + 1, z);
 				world.setBlockState(mutable, glassState, FAST_BLOCK_FLAGS);
 			}
 		}
 
-		// 2. Обилие цветного стекла вокруг центральной зоны:
-		// Ступенчатые витражные кольца и светящиеся стеклянные бортики вокруг площади (радиусы 6, 11, 18, 26)
+		// 2. Концентрические витражные кольца вокруг площади
 		int[] glassRings = new int[]{6, 11, 18, 26};
 		for (int ringR : glassRings) {
 			for (int dx = -ringR; dx <= ringR; dx++) {
 				for (int dz = -ringR; dz <= ringR; dz++) {
 					int distSq = dx * dx + dz * dz;
 					if (distSq >= (ringR - 1) * (ringR - 1) && distSq <= ringR * ringR) {
-						// Оставляем свободный проход по центральной аллее
 						if (Math.abs(dx) <= 2 && dz >= -5 && dz <= 4) {
 							continue;
 						}
 						mutable.set(s.centerX + dx, s.baseY + 2, s.centerZ + dz);
 						world.setBlockState(mutable, glassState, FAST_BLOCK_FLAGS);
-						// Парящее верхнее витражное кольцо в воздухе
 						if ((dx + dz) % 2 == 0) {
 							mutable.set(s.centerX + dx, s.baseY + 8, s.centerZ + dz);
 							world.setBlockState(mutable, glassState, FAST_BLOCK_FLAGS);
@@ -191,19 +238,17 @@ public final class MysterySkyManager {
 				mutable.set(s.centerX + 3, s.baseY + dy, z);
 				world.setBlockState(mutable, glassState, FAST_BLOCK_FLAGS);
 			}
-			// Сводчатый потолок из цветного стекла над дорожкой
 			for (int dx = -2; dx <= 2; dx++) {
 				mutable.set(s.centerX + dx, s.baseY + 6, z);
 				world.setBlockState(mutable, glassState, FAST_BLOCK_FLAGS);
 			}
-			// Низкие стеклянные перила вдоль дорожки
 			mutable.set(s.centerX - 2, s.baseY + 2, z);
 			world.setBlockState(mutable, glassState, FAST_BLOCK_FLAGS);
 			mutable.set(s.centerX + 2, s.baseY + 2, z);
 			world.setBlockState(mutable, glassState, FAST_BLOCK_FLAGS);
 		}
 
-		// 4. Высокие витражные обелиски/кристаллы из цветного стекла вокруг центра
+		// 4. Высокие витражные обелиски из цветного стекла вокруг центра
 		int[][] crystalPillars = new int[][]{
 				{-5, -6}, {5, -6}, {-7, 0}, {7, 0}, {-5, 6}, {5, 6},
 				{0, -9}, {-10, -4}, {10, -4}, {-10, 4}, {10, 4}
@@ -232,7 +277,7 @@ public final class MysterySkyManager {
 			world.setBlockState(mutable, glassState, FAST_BLOCK_FLAGS);
 		}
 
-		// 5. Автомат судьбы в обрамлении витражного ореола из цветного стекла
+		// 5. Автомат судьбы в обрамлении витражного ореола
 		BlockPos machinePos = new BlockPos(s.machineX, s.machineY, s.machineZ);
 		for (int dx = -2; dx <= 2; dx++) {
 			for (int dy = 0; dy <= 4; dy++) {
@@ -249,12 +294,11 @@ public final class MysterySkyManager {
 		);
 		world.setBlockState(machinePos.up(), glassState, FAST_BLOCK_FLAGS);
 
-		// 6. Кастомные деревья расположены НАМНОГО БЛИЖЕ к центру (кольца 8..16, 17..28 и 29..46 блоков)!
-		// Внутреннее плотное кольцо деревьев прямо у стеклянной площади (чтобы игрок сразу видел лес вокруг себя в Темноте)
+		// 6. Кастомные деревья вблизи центра (плотное внутреннее кольцо 8..14 блоков и среднее 15..42 блока)
 		int innerTrees = 18;
 		for (int i = 0; i < innerTrees; i++) {
 			double angle = (Math.PI * 2.0D * i) / innerTrees + (random.nextDouble() - 0.5D) * 0.18D;
-			int dist = 8 + random.nextInt(7); // 8..14 блоков от центра!
+			int dist = 8 + random.nextInt(7);
 			int tx = s.centerX + (int) Math.round(Math.cos(angle) * dist);
 			int tz = s.centerZ + (int) Math.round(Math.sin(angle) * dist);
 			if (Math.abs(tx - s.centerX) <= 4 && tz >= s.centerZ - 7 && tz <= s.centerZ + 5) {
@@ -263,11 +307,10 @@ public final class MysterySkyManager {
 			buildCustomTree(world, tx, s.baseY + 2, tz, i % 4, glassState, random);
 		}
 
-		// Среднее и внешнее кольца деревьев (15..44 блока)
-		int outerTrees = 38;
+		int outerTrees = 36;
 		for (int i = 0; i < outerTrees; i++) {
 			double angle = random.nextDouble() * Math.PI * 2.0D;
-			int dist = 15 + random.nextInt(30); // 15..44 блоков
+			int dist = 15 + random.nextInt(28);
 			int tx = s.centerX + (int) Math.round(Math.cos(angle) * dist);
 			int tz = s.centerZ + (int) Math.round(Math.sin(angle) * dist);
 			if (Math.abs(tx - s.centerX) <= 4 && tz >= s.centerZ - 7 && tz <= s.centerZ + 5) {
@@ -280,7 +323,7 @@ public final class MysterySkyManager {
 	private static void buildCustomTree(ServerWorld world, int x, int y, int z, int style, BlockState arenaGlass, Random random) {
 		BlockState trunk;
 		BlockState canopyPrimary;
-		BlockState canopyAccent = arenaGlass; // В каждом дереве активно используется цветное стекло арены!
+		BlockState canopyAccent = arenaGlass;
 
 		switch (style) {
 			case 0 -> {
@@ -317,7 +360,6 @@ public final class MysterySkyManager {
 			world.setBlockState(m, trunk, FAST_BLOCK_FLAGS);
 		}
 
-		// Необычная многоярусная крона с обильными витражными вставками и свисающими нитями цветного стекла
 		int topY = y + height;
 		for (int dx = -3; dx <= 3; dx++) {
 			for (int dz = -3; dz <= 3; dz++) {
@@ -333,7 +375,6 @@ public final class MysterySkyManager {
 					m.set(curX + dx, topY + 1, curZ + dz);
 					world.setBlockState(m, dist == 2 ? canopyAccent : canopyPrimary, FAST_BLOCK_FLAGS);
 				}
-				// Длинные свисающие лозы цветного стекла по краям кроны
 				if (dist >= 3 && random.nextInt(3) != 0) {
 					int drop = 2 + random.nextInt(3);
 					for (int k = 1; k <= drop; k++) {
@@ -349,13 +390,9 @@ public final class MysterySkyManager {
 		world.setBlockState(m, canopyAccent, FAST_BLOCK_FLAGS);
 	}
 
-	/**
-	 * Проверяет отложенный перенос (после Темноты) и активные сессии каждый тик.
-	 */
 	public static void tickSkyArenas(MinecraftServer server) {
 		ModPersistentState state = ModPersistentState.get(server);
 
-		// 1. Обрабатываем игроков, у которых уже наложена Темнота и идёт отсчёт до телепорта
 		for (ServerPlayerEntity p : server.getPlayerManager().getPlayerList()) {
 			ModPersistentState.PlayerFinanceData acc = state.getAccount(p.getUuid());
 			if (acc.pendingOblivionTicks > 0) {
@@ -421,9 +458,6 @@ public final class MysterySkyManager {
 		}
 	}
 
-	/**
-	 * Розыгрыш в Автомате судьбы с учётом настроек вероятностей (по умолчанию 50% / 25% / 25%).
-	 */
 	public static void rollFateMachine(ServerPlayerEntity player, BlockPos clickedPos) {
 		MinecraftServer server = player.getServer();
 		if (server == null) {
@@ -439,7 +473,7 @@ public final class MysterySkyManager {
 		int wDeath = Math.max(0, odds.fateDeathChance);
 		int total = wToken + wNothing + wDeath;
 
-		int outcome; // 0 = token, 1 = nothing, 2 = death
+		int outcome;
 		if (total <= 0) {
 			outcome = 1;
 		} else {
@@ -507,11 +541,14 @@ public final class MysterySkyManager {
 			for (int dz = -s.radius; dz <= s.radius; dz++) {
 				int x = s.centerX + dx;
 				int z = s.centerZ + dz;
-				m.set(x, s.baseY, z);
-				overworld.setBlockState(m, air, FAST_BLOCK_FLAGS);
-				m.set(x, s.baseY + 1, z);
-				overworld.setBlockState(m, air, FAST_BLOCK_FLAGS);
-
+				// Очищаем все слои туманного пола от (baseY - FOG_DEPTH) до (baseY + 1)
+				for (int dy = -FOG_DEPTH; dy <= 1; dy++) {
+					m.set(x, s.baseY + dy, z);
+					if (!overworld.getBlockState(m).isAir()) {
+						overworld.setBlockState(m, air, FAST_BLOCK_FLAGS);
+					}
+				}
+				// И всю надземную часть (арки, обелиски, деревья, автомат)
 				for (int dy = 2; dy <= 22; dy++) {
 					m.set(x, s.baseY + dy, z);
 					if (!overworld.getBlockState(m).isAir()) {

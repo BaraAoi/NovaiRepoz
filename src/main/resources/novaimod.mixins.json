@@ -6,7 +6,9 @@
 		"CreeperEntityMixin",
 		"LivingEntityMixin",
 		"AbstractSkeletonEntityMixin",
-		"BowAttackGoalMixin"
+		"BowAttackGoalMixin",
+		"MobEntityMixin",
+		"ProjectileEntityMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

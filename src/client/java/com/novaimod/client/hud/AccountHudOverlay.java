@@ -11,16 +11,21 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 
 /**
- * Отрисовывает у каждого игрока сверху слева его виртуальный Счёт и Долг
- * (а также таймер СИЗО, если игрок задержан ОМОНом).
+ * Отрисовывает:
+ * 1) Виртуальный Счёт и Долг (плюс таймер СИЗО) сверху слева.
+ * 2) Мимолётный силуэт и тень в углу экрана, когда за спиной или сбоку подкрадывается моб.
  */
 public class AccountHudOverlay implements HudRenderCallback {
+	private static final long SHADOW_DURATION_MS = 460L;
+
 	@Override
 	public void onHudRender(DrawContext context, RenderTickCounter tickCounter) {
 		MinecraftClient client = MinecraftClient.getInstance();
 		if (client.player == null || client.options.hudHidden) {
 			return;
 		}
+
+		renderPeripheralShadowCue(context);
 
 		TextRenderer tr = client.textRenderer;
 		long balance = ClientAccountData.getBalance();
@@ -60,5 +65,44 @@ public class AccountHudOverlay implements HudRenderCallback {
 		if (sizoText != null) {
 			context.drawText(tr, sizoText, x + 6, y + 26, 0xFF5555, true);
 		}
+	}
+
+	private void renderPeripheralShadowCue(DrawContext context) {
+		long elapsed = System.currentTimeMillis() - ClientAccountData.getShadowCueStartMs();
+		if (elapsed < 0L || elapsed >= SHADOW_DURATION_MS) {
+			return;
+		}
+
+		float progress = (float) elapsed / (float) SHADOW_DURATION_MS; // 0..1
+		// Быстро проявляется и ускользает за край экрана
+		float envelope = (float) Math.sin(progress * Math.PI);
+		int maxAlpha = Math.round(135.0F * envelope * ClientAccountData.getShadowCueIntensity());
+		if (maxAlpha <= 4) {
+			return;
+		}
+
+		int sw = context.getScaledWindowWidth();
+		int sh = context.getScaledWindowHeight();
+		boolean left = ClientAccountData.isShadowCueLeftSide();
+
+		// Скользящий к краю экрана смазанный тёмный силуэт (голова + плечи + теневой шлейф)
+		int drift = Math.round(progress * 28.0F);
+		int baseX = left ? (14 - drift) : (sw - 42 + drift);
+		int baseY = sh / 2 + 12 + Math.round((progress - 0.5F) * 14.0F);
+
+		int coreColor = (maxAlpha << 24) | 0x050608;
+		int softColor = ((maxAlpha / 2) << 24) | 0x080A0E;
+
+		// Краевое затенение угла экрана
+		if (left) {
+			context.fill(0, 0, 26, sh, ((maxAlpha / 3) << 24) | 0x030406);
+		} else {
+			context.fill(sw - 26, 0, sw, sh, ((maxAlpha / 3) << 24) | 0x030406);
+		}
+
+		// Силуэт головы и сгорбленной фигуры, мелькающий боковым зрением
+		context.fill(baseX + 6, baseY - 34, baseX + 22, baseY - 18, coreColor);
+		context.fill(baseX + 2, baseY - 18, baseX + 26, baseY + 26, coreColor);
+		context.fill(baseX - 4, baseY - 22, baseX + 32, baseY + 32, softColor);
 	}
 }

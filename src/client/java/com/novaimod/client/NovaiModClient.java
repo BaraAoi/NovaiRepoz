@@ -90,5 +90,9 @@ public class NovaiModClient implements ClientModInitializer {
 					payload.rouletteBlackChance()
 			));
 		});
+
+		ClientPlayNetworking.registerGlobalReceiver(ModPayloads.ShadowCuePayload.ID, (payload, context) -> {
+			ClientAccountData.triggerShadowCue(payload.leftSide(), payload.intensity());
+		});
 	}
 }
