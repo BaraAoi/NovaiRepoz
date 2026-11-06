@@ -252,24 +252,24 @@ public final class ItemPricingRegistry {
 		double missingFraction = (double) damage / (double) maxDamage;
 
 		String path = Registries.ITEM.getId(stack.getItem()).getPath();
-		long fullRepairBase = 40L;
+		long fullRepairBase = 60L;
 		if (path.contains("netherite")) {
-			fullRepairBase = 450L;
+			fullRepairBase = 690L;
 		} else if (path.contains("diamond")) {
-			fullRepairBase = 180L;
+			fullRepairBase = 270L;
 		} else if (path.contains("iron") || path.contains("chainmail")) {
-			fullRepairBase = 75L;
+			fullRepairBase = 115L;
 		} else if (path.contains("gold") || path.contains("golden")) {
-			fullRepairBase = 60L;
+			fullRepairBase = 90L;
 		} else if (path.contains("stone")) {
-			fullRepairBase = 25L;
+			fullRepairBase = 39L;
 		}
 
 		ItemEnchantmentsComponent enchants = stack.getEnchantments();
 		if (enchants != null && !enchants.isEmpty()) {
-			fullRepairBase += enchants.getSize() * 30L;
+			fullRepairBase += enchants.getSize() * 45L;
 		}
 
-		return Math.max(5L, Math.round(fullRepairBase * missingFraction));
+		return Math.max(9L, Math.round(fullRepairBase * missingFraction));
 	}
 }

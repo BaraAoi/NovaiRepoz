@@ -25,10 +25,10 @@ import net.minecraft.world.biome.Biome;
  * Генерирует все заведения мода в мире:
  * 1) Микрокредитная организация (МФО) — сразу в начале игры рядом со спавном мира.
  * 2) Продуктовый магазин — на поверхности.
- * 3) Шахтёрская лавка — под землёй.
+ * 3) Шахтёрская лавка — под землёй (с проверкой и расчисткой свободного места перед входом!).
  * 4) Лавовый курорт — в Аду (Незере).
- * 5) Казино — в разных биомах со своим архитектурным стилем, включая подземные пещеры!
- * На входе каждого заведения стоит Торговый аппарат.
+ * 5) Казино — в разных биомах со своим архитектурным стилем, включая подземные пещеры
+ *    (со столами «Монетка» и «Рулетка», а также проверкой свободного прохода перед входом под землёй!).
  */
 public final class ModStructureGenerator {
 	private static final int FLAGS = Block.NOTIFY_LISTENERS | Block.FORCE_STATE;
@@ -36,14 +36,10 @@ public final class ModStructureGenerator {
 	private ModStructureGenerator() {
 	}
 
-	/**
-	 * Проверяет генерацию стартовой МФО и региональных структур вокруг игроков раз в 2 секунды.
-	 */
 	public static void tickWorldGeneration(MinecraftServer server) {
 		ModPersistentState state = ModPersistentState.get(server);
 		ServerWorld overworld = server.getOverworld();
 
-		// 1. В самом начале игры рядом с точкой спавна стоит Микрокредитная организация!
 		if (!state.isMfoSpawned() && !overworld.getPlayers().isEmpty()) {
 			BlockPos worldSpawn = overworld.getSpawnPos();
 			int mx = worldSpawn.getX() + 18;
@@ -56,7 +52,6 @@ public final class ModStructureGenerator {
 			}
 		}
 
-		// 2. По мере исследования мира генерируем магазины, шахтёрские лавки, казино (наземные и пещерные) и лавовые курорты в Аду
 		for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
 			if (player.isSpectator()) {
 				continue;
@@ -74,7 +69,6 @@ public final class ModStructureGenerator {
 	}
 
 	private static void tryGenerateOverworldRegion(ServerWorld world, ModPersistentState state, int rx, int rz) {
-		// Не перезаписываем стартовый пятачок прямо поверх МФО
 		String key = "ow:" + rx + ":" + rz;
 		if (state.hasGeneratedRegion(key)) {
 			return;
@@ -93,7 +87,6 @@ public final class ModStructureGenerator {
 
 		state.markRegionGenerated(key);
 
-		// Распределяем по регионам: продуктовый, наземное биомное казино, подземную шахтёрскую лавку и пещерное казино!
 		int roll = Math.floorMod(rx * 31 + rz * 17, 3);
 		int surfY = findSurfaceY(world, baseX, baseZ);
 		BlockPos surfacePos = new BlockPos(baseX, surfY, baseZ);
@@ -107,18 +100,140 @@ public final class ModStructureGenerator {
 			state.recordStructure("casino_" + biomeStyle, "minecraft:overworld", surfacePos);
 		}
 
-		// Под землёй в этом регионе генерируем либо Шахтёрскую лавку, либо Пещерное казино!
+		// Подземные структуры: подбираем точку рядом с пещерной полостью И проверяем/обеспечиваем свободный проход перед входом!
 		int ugX = baseX + (rng.nextBoolean() ? 24 : -24);
 		int ugZ = baseZ + (rng.nextBoolean() ? 24 : -24);
-		if (world.isChunkLoaded(ugX >> 4, ugZ >> 4)) {
-			int ugY = rng.nextBetween(-24, 22);
-			BlockPos ugPos = new BlockPos(ugX, ugY, ugZ);
+		if (world.isChunkLoaded(ugX >> 4, (ugZ - 16) >> 4) && world.isChunkLoaded(ugX >> 4, ugZ >> 4)) {
+			BlockPos ugPos = findAccessibleUndergroundSpot(world, ugX, ugZ, rng);
 			if ((rx + rz) % 2 == 0) {
 				buildMinerShop(world, ugPos);
 				state.recordStructure("miner_shop", "minecraft:overworld", ugPos);
 			} else {
 				buildBiomeCasino(world, ugPos, "cave");
 				state.recordStructure("casino_cave", "minecraft:overworld", ugPos);
+			}
+		}
+	}
+
+	/**
+	 * Ищет подземную позицию так, чтобы перед входом (в сторону -Z) было свободное пещерное пространство для прохода.
+	 */
+	private static BlockPos findAccessibleUndergroundSpot(ServerWorld world, int centerX, int centerZ, Random rng) {
+		BlockPos.Mutable m = new BlockPos.Mutable();
+		BlockPos bestPos = null;
+		int bestOpenScore = -1;
+
+		for (int attempt = 0; attempt < 18; attempt++) {
+			int cx = centerX + (attempt == 0 ? 0 : rng.nextBetween(-12, 12));
+			int cz = centerZ + (attempt == 0 ? 0 : rng.nextBetween(-12, 12));
+			if (!world.isChunkLoaded(cx >> 4, cz >> 4) || !world.isChunkLoaded(cx >> 4, (cz - 12) >> 4)) {
+				continue;
+			}
+
+			for (int y = 26; y >= -30; y -= 4) {
+				// Проверяем наличие твёрдого пола и свободного места перед предполагаемым входом (dz = -7..-10)
+				m.set(cx, y, cz - 7);
+				BlockState floor = world.getBlockState(m);
+				if (floor.isAir() || floor.isOf(Blocks.LAVA) || floor.isOf(Blocks.WATER) || floor.isOf(Blocks.BEDROCK)) {
+					continue;
+				}
+				int openAhead = countOpenEntranceSpace(world, new BlockPos(cx, y, cz - 7));
+				if (openAhead > bestOpenScore) {
+					bestOpenScore = openAhead;
+					bestPos = new BlockPos(cx, y, cz);
+					if (openAhead >= 12) {
+						return bestPos;
+					}
+				}
+			}
+		}
+
+		return bestPos != null ? bestPos : new BlockPos(centerX, rng.nextBetween(-20, 18), centerZ);
+	}
+
+	/**
+	 * Подсчитывает количество свободных воздушных блоков перед входом в подземную структуру.
+	 */
+	private static int countOpenEntranceSpace(ServerWorld world, BlockPos entranceFrontFloor) {
+		BlockPos.Mutable m = new BlockPos.Mutable();
+		int airCount = 0;
+		for (int dz = 0; dz >= -6; dz--) {
+			for (int dx = -2; dx <= 2; dx++) {
+				for (int dy = 1; dy <= 3; dy++) {
+					m.set(entranceFrontFloor.getX() + dx, entranceFrontFloor.getY() + dy, entranceFrontFloor.getZ() + dz);
+					if (world.getBlockState(m).isAir()) {
+						airCount++;
+					}
+				}
+			}
+		}
+		return airCount;
+	}
+
+	/**
+	 * Проверяет и гарантирует свободное безопасное место перед входом подземной структуры,
+	 * чтобы игрок всегда мог свободно подойти и войти внутрь (расчищает завалы, укрепляет пол над пропастями/лавой и ставит освещение).
+	 */
+	private static void ensureUndergroundEntrancePassage(
+			ServerWorld world,
+			BlockPos doorFloorCenter,
+			Block floorBlock,
+			Block supportWallBlock
+	) {
+		BlockPos.Mutable m = new BlockPos.Mutable();
+
+		// 1. Всегда расчищаем просторную входную площадку перед дверью (5 блоков в ширину, 4 в высоту, 5 в глубину)
+		for (int step = 1; step <= 12; step++) {
+			int z = doorFloorCenter.getZ() - step;
+			if (!world.isChunkLoaded(doorFloorCenter.getX() >> 4, z >> 4)) {
+				break;
+			}
+
+			// Проверяем, вышли ли уже в достаточно просторную пещеру после обязательного предбанника (step > 5)
+			if (step > 5 && countOpenEntranceSpace(world, new BlockPos(doorFloorCenter.getX(), doorFloorCenter.getY(), z)) >= 22) {
+				break;
+			}
+
+			for (int dx = -2; dx <= 2; dx++) {
+				int x = doorFloorCenter.getX() + dx;
+				// Надёжный пол под ногами (чтобы перед входом не было обрыва или лавы)
+				m.set(x, doorFloorCenter.getY(), z);
+				if (world.getBlockState(m).isAir() || world.getBlockState(m).isReplaceable()
+						|| world.getBlockState(m).isOf(Blocks.LAVA) || world.getBlockState(m).isOf(Blocks.WATER)) {
+					world.setBlockState(m, floorBlock.getDefaultState(), FLAGS);
+				}
+
+				// Проход высотой 4 блока (свободное место перед входом)
+				for (int dy = 1; dy <= 4; dy++) {
+					m.set(x, doorFloorCenter.getY() + dy, z);
+					world.setBlockState(m, Blocks.AIR.getDefaultState(), FLAGS);
+				}
+
+				// Защита потолка и боковых стен от вытекания лавы/воды в проход
+				m.set(x, doorFloorCenter.getY() + 5, z);
+				BlockState above = world.getBlockState(m);
+				if (above.isOf(Blocks.LAVA) || above.isOf(Blocks.WATER) || above.isOf(Blocks.GRAVEL) || above.isOf(Blocks.SAND)) {
+					world.setBlockState(m, supportWallBlock.getDefaultState(), FLAGS);
+				}
+			}
+
+			for (int side : new int[]{-3, 3}) {
+				for (int dy = 1; dy <= 4; dy++) {
+					m.set(doorFloorCenter.getX() + side, doorFloorCenter.getY() + dy, z);
+					BlockState sideState = world.getBlockState(m);
+					if (sideState.isOf(Blocks.LAVA) || sideState.isOf(Blocks.WATER)) {
+						world.setBlockState(m, supportWallBlock.getDefaultState(), FLAGS);
+					}
+				}
+			}
+
+			if (step == 2 || step == 6 || step == 10) {
+				m.set(doorFloorCenter.getX(), doorFloorCenter.getY() + 4, z);
+				if (!world.getBlockState(m.up()).isAir()) {
+					world.setBlockState(m, Blocks.LANTERN.getDefaultState(), FLAGS);
+				} else {
+					world.setBlockState(m, Blocks.SEA_LANTERN.getDefaultState(), FLAGS);
+				}
 			}
 		}
 	}
@@ -183,14 +298,11 @@ public final class ModStructureGenerator {
 	// =========================================================================
 	public static void buildMfoOffice(ServerWorld world, BlockPos origin) {
 		fillFoundation(world, origin.add(-6, -4, -6), origin.add(6, -1, 7), Blocks.STONE_BRICKS.getDefaultState());
-		// Очистка площадки
 		fillBox(world, origin.add(-7, 0, -8), origin.add(7, 7, 7), Blocks.AIR.getDefaultState());
 
-		// Пол из гладкого кварца и красной ковровой дорожки
 		fillBox(world, origin.add(-6, 0, -6), origin.add(6, 0, 6), Blocks.QUARTZ_BRICKS.getDefaultState());
 		fillBox(world, origin.add(-1, 0, -6), origin.add(1, 0, 3), Blocks.RED_WOOL.getDefaultState());
 
-		// Стены и крыша
 		for (int dx = -6; dx <= 6; dx++) {
 			for (int dy = 1; dy <= 5; dy++) {
 				for (int dz = -6; dz <= 6; dz++) {
@@ -202,7 +314,6 @@ public final class ModStructureGenerator {
 					} else if (edgeX && edgeZ) {
 						setBlock(world, origin.add(dx, dy, dz), Blocks.GOLD_BLOCK.getDefaultState());
 					} else if (edgeX || edgeZ) {
-						// Вход спереди (dz == -6, |dx| <= 1, dy <= 3)
 						if (dz == -6 && Math.abs(dx) <= 1 && dy <= 3) {
 							setBlock(world, origin.add(dx, dy, dz), Blocks.AIR.getDefaultState());
 						} else if (dy >= 2 && dy <= 3 && (Math.abs(dx) == 3 || Math.abs(dz) == 3)) {
@@ -215,26 +326,21 @@ public final class ModStructureGenerator {
 			}
 		}
 
-		// Вывеска из золотых и красных блоков над входом
 		fillBox(world, origin.add(-4, 5, -7), origin.add(4, 6, -7), Blocks.RED_CONCRETE.getDefaultState());
 		setBlock(world, origin.add(0, 6, -7), Blocks.GOLD_BLOCK.getDefaultState());
 		setBlock(world, origin.add(-2, 6, -7), Blocks.SEA_LANTERN.getDefaultState());
 		setBlock(world, origin.add(2, 6, -7), Blocks.SEA_LANTERN.getDefaultState());
 
-		// Стойка Кредитора в центре зала
 		fillBox(world, origin.add(-2, 1, 3), origin.add(2, 1, 3), Blocks.POLISHED_BLACKSTONE_BRICKS.getDefaultState());
-		// Витрины элитных продавцов по бокам
 		fillBox(world, origin.add(-4, 1, 0), origin.add(-4, 1, 2), Blocks.GOLD_BLOCK.getDefaultState());
 		fillBox(world, origin.add(4, 1, 0), origin.add(4, 1, 2), Blocks.GOLD_BLOCK.getDefaultState());
 
-		// Торговый аппарат прямо на входе МФО!
 		setBlock(
 				world,
 				origin.add(2, 1, -7),
 				ModBlocks.TRADE_MACHINE.getDefaultState().with(TradeMachineBlock.FACING, Direction.NORTH)
 		);
 
-		// Спавним Зазывалу на улице, Кредитора за стойкой и 2 Элитных продавцов внутри
 		spawnNpcAt(world, origin.add(-2, 1, -8), NpcRole.MFO_BARKER, "");
 		spawnNpcAt(world, origin.add(0, 1, 4), NpcRole.MFO_LENDER, "");
 		spawnNpcAt(world, origin.add(-5, 1, 1), NpcRole.MFO_ELITE_SELLER, "1");
@@ -242,13 +348,12 @@ public final class ModStructureGenerator {
 	}
 
 	// =========================================================================
-	// 2. ПРОДУКТОВЫЙ МАГАЗИН (на поверхности, 2 продавца + торговый аппарат)
+	// 2. ПРОДУКТОВЫЙ МАГАЗИН
 	// =========================================================================
 	public static void buildGroceryStore(ServerWorld world, BlockPos origin) {
 		fillFoundation(world, origin.add(-5, -4, -5), origin.add(5, -1, 5), Blocks.COBBLESTONE.getDefaultState());
 		fillBox(world, origin.add(-6, 0, -7), origin.add(6, 6, 6), Blocks.AIR.getDefaultState());
 
-		// Шахматный пол из берёзовых и еловых досок
 		for (int dx = -5; dx <= 5; dx++) {
 			for (int dz = -5; dz <= 5; dz++) {
 				Block floor = ((dx + dz) & 1) == 0 ? Blocks.BIRCH_PLANKS : Blocks.SPRUCE_PLANKS;
@@ -256,7 +361,6 @@ public final class ModStructureGenerator {
 			}
 		}
 
-		// Кирпичные стены с окнами и дубовыми углами
 		for (int dx = -5; dx <= 5; dx++) {
 			for (int dy = 1; dy <= 4; dy++) {
 				for (int dz = -5; dz <= 5; dz++) {
@@ -277,14 +381,12 @@ public final class ModStructureGenerator {
 			}
 		}
 
-		// Крыша и зелёно-белый козырёк над входом
 		fillBox(world, origin.add(-5, 5, -5), origin.add(5, 5, 5), Blocks.DARK_OAK_PLANKS.getDefaultState());
 		setBlock(world, origin.add(0, 5, 0), Blocks.SEA_LANTERN.getDefaultState());
 		for (int dx = -3; dx <= 3; dx++) {
 			setBlock(world, origin.add(dx, 4, -6), ((dx & 1) == 0 ? Blocks.GREEN_WOOL : Blocks.WHITE_WOOL).getDefaultState());
 		}
 
-		// Прилавки 2 продавцов и полки с продуктами
 		fillBox(world, origin.add(-4, 1, 2), origin.add(-1, 1, 2), Blocks.OAK_PLANKS.getDefaultState());
 		fillBox(world, origin.add(1, 1, 2), origin.add(4, 1, 2), Blocks.SPRUCE_PLANKS.getDefaultState());
 		setBlock(world, origin.add(-4, 1, 4), Blocks.HAY_BLOCK.getDefaultState());
@@ -292,7 +394,6 @@ public final class ModStructureGenerator {
 		setBlock(world, origin.add(3, 1, 4), Blocks.BARREL.getDefaultState());
 		setBlock(world, origin.add(4, 1, 4), Blocks.SMOKER.getDefaultState());
 
-		// Торговый аппарат на входе заведения!
 		setBlock(
 				world,
 				origin.add(2, 1, -6),
@@ -304,10 +405,9 @@ public final class ModStructureGenerator {
 	}
 
 	// =========================================================================
-	// 3. ШАХТЁРСКАЯ ЛАВКА (под землёй, кирки + материалы без незерита + ремонт + автомат)
+	// 3. ШАХТЁРСКАЯ ЛАВКА (под землёй + проверка и расчистка входа!)
 	// =========================================================================
 	public static void buildMinerShop(ServerWorld world, BlockPos origin) {
-		// Вырубаем аккуратный подземный зал с креплением из брёвен и глубинного сланца
 		for (int dx = -5; dx <= 5; dx++) {
 			for (int dy = 0; dy <= 5; dy++) {
 				for (int dz = -6; dz <= 5; dz++) {
@@ -331,7 +431,9 @@ public final class ModStructureGenerator {
 			}
 		}
 
-		// Освещение фонарями и декоративные залежи руд (без незерита!)
+		// Проверяем и расчищаем свободный проход перед входом в подземную лавку!
+		ensureUndergroundEntrancePassage(world, origin.add(0, 0, -6), Blocks.COBBLED_DEEPSLATE, Blocks.DEEPSLATE_BRICKS);
+
 		setBlock(world, origin.add(-3, 4, -2), Blocks.LANTERN.getDefaultState());
 		setBlock(world, origin.add(3, 4, -2), Blocks.LANTERN.getDefaultState());
 		setBlock(world, origin.add(0, 4, 2), Blocks.SEA_LANTERN.getDefaultState());
@@ -341,12 +443,10 @@ public final class ModStructureGenerator {
 		setBlock(world, origin.add(3, 1, 4), Blocks.GOLD_ORE.getDefaultState());
 		setBlock(world, origin.add(4, 1, 4), Blocks.DIAMOND_ORE.getDefaultState());
 
-		// Прилавок шахтёра и Ремонтный станок для починки инструментов
 		fillBox(world, origin.add(-2, 1, 2), origin.add(2, 1, 2), Blocks.SPRUCE_PLANKS.getDefaultState());
 		setBlock(world, origin.add(-3, 1, 0), ModBlocks.REPAIR_STATION.getDefaultState());
 		setBlock(world, origin.add(-3, 1, 1), Blocks.BLAST_FURNACE.getDefaultState());
 
-		// Торговый автомат на входе шахтёрской лавки!
 		setBlock(
 				world,
 				origin.add(2, 1, -5),
@@ -357,14 +457,12 @@ public final class ModStructureGenerator {
 	}
 
 	// =========================================================================
-	// 4. ЛАВОВЫЙ КУРОРТ В АДУ (пляж с Адольфом Гидлером и жетоном возрождения)
+	// 4. ЛАВОВЫЙ КУРОРТ В АДУ
 	// =========================================================================
 	public static void buildLavaResort(ServerWorld nether, BlockPos origin) {
-		// Расчищаем пляж в Аду
 		fillBox(nether, origin.add(-7, 1, -7), origin.add(7, 8, 7), Blocks.AIR.getDefaultState());
 		fillBox(nether, origin.add(-7, -2, -7), origin.add(7, -1, 7), Blocks.SANDSTONE.getDefaultState());
 
-		// Песчаный пляж + лавовая лагуна спереди (dz >= 3)
 		for (int dx = -7; dx <= 7; dx++) {
 			for (int dz = -7; dz <= 7; dz++) {
 				BlockPos p = origin.add(dx, 0, dz);
@@ -376,7 +474,6 @@ public final class ModStructureGenerator {
 			}
 		}
 
-		// Шезлонги (песчаниковые ступеньки/плиты) и пляжные зонтики
 		setBlock(nether, origin.add(-2, 1, 0), Blocks.SANDSTONE_SLAB.getDefaultState());
 		setBlock(nether, origin.add(-2, 1, -1), Blocks.SANDSTONE_STAIRS.getDefaultState());
 		setBlock(nether, origin.add(2, 1, 0), Blocks.SANDSTONE_SLAB.getDefaultState());
@@ -385,21 +482,18 @@ public final class ModStructureGenerator {
 		buildBeachUmbrella(nether, origin.add(0, 1, -1), Blocks.RED_WOOL, Blocks.WHITE_WOOL);
 		buildBeachUmbrella(nether, origin.add(-5, 1, -2), Blocks.YELLOW_WOOL, Blocks.ORANGE_WOOL);
 
-		// Пальма у пляжа (багровый ствол + крона)
 		for (int dy = 1; dy <= 4; dy++) {
 			setBlock(nether, origin.add(5, dy, -3), Blocks.CRIMSON_STEM.getDefaultState());
 		}
 		fillBox(nether, origin.add(4, 5, -4), origin.add(6, 5, -2), Blocks.WARPED_WART_BLOCK.getDefaultState());
 		setBlock(nether, origin.add(5, 4, -2), Blocks.SHROOMLIGHT.getDefaultState());
 
-		// Торговый аппарат на входе курорта
 		setBlock(
 				nether,
 				origin.add(-5, 1, -6),
 				ModBlocks.TRADE_MACHINE.getDefaultState().with(TradeMachineBlock.FACING, Direction.SOUTH)
 		);
 
-		// Отдыхающий Адольф Гидлер на пляже
 		spawnNpcAt(nether, origin.add(0, 1, 0), NpcRole.ADOLF_GIDLER, "");
 	}
 
@@ -416,7 +510,7 @@ public final class ModStructureGenerator {
 	}
 
 	// =========================================================================
-	// 5. БИОМНОЕ КАЗИНО (включая пещеры!) + Бармен за барной стойкой + Автомат
+	// 5. БИОМНОЕ КАЗИНО (включая пещеры!) + Столы Монетки и Рулетки + Бармен
 	// =========================================================================
 	public static void buildBiomeCasino(ServerWorld world, BlockPos origin, String style) {
 		Block wallBlock;
@@ -468,7 +562,7 @@ public final class ModStructureGenerator {
 		}
 		fillBox(world, origin.add(-6, 0, -7), origin.add(6, 6, 6), Blocks.AIR.getDefaultState());
 
-		// Пол казино с узором
+		// Пол казино
 		for (int dx = -6; dx <= 6; dx++) {
 			for (int dz = -6; dz <= 6; dz++) {
 				Block f = (Math.abs(dx) <= 2 || Math.abs(dz) <= 1) ? floorAccent : floorPrimary;
@@ -476,7 +570,7 @@ public final class ModStructureGenerator {
 			}
 		}
 
-		// Стены и светящийся потолок казино
+		// Стены и потолок
 		for (int dx = -6; dx <= 6; dx++) {
 			for (int dy = 1; dy <= 5; dy++) {
 				for (int dz = -6; dz <= 6; dz++) {
@@ -498,10 +592,27 @@ public final class ModStructureGenerator {
 			}
 		}
 
+		// Для подземного казино обеспечиваем свободный безопасный проход перед входом!
+		if ("cave".equals(style)) {
+			setBlock(world, origin.add(2, 0, -7), floorPrimary.getDefaultState());
+			ensureUndergroundEntrancePassage(world, origin.add(0, 0, -7), floorPrimary, wallBlock);
+		}
+
 		// Неоновая вывеска над входом казино
 		setBlock(world, origin.add(-2, 4, -6), Blocks.SEA_LANTERN.getDefaultState());
 		setBlock(world, origin.add(0, 4, -6), Blocks.GOLD_BLOCK.getDefaultState());
 		setBlock(world, origin.add(2, 4, -6), Blocks.SEA_LANTERN.getDefaultState());
+
+		// ДВА ИГРОВЫХ СТОЛА КАЗИНО в зале:
+		// 1) Стол «Монетка» (слева)
+		setBlock(world, origin.add(-3, 1, -2), ModBlocks.COINFLIP_TABLE.getDefaultState());
+		setBlock(world, origin.add(-4, 1, -2), Blocks.RED_CARPET.getDefaultState());
+		setBlock(world, origin.add(-2, 1, -2), Blocks.RED_CARPET.getDefaultState());
+
+		// 2) Полноценный стол «Рулетка» (справа)
+		setBlock(world, origin.add(3, 1, -2), ModBlocks.ROULETTE_TABLE.getDefaultState());
+		setBlock(world, origin.add(4, 1, -2), Blocks.GREEN_CARPET.getDefaultState());
+		setBlock(world, origin.add(2, 1, -2), Blocks.GREEN_CARPET.getDefaultState());
 
 		// Барная стойка и полки с напитками
 		fillBox(world, origin.add(-3, 1, 2), origin.add(3, 1, 2), barCounterBlock.getDefaultState());
@@ -509,14 +620,14 @@ public final class ModStructureGenerator {
 		setBlock(world, origin.add(2, 2, 4), Blocks.BREWING_STAND.getDefaultState());
 		fillBox(world, origin.add(-3, 1, 4), origin.add(3, 1, 4), pillarBlock.getDefaultState());
 
-		// Торговый аппарат на входе казино!
+		// Торговый аппарат на входе казино
 		setBlock(
 				world,
 				origin.add(2, 1, -7),
 				ModBlocks.TRADE_MACHINE.getDefaultState().with(TradeMachineBlock.FACING, Direction.NORTH)
 		);
 
-		// Бармен за барной стойкой с биомным ассортиментом зелий и коктейлем «Пьяное забвение»!
+		// Бармен за стойкой
 		spawnNpcAt(world, origin.add(0, 1, 3), NpcRole.CASINO_BARTENDER, style);
 	}
 

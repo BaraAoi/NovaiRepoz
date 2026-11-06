@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import com.novaimod.block.RepairStationBlock;
 import com.novaimod.data.ModPersistentState;
+import com.novaimod.economy.CasinoGamesManager;
 import com.novaimod.economy.ShopCatalogs;
 import com.novaimod.registry.ModItems;
 import com.novaimod.screen.VendingScreenHandler;
@@ -56,6 +57,76 @@ public final class ModServerNetworking {
 			ServerPlayerEntity player = context.player();
 			handleRevivePlayer(player, payload.targetUuid());
 		});
+
+		ServerPlayNetworking.registerGlobalReceiver(ModPayloads.PlayCoinflipPayload.ID, (payload, context) -> {
+			ServerPlayerEntity player = context.player();
+			CasinoGamesManager.handlePlayCoinflip(player, payload.bet(), payload.betHeads());
+		});
+
+		ServerPlayNetworking.registerGlobalReceiver(ModPayloads.PlayRoulettePayload.ID, (payload, context) -> {
+			ServerPlayerEntity player = context.player();
+			CasinoGamesManager.handlePlayRoulette(player, payload.bet(), payload.betTypeOrd(), payload.chosenNumber());
+		});
+
+		ServerPlayNetworking.registerGlobalReceiver(ModPayloads.SaveOddsConfigPayload.ID, (payload, context) -> {
+			ServerPlayerEntity player = context.player();
+			handleSaveOddsConfig(player, payload);
+		});
+	}
+
+	public static void openCoinflipScreen(ServerPlayerEntity player) {
+		ModPersistentState state = ModPersistentState.get(player.getServer());
+		ModPersistentState.PlayerFinanceData acc = state.getAccount(player.getUuid());
+		syncAccount(player);
+		ServerPlayNetworking.send(player, new ModPayloads.OpenCoinflipScreenPayload(acc.balance));
+	}
+
+	public static void openRouletteScreen(ServerPlayerEntity player) {
+		ModPersistentState state = ModPersistentState.get(player.getServer());
+		ModPersistentState.PlayerFinanceData acc = state.getAccount(player.getUuid());
+		syncAccount(player);
+		ServerPlayNetworking.send(player, new ModPayloads.OpenRouletteScreenPayload(acc.balance));
+	}
+
+	public static void openOddsConfigScreen(ServerPlayerEntity player) {
+		ModPersistentState state = ModPersistentState.get(player.getServer());
+		ModPersistentState.MachineOddsConfig cfg = state.getOddsConfig();
+		ServerPlayNetworking.send(
+				player,
+				new ModPayloads.OpenOddsConfigScreenPayload(
+						cfg.fateTokenChance,
+						cfg.fateNothingChance,
+						cfg.fateDeathChance,
+						cfg.coinHeadsChance,
+						cfg.rouletteGreenChance,
+						cfg.rouletteRedChance,
+						cfg.rouletteBlackChance
+				)
+		);
+	}
+
+	private static void handleSaveOddsConfig(ServerPlayerEntity player, ModPayloads.SaveOddsConfigPayload payload) {
+		if (!player.isCreative() && !player.hasPermissionLevel(2)) {
+			player.sendMessage(Text.literal("Настройка шансов доступна только в творческом режиме!").formatted(Formatting.RED), false);
+			return;
+		}
+		ModPersistentState state = ModPersistentState.get(player.getServer());
+		ModPersistentState.MachineOddsConfig cfg = state.getOddsConfig();
+		cfg.fateTokenChance = Math.clamp(payload.fateTokenChance(), 0, 100);
+		cfg.fateNothingChance = Math.clamp(payload.fateNothingChance(), 0, 100);
+		cfg.fateDeathChance = Math.clamp(payload.fateDeathChance(), 0, 100);
+		cfg.coinHeadsChance = Math.clamp(payload.coinHeadsChance(), 0, 100);
+		cfg.rouletteGreenChance = Math.clamp(payload.rouletteGreenChance(), 0, 100);
+		cfg.rouletteRedChance = Math.clamp(payload.rouletteRedChance(), 0, 100);
+		cfg.rouletteBlackChance = Math.clamp(payload.rouletteBlackChance(), 0, 100);
+		state.markDirty();
+
+		player.getServerWorld().playSound(null, player.getBlockPos(), SoundEvents.BLOCK_NOTE_BLOCK_PLING.value(), SoundCategory.PLAYERS, 1.0F, 1.3F);
+		player.sendMessage(
+				Text.literal("[Пульт вероятностей] Шансы всех автоматов и столов казино успешно обновлены!")
+						.formatted(Formatting.LIGHT_PURPLE, Formatting.BOLD),
+				false
+		);
 	}
 
 	public static void syncAccount(ServerPlayerEntity player) {

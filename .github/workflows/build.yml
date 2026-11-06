@@ -23,6 +23,13 @@ jobs:
           distribution: "temurin"
           cache: "gradle"
 
+      - name: Read Mod Version
+        id: meta
+        run: |
+          MOD_VER=$(grep '^mod_version=' gradle.properties | cut -d'=' -f2 | tr -d '\r ')
+          echo "version=${MOD_VER}" >> "$GITHUB_OUTPUT"
+          echo "jar_path=build/libs/novaimod-${MOD_VER}.jar" >> "$GITHUB_OUTPUT"
+
       - name: Build Fabric Mod JAR
         run: |
           chmod +x ./gradlew
@@ -41,18 +48,21 @@ jobs:
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: novaimod-1.0.0
-          path: build/libs/novaimod-1.0.0.jar
+          name: novaimod-${{ steps.meta.outputs.version }}
+          path: ${{ steps.meta.outputs.jar_path }}
 
       - name: Create or Update GitHub Release with JAR
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VER: ${{ steps.meta.outputs.version }}
+          JAR: ${{ steps.meta.outputs.jar_path }}
         run: |
-          if gh release view v1.0.0 >/dev/null 2>&1; then
-            gh release upload v1.0.0 build/libs/novaimod-1.0.0.jar --clobber
+          TAG="v${VER}"
+          if gh release view "${TAG}" >/dev/null 2>&1; then
+            gh release upload "${TAG}" "${JAR}" --clobber
           else
-            gh release create v1.0.0 build/libs/novaimod-1.0.0.jar \
+            gh release create "${TAG}" "${JAR}" \
               --target "${{ github.sha }}" \
-              --title "Novai Mod v1.0.0 (Minecraft 1.21.1 Fabric)" \
-              --notes "Готовый файл мода **novaimod-1.0.0.jar** для **Minecraft 1.21.1 (Fabric + Fabric API)**. Скачайте файл `novaimod-1.0.0.jar` ниже и положите в папку `.minecraft/mods` вместе с Fabric API."
+              --title "Novai Mod v${VER} (Minecraft 1.21.1 Fabric)" \
+              --notes "Готовый файл мода **novaimod-${VER}.jar** для **Minecraft 1.21.1 (Fabric + Fabric API)**. Скачайте файл ниже и положите в папку `.minecraft/mods` вместе с Fabric API."
           fi

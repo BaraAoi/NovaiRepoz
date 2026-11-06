@@ -162,6 +162,134 @@ public final class ModPayloads {
 		}
 	}
 
+	public record OpenCoinflipScreenPayload(long balance) implements CustomPayload {
+		public static final CustomPayload.Id<OpenCoinflipScreenPayload> ID =
+				new CustomPayload.Id<>(Identifier.of(NovaiMod.MOD_ID, "open_coinflip_screen"));
+		public static final PacketCodec<RegistryByteBuf, OpenCoinflipScreenPayload> CODEC =
+				PacketCodec.of(OpenCoinflipScreenPayload::write, OpenCoinflipScreenPayload::read);
+
+		private void write(RegistryByteBuf buf) {
+			buf.writeLong(balance);
+		}
+
+		private static OpenCoinflipScreenPayload read(RegistryByteBuf buf) {
+			return new OpenCoinflipScreenPayload(buf.readLong());
+		}
+
+		@Override
+		public Id<? extends CustomPayload> getId() {
+			return ID;
+		}
+	}
+
+	public record CoinflipResultPayload(boolean landedHeads, boolean won, long payout, int animTicks) implements CustomPayload {
+		public static final CustomPayload.Id<CoinflipResultPayload> ID =
+				new CustomPayload.Id<>(Identifier.of(NovaiMod.MOD_ID, "coinflip_result"));
+		public static final PacketCodec<RegistryByteBuf, CoinflipResultPayload> CODEC =
+				PacketCodec.of(CoinflipResultPayload::write, CoinflipResultPayload::read);
+
+		private void write(RegistryByteBuf buf) {
+			buf.writeBoolean(landedHeads);
+			buf.writeBoolean(won);
+			buf.writeLong(payout);
+			buf.writeVarInt(animTicks);
+		}
+
+		private static CoinflipResultPayload read(RegistryByteBuf buf) {
+			return new CoinflipResultPayload(buf.readBoolean(), buf.readBoolean(), buf.readLong(), buf.readVarInt());
+		}
+
+		@Override
+		public Id<? extends CustomPayload> getId() {
+			return ID;
+		}
+	}
+
+	public record OpenRouletteScreenPayload(long balance) implements CustomPayload {
+		public static final CustomPayload.Id<OpenRouletteScreenPayload> ID =
+				new CustomPayload.Id<>(Identifier.of(NovaiMod.MOD_ID, "open_roulette_screen"));
+		public static final PacketCodec<RegistryByteBuf, OpenRouletteScreenPayload> CODEC =
+				PacketCodec.of(OpenRouletteScreenPayload::write, OpenRouletteScreenPayload::read);
+
+		private void write(RegistryByteBuf buf) {
+			buf.writeLong(balance);
+		}
+
+		private static OpenRouletteScreenPayload read(RegistryByteBuf buf) {
+			return new OpenRouletteScreenPayload(buf.readLong());
+		}
+
+		@Override
+		public Id<? extends CustomPayload> getId() {
+			return ID;
+		}
+	}
+
+	public record RouletteResultPayload(int winningNumber, boolean won, long payout, int animTicks) implements CustomPayload {
+		public static final CustomPayload.Id<RouletteResultPayload> ID =
+				new CustomPayload.Id<>(Identifier.of(NovaiMod.MOD_ID, "roulette_result"));
+		public static final PacketCodec<RegistryByteBuf, RouletteResultPayload> CODEC =
+				PacketCodec.of(RouletteResultPayload::write, RouletteResultPayload::read);
+
+		private void write(RegistryByteBuf buf) {
+			buf.writeVarInt(winningNumber);
+			buf.writeBoolean(won);
+			buf.writeLong(payout);
+			buf.writeVarInt(animTicks);
+		}
+
+		private static RouletteResultPayload read(RegistryByteBuf buf) {
+			return new RouletteResultPayload(buf.readVarInt(), buf.readBoolean(), buf.readLong(), buf.readVarInt());
+		}
+
+		@Override
+		public Id<? extends CustomPayload> getId() {
+			return ID;
+		}
+	}
+
+	public record OpenOddsConfigScreenPayload(
+			int fateTokenChance,
+			int fateNothingChance,
+			int fateDeathChance,
+			int coinHeadsChance,
+			int rouletteGreenChance,
+			int rouletteRedChance,
+			int rouletteBlackChance
+	) implements CustomPayload {
+		public static final CustomPayload.Id<OpenOddsConfigScreenPayload> ID =
+				new CustomPayload.Id<>(Identifier.of(NovaiMod.MOD_ID, "open_odds_config_screen"));
+		public static final PacketCodec<RegistryByteBuf, OpenOddsConfigScreenPayload> CODEC =
+				PacketCodec.of(OpenOddsConfigScreenPayload::write, OpenOddsConfigScreenPayload::read);
+
+		private void write(RegistryByteBuf buf) {
+			buf.writeVarInt(fateTokenChance);
+			buf.writeVarInt(fateNothingChance);
+			buf.writeVarInt(fateDeathChance);
+			buf.writeVarInt(coinHeadsChance);
+			buf.writeVarInt(rouletteGreenChance);
+			buf.writeVarInt(rouletteRedChance);
+			buf.writeVarInt(rouletteBlackChance);
+		}
+
+		private static OpenOddsConfigScreenPayload read(RegistryByteBuf buf) {
+			return new OpenOddsConfigScreenPayload(
+					buf.readVarInt(),
+					buf.readVarInt(),
+					buf.readVarInt(),
+					buf.readVarInt(),
+					buf.readVarInt(),
+					buf.readVarInt(),
+					buf.readVarInt()
+			);
+		}
+
+		@Override
+		public Id<? extends CustomPayload> getId() {
+			return ID;
+		}
+	}
+
 	// ===================== C2S =====================
 
 	public record LoanActionPayload(boolean borrow, long amount) implements CustomPayload {
@@ -250,16 +378,109 @@ public final class ModPayloads {
 		}
 	}
 
+	public record PlayCoinflipPayload(long bet, boolean betHeads) implements CustomPayload {
+		public static final CustomPayload.Id<PlayCoinflipPayload> ID =
+				new CustomPayload.Id<>(Identifier.of(NovaiMod.MOD_ID, "play_coinflip"));
+		public static final PacketCodec<RegistryByteBuf, PlayCoinflipPayload> CODEC =
+				PacketCodec.of(PlayCoinflipPayload::write, PlayCoinflipPayload::read);
+
+		private void write(RegistryByteBuf buf) {
+			buf.writeLong(bet);
+			buf.writeBoolean(betHeads);
+		}
+
+		private static PlayCoinflipPayload read(RegistryByteBuf buf) {
+			return new PlayCoinflipPayload(buf.readLong(), buf.readBoolean());
+		}
+
+		@Override
+		public Id<? extends CustomPayload> getId() {
+			return ID;
+		}
+	}
+
+	public record PlayRoulettePayload(long bet, int betTypeOrd, int chosenNumber) implements CustomPayload {
+		public static final CustomPayload.Id<PlayRoulettePayload> ID =
+				new CustomPayload.Id<>(Identifier.of(NovaiMod.MOD_ID, "play_roulette"));
+		public static final PacketCodec<RegistryByteBuf, PlayRoulettePayload> CODEC =
+				PacketCodec.of(PlayRoulettePayload::write, PlayRoulettePayload::read);
+
+		private void write(RegistryByteBuf buf) {
+			buf.writeLong(bet);
+			buf.writeVarInt(betTypeOrd);
+			buf.writeVarInt(chosenNumber);
+		}
+
+		private static PlayRoulettePayload read(RegistryByteBuf buf) {
+			return new PlayRoulettePayload(buf.readLong(), buf.readVarInt(), buf.readVarInt());
+		}
+
+		@Override
+		public Id<? extends CustomPayload> getId() {
+			return ID;
+		}
+	}
+
+	public record SaveOddsConfigPayload(
+			int fateTokenChance,
+			int fateNothingChance,
+			int fateDeathChance,
+			int coinHeadsChance,
+			int rouletteGreenChance,
+			int rouletteRedChance,
+			int rouletteBlackChance
+	) implements CustomPayload {
+		public static final CustomPayload.Id<SaveOddsConfigPayload> ID =
+				new CustomPayload.Id<>(Identifier.of(NovaiMod.MOD_ID, "save_odds_config"));
+		public static final PacketCodec<RegistryByteBuf, SaveOddsConfigPayload> CODEC =
+				PacketCodec.of(SaveOddsConfigPayload::write, SaveOddsConfigPayload::read);
+
+		private void write(RegistryByteBuf buf) {
+			buf.writeVarInt(fateTokenChance);
+			buf.writeVarInt(fateNothingChance);
+			buf.writeVarInt(fateDeathChance);
+			buf.writeVarInt(coinHeadsChance);
+			buf.writeVarInt(rouletteGreenChance);
+			buf.writeVarInt(rouletteRedChance);
+			buf.writeVarInt(rouletteBlackChance);
+		}
+
+		private static SaveOddsConfigPayload read(RegistryByteBuf buf) {
+			return new SaveOddsConfigPayload(
+					buf.readVarInt(),
+					buf.readVarInt(),
+					buf.readVarInt(),
+					buf.readVarInt(),
+					buf.readVarInt(),
+					buf.readVarInt(),
+					buf.readVarInt()
+			);
+		}
+
+		@Override
+		public Id<? extends CustomPayload> getId() {
+			return ID;
+		}
+	}
+
 	public static void registerPayloadTypes() {
 		PayloadTypeRegistry.playS2C().register(AccountSyncPayload.ID, AccountSyncPayload.CODEC);
 		PayloadTypeRegistry.playS2C().register(OpenLoanScreenPayload.ID, OpenLoanScreenPayload.CODEC);
 		PayloadTypeRegistry.playS2C().register(OpenShopScreenPayload.ID, OpenShopScreenPayload.CODEC);
 		PayloadTypeRegistry.playS2C().register(OpenRevivalScreenPayload.ID, OpenRevivalScreenPayload.CODEC);
+		PayloadTypeRegistry.playS2C().register(OpenCoinflipScreenPayload.ID, OpenCoinflipScreenPayload.CODEC);
+		PayloadTypeRegistry.playS2C().register(CoinflipResultPayload.ID, CoinflipResultPayload.CODEC);
+		PayloadTypeRegistry.playS2C().register(OpenRouletteScreenPayload.ID, OpenRouletteScreenPayload.CODEC);
+		PayloadTypeRegistry.playS2C().register(RouletteResultPayload.ID, RouletteResultPayload.CODEC);
+		PayloadTypeRegistry.playS2C().register(OpenOddsConfigScreenPayload.ID, OpenOddsConfigScreenPayload.CODEC);
 
 		PayloadTypeRegistry.playC2S().register(LoanActionPayload.ID, LoanActionPayload.CODEC);
 		PayloadTypeRegistry.playC2S().register(ShopBuyPayload.ID, ShopBuyPayload.CODEC);
 		PayloadTypeRegistry.playC2S().register(RepairToolPayload.ID, RepairToolPayload.CODEC);
 		PayloadTypeRegistry.playC2S().register(VendingSellAllPayload.ID, VendingSellAllPayload.CODEC);
 		PayloadTypeRegistry.playC2S().register(RevivePlayerPayload.ID, RevivePlayerPayload.CODEC);
+		PayloadTypeRegistry.playC2S().register(PlayCoinflipPayload.ID, PlayCoinflipPayload.CODEC);
+		PayloadTypeRegistry.playC2S().register(PlayRoulettePayload.ID, PlayRoulettePayload.CODEC);
+		PayloadTypeRegistry.playC2S().register(SaveOddsConfigPayload.ID, SaveOddsConfigPayload.CODEC);
 	}
 }

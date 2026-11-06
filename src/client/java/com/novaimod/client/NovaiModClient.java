@@ -3,8 +3,11 @@ package com.novaimod.client;
 import com.novaimod.client.hud.AccountHudOverlay;
 import com.novaimod.client.render.ModNpcRenderer;
 import com.novaimod.client.screen.AccountShopScreen;
+import com.novaimod.client.screen.CoinflipScreen;
 import com.novaimod.client.screen.LoanScreen;
+import com.novaimod.client.screen.OddsConfigScreen;
 import com.novaimod.client.screen.RevivalSelectScreen;
+import com.novaimod.client.screen.RouletteScreen;
 import com.novaimod.client.screen.VendingScreen;
 import com.novaimod.network.ModPayloads;
 import com.novaimod.registry.ModEntities;
@@ -54,6 +57,38 @@ public class NovaiModClient implements ClientModInitializer {
 
 		ClientPlayNetworking.registerGlobalReceiver(ModPayloads.OpenRevivalScreenPayload.ID, (payload, context) -> {
 			context.client().setScreen(new RevivalSelectScreen(payload.candidates()));
+		});
+
+		ClientPlayNetworking.registerGlobalReceiver(ModPayloads.OpenCoinflipScreenPayload.ID, (payload, context) -> {
+			context.client().setScreen(new CoinflipScreen(payload.balance()));
+		});
+
+		ClientPlayNetworking.registerGlobalReceiver(ModPayloads.CoinflipResultPayload.ID, (payload, context) -> {
+			if (context.client().currentScreen instanceof CoinflipScreen coinflipScreen) {
+				coinflipScreen.onSpinResult(payload.landedHeads(), payload.won(), payload.payout(), payload.animTicks());
+			}
+		});
+
+		ClientPlayNetworking.registerGlobalReceiver(ModPayloads.OpenRouletteScreenPayload.ID, (payload, context) -> {
+			context.client().setScreen(new RouletteScreen(payload.balance()));
+		});
+
+		ClientPlayNetworking.registerGlobalReceiver(ModPayloads.RouletteResultPayload.ID, (payload, context) -> {
+			if (context.client().currentScreen instanceof RouletteScreen rouletteScreen) {
+				rouletteScreen.onSpinResult(payload.winningNumber(), payload.won(), payload.payout(), payload.animTicks());
+			}
+		});
+
+		ClientPlayNetworking.registerGlobalReceiver(ModPayloads.OpenOddsConfigScreenPayload.ID, (payload, context) -> {
+			context.client().setScreen(new OddsConfigScreen(
+					payload.fateTokenChance(),
+					payload.fateNothingChance(),
+					payload.fateDeathChance(),
+					payload.coinHeadsChance(),
+					payload.rouletteGreenChance(),
+					payload.rouletteRedChance(),
+					payload.rouletteBlackChance()
+			));
 		});
 	}
 }

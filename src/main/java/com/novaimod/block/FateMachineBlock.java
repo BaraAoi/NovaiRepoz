@@ -26,9 +26,9 @@ import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
 
 /**
- * Таинственный автомат в небесной локации казино:
+ * Автомат судьбы:
  * 50% — Жетон на одно возрождение
- * 25% — Ничего (просто возвращает назад)
+ * 25% — Ничего
  * 25% — Твоя смерть
  */
 public class FateMachineBlock extends Block {

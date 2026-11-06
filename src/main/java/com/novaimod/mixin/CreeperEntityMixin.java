@@ -1,6 +1,7 @@
 package com.novaimod.mixin;
 
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -23,15 +24,23 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 
 /**
- * Улучшает ИИ ванильного крипера:
- * - Радиус обнаружения 64 блока, рентгеновское зрение сквозь блоки (canSee = true для игроков).
- * - Подрыв сквозь стены и пробитие преград (SmartCreeperIgniteGoal), при этом explosionRadius (сила взрыва) НЕ меняется!
- * - Ускоренное преследование и умное всплытие в воде за игроком.
+ * Улучшает ИИ и взрыв ванильного крипера:
+ * - Повышенный радиус взрыва (explosionRadius = 5 вместо 3).
+ * - Радиус обнаружения 64 блока, видит игрока всегда сквозь любые стены.
+ * - Подрыв сквозь блоки и пробитие преград (SmartCreeperIgniteGoal).
  */
 @Mixin(CreeperEntity.class)
 public abstract class CreeperEntityMixin extends HostileEntity {
+	@Shadow
+	private int explosionRadius;
+
 	protected CreeperEntityMixin(EntityType<? extends HostileEntity> entityType, World world) {
 		super(entityType, world);
+	}
+
+	@Inject(method = "<init>", at = @At("TAIL"))
+	private void novai$increaseExplosionRadius(EntityType<? extends CreeperEntity> entityType, World world, CallbackInfo ci) {
+		this.explosionRadius = 5;
 	}
 
 	@Inject(method = "createCreeperAttributes", at = @At("RETURN"), cancellable = true)
@@ -62,7 +71,6 @@ public abstract class CreeperEntityMixin extends HostileEntity {
 		if (target == null || !target.isAlive()) {
 			return;
 		}
-		// Улучшенное движение в воде и прыжки через уступы при погоне
 		if (this.isTouchingWater() && target.getY() >= this.getY() - 0.5D) {
 			Vec3d vel = this.getVelocity();
 			Vec3d dir = new Vec3d(target.getX() - this.getX(), 0.0D, target.getZ() - this.getZ());

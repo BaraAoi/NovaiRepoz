@@ -3,7 +3,10 @@
 	"block.novaimod.trade_machine": "Торговый аппарат",
 	"block.novaimod.fate_machine": "Автомат судьбы",
 	"block.novaimod.repair_station": "Ремонтный станок",
+	"block.novaimod.coinflip_table": "Стол «Монетка»",
+	"block.novaimod.roulette_table": "Стол «Рулетка»",
 	"item.novaimod.revival_token": "Жетон возрождения",
-	"item.novaimod.drunken_oblivion": "Коктейль «Пьяное забвение»",
+	"item.novaimod.drunken_oblivion": "Пьяное забвение",
+	"item.novaimod.odds_configurator": "Пульт вероятностей",
 	"entity.novaimod.mod_npc": "Житель заведения"
 }

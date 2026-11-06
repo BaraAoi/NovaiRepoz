@@ -32,19 +32,18 @@ import net.minecraft.util.math.random.Random;
 import net.minecraft.world.World;
 
 /**
- * Управляет таинственной небесной локацией после выпивания коктейля «Пьяное забвение»:
- * - Платформа 100 блоков во все стороны высоко в небе (Y=272): сверху цветное стекло одного случайного цвета,
- *   снизу морские фонари + центральный помост из 7 блоков цветного стекла перед автоматом.
- * - Кастомные необычные деревья вокруг.
- * - Эффект Темнота + личное сообщение красным жирным текстом: готов ли ты рискнуть всем ради " шанса"?
- * - При попытке убежать от автомата телепортирует игрока обратно к автомату.
- * - Шансы автомата: 50% жетон на одно возрождение, 25% ничего, 25% смерть.
- * - После исхода вся небесная структура полностью исчезает, чтобы её нельзя было случайно найти в небе.
+ * Управляет секретной локацией после выпивания коктейля «Пьяное забвение»:
+ * - Сначала накладывается эффект Темноты, и только после погружения экрана во тьму происходит перенос.
+ * - Вся структура наполнена обилием цветного стекла одного случайного цвета (витражные арки, обелиски, кольца и помост),
+ *   а кастомные деревья расположены плотными кольцами намного ближе к центру.
+ * - Шансы автомата по умолчанию 50% жетон / 25% ничего / 25% смерть, и регулируются творческим пультом вероятностей.
  */
 public final class MysterySkyManager {
 	private static final int PLATFORM_RADIUS = 100;
 	private static final int SKY_BASE_Y = 272;
 	private static final int FAST_BLOCK_FLAGS = Block.NOTIFY_LISTENERS | Block.FORCE_STATE;
+	/** Сколько тиков длится погружение в Темноту ДО телепорта (~2.25 секунды). */
+	private static final int DARKNESS_PRE_TELEPORT_TICKS = 45;
 
 	private static final Block[] STAINED_GLASS_COLORS = new Block[]{
 			Blocks.WHITE_STAINED_GLASS,
@@ -68,20 +67,43 @@ public final class MysterySkyManager {
 	private MysterySkyManager() {
 	}
 
+	/**
+	 * Шаг 1: Сначала накладываем Темноту, и только спустя DARKNESS_PRE_TELEPORT_TICKS телепортируем в локацию!
+	 */
+	public static void beginDrunkenOblivionSequence(ServerPlayerEntity player) {
+		MinecraftServer server = player.getServer();
+		if (server == null) {
+			return;
+		}
+		ModPersistentState state = ModPersistentState.get(server);
+		if (state.getActiveSkyArenas().containsKey(player.getUuid())) {
+			return;
+		}
+		ModPersistentState.PlayerFinanceData acc = state.getAccount(player.getUuid());
+		if (acc.pendingOblivionTicks > 0) {
+			return;
+		}
+
+		// Сначала накладываем эффект Темноты!
+		player.addStatusEffect(new StatusEffectInstance(StatusEffects.DARKNESS, 20 * 600, 0, false, false, true));
+		player.getServerWorld().playSound(null, player.getBlockPos(), SoundEvents.BLOCK_PORTAL_TRIGGER, SoundCategory.PLAYERS, 0.7F, 0.65F);
+
+		acc.pendingOblivionTicks = DARKNESS_PRE_TELEPORT_TICKS;
+		state.markDirty();
+	}
+
 	public static void enterMysteryArena(ServerPlayerEntity player) {
 		MinecraftServer server = player.getServer();
 		if (server == null) {
 			return;
 		}
 		ModPersistentState state = ModPersistentState.get(server);
-		// Если игрок уже в небесной локации — не дублируем
 		if (state.getActiveSkyArenas().containsKey(player.getUuid())) {
 			return;
 		}
 
 		ServerWorld overworld = server.getOverworld();
 		int slotIdx = state.nextSkyArenaIndex();
-		// Разносим арены далеко друг от друга по координатам, чтобы игроки не пересекались
 		int centerX = ((int) Math.floor(player.getX()) & ~15) + (slotIdx % 7) * 512;
 		int centerZ = ((int) Math.floor(player.getZ()) & ~15) + ((slotIdx / 7) % 7) * 512;
 		int baseY = SKY_BASE_Y;
@@ -105,11 +127,11 @@ public final class MysterySkyManager {
 		buildSkyPlatform(overworld, session, overworld.getRandom());
 		state.putSkyArena(session);
 
-		// Телепортируем игрока прямо перед автоматом лицом на север (yaw = 180)
-		player.teleport(overworld, centerX + 0.5D, baseY + 2.0D, centerZ + 1.5D, 180.0F, 0.0F);
+		// Поддерживаем Темноту и переносим уже погружённого во мрак игрока к автомату
 		player.addStatusEffect(new StatusEffectInstance(StatusEffects.DARKNESS, 20 * 600, 0, false, false, true));
+		player.teleport(overworld, centerX + 0.5D, baseY + 2.0D, centerZ + 1.5D, 180.0F, 0.0F);
 
-		// Только для этого игрока красным жирным текстом:
+		// Личное сообщение игроку красным жирным текстом:
 		player.sendMessage(
 				Text.literal("готов ли ты рискнуть всем ради \" шанса\"?")
 						.formatted(Formatting.RED, Formatting.BOLD),
@@ -124,7 +146,7 @@ public final class MysterySkyManager {
 
 		BlockPos.Mutable mutable = new BlockPos.Mutable();
 
-		// Платформа 100 блоков во все стороны: снизу морские фонари, сверху цветное стекло одного рандомного цвета
+		// 1. Основная платформа 100 блоков во все стороны: снизу морские фонари, сверху цветное стекло одного случайного цвета
 		for (int dx = -s.radius; dx <= s.radius; dx++) {
 			for (int dz = -s.radius; dz <= s.radius; dz++) {
 				int x = s.centerX + dx;
@@ -136,17 +158,90 @@ public final class MysterySkyManager {
 			}
 		}
 
-		// Дорожка из 7 блоков цветного стекла того же цвета к автомату в центре
+		// 2. Обилие цветного стекла вокруг центральной зоны:
+		// Ступенчатые витражные кольца и светящиеся стеклянные бортики вокруг площади (радиусы 6, 11, 18, 26)
+		int[] glassRings = new int[]{6, 11, 18, 26};
+		for (int ringR : glassRings) {
+			for (int dx = -ringR; dx <= ringR; dx++) {
+				for (int dz = -ringR; dz <= ringR; dz++) {
+					int distSq = dx * dx + dz * dz;
+					if (distSq >= (ringR - 1) * (ringR - 1) && distSq <= ringR * ringR) {
+						// Оставляем свободный проход по центральной аллее
+						if (Math.abs(dx) <= 2 && dz >= -5 && dz <= 4) {
+							continue;
+						}
+						mutable.set(s.centerX + dx, s.baseY + 2, s.centerZ + dz);
+						world.setBlockState(mutable, glassState, FAST_BLOCK_FLAGS);
+						// Парящее верхнее витражное кольцо в воздухе
+						if ((dx + dz) % 2 == 0) {
+							mutable.set(s.centerX + dx, s.baseY + 8, s.centerZ + dz);
+							world.setBlockState(mutable, glassState, FAST_BLOCK_FLAGS);
+						}
+					}
+				}
+			}
+		}
+
+		// 3. Витражный коридор из 7 арок цветного стекла к Автомату судьбы
 		for (int i = -2; i <= 4; i++) {
-			// По бокам акцентные колонны/дорожка из того же стекла
-			mutable.set(s.centerX - 2, s.baseY + 2, s.centerZ - i);
+			int z = s.centerZ - i;
+			for (int dy = 2; dy <= 5; dy++) {
+				mutable.set(s.centerX - 3, s.baseY + dy, z);
+				world.setBlockState(mutable, glassState, FAST_BLOCK_FLAGS);
+				mutable.set(s.centerX + 3, s.baseY + dy, z);
+				world.setBlockState(mutable, glassState, FAST_BLOCK_FLAGS);
+			}
+			// Сводчатый потолок из цветного стекла над дорожкой
+			for (int dx = -2; dx <= 2; dx++) {
+				mutable.set(s.centerX + dx, s.baseY + 6, z);
+				world.setBlockState(mutable, glassState, FAST_BLOCK_FLAGS);
+			}
+			// Низкие стеклянные перила вдоль дорожки
+			mutable.set(s.centerX - 2, s.baseY + 2, z);
 			world.setBlockState(mutable, glassState, FAST_BLOCK_FLAGS);
-			mutable.set(s.centerX + 2, s.baseY + 2, s.centerZ - i);
+			mutable.set(s.centerX + 2, s.baseY + 2, z);
 			world.setBlockState(mutable, glassState, FAST_BLOCK_FLAGS);
 		}
 
-		// Пьедестал и сам Автомат судьбы прямо перед игроком
+		// 4. Высокие витражные обелиски/кристаллы из цветного стекла вокруг центра
+		int[][] crystalPillars = new int[][]{
+				{-5, -6}, {5, -6}, {-7, 0}, {7, 0}, {-5, 6}, {5, 6},
+				{0, -9}, {-10, -4}, {10, -4}, {-10, 4}, {10, 4}
+		};
+		for (int[] p : crystalPillars) {
+			int px = s.centerX + p[0];
+			int pz = s.centerZ + p[1];
+			int pHeight = 7 + random.nextInt(4);
+			for (int dy = 2; dy <= pHeight; dy++) {
+				mutable.set(px, s.baseY + dy, pz);
+				world.setBlockState(mutable, glassState, FAST_BLOCK_FLAGS);
+				if (dy == 4 || dy == pHeight - 1) {
+					mutable.set(px + 1, s.baseY + dy, pz);
+					world.setBlockState(mutable, glassState, FAST_BLOCK_FLAGS);
+					mutable.set(px - 1, s.baseY + dy, pz);
+					world.setBlockState(mutable, glassState, FAST_BLOCK_FLAGS);
+					mutable.set(px, s.baseY + dy, pz + 1);
+					world.setBlockState(mutable, glassState, FAST_BLOCK_FLAGS);
+					mutable.set(px, s.baseY + dy, pz - 1);
+					world.setBlockState(mutable, glassState, FAST_BLOCK_FLAGS);
+				}
+			}
+			mutable.set(px, s.baseY + pHeight + 1, pz);
+			world.setBlockState(mutable, lanternState, FAST_BLOCK_FLAGS);
+			mutable.set(px, s.baseY + pHeight + 2, pz);
+			world.setBlockState(mutable, glassState, FAST_BLOCK_FLAGS);
+		}
+
+		// 5. Автомат судьбы в обрамлении витражного ореола из цветного стекла
 		BlockPos machinePos = new BlockPos(s.machineX, s.machineY, s.machineZ);
+		for (int dx = -2; dx <= 2; dx++) {
+			for (int dy = 0; dy <= 4; dy++) {
+				if (Math.abs(dx) == 2 || dy >= 3) {
+					mutable.set(s.machineX + dx, s.machineY + dy, s.machineZ - 1);
+					world.setBlockState(mutable, glassState, FAST_BLOCK_FLAGS);
+				}
+			}
+		}
 		world.setBlockState(
 				machinePos,
 				ModBlocks.FATE_MACHINE.getDefaultState().with(FateMachineBlock.FACING, Direction.SOUTH),
@@ -154,12 +249,28 @@ public final class MysterySkyManager {
 		);
 		world.setBlockState(machinePos.up(), glassState, FAST_BLOCK_FLAGS);
 
-		// Генерируем разные кастомные деревья на платформе (не слишком близко к автомату)
-		int treeCount = 42;
-		for (int i = 0; i < treeCount; i++) {
-			int tx = s.centerX + random.nextBetween(-85, 85);
-			int tz = s.centerZ + random.nextBetween(-85, 85);
-			if (Math.abs(tx - s.centerX) < 8 && Math.abs(tz - s.centerZ) < 10) {
+		// 6. Кастомные деревья расположены НАМНОГО БЛИЖЕ к центру (кольца 8..16, 17..28 и 29..46 блоков)!
+		// Внутреннее плотное кольцо деревьев прямо у стеклянной площади (чтобы игрок сразу видел лес вокруг себя в Темноте)
+		int innerTrees = 18;
+		for (int i = 0; i < innerTrees; i++) {
+			double angle = (Math.PI * 2.0D * i) / innerTrees + (random.nextDouble() - 0.5D) * 0.18D;
+			int dist = 8 + random.nextInt(7); // 8..14 блоков от центра!
+			int tx = s.centerX + (int) Math.round(Math.cos(angle) * dist);
+			int tz = s.centerZ + (int) Math.round(Math.sin(angle) * dist);
+			if (Math.abs(tx - s.centerX) <= 4 && tz >= s.centerZ - 7 && tz <= s.centerZ + 5) {
+				continue;
+			}
+			buildCustomTree(world, tx, s.baseY + 2, tz, i % 4, glassState, random);
+		}
+
+		// Среднее и внешнее кольца деревьев (15..44 блока)
+		int outerTrees = 38;
+		for (int i = 0; i < outerTrees; i++) {
+			double angle = random.nextDouble() * Math.PI * 2.0D;
+			int dist = 15 + random.nextInt(30); // 15..44 блоков
+			int tx = s.centerX + (int) Math.round(Math.cos(angle) * dist);
+			int tz = s.centerZ + (int) Math.round(Math.sin(angle) * dist);
+			if (Math.abs(tx - s.centerX) <= 4 && tz >= s.centerZ - 7 && tz <= s.centerZ + 5) {
 				continue;
 			}
 			buildCustomTree(world, tx, s.baseY + 2, tz, i % 4, glassState, random);
@@ -169,32 +280,24 @@ public final class MysterySkyManager {
 	private static void buildCustomTree(ServerWorld world, int x, int y, int z, int style, BlockState arenaGlass, Random random) {
 		BlockState trunk;
 		BlockState canopyPrimary;
-		BlockState canopyAccent;
+		BlockState canopyAccent = arenaGlass; // В каждом дереве активно используется цветное стекло арены!
 
 		switch (style) {
 			case 0 -> {
-				// Кристальное аметистово-обсидиановое плакучее дерево
 				trunk = Blocks.CRYING_OBSIDIAN.getDefaultState();
 				canopyPrimary = Blocks.AMETHYST_BLOCK.getDefaultState();
-				canopyAccent = arenaGlass;
 			}
 			case 1 -> {
-				// Искажённое бирюзовое дерево с морскими огнями
 				trunk = Blocks.WARPED_HYPHAE.getDefaultState();
 				canopyPrimary = Blocks.WARPED_WART_BLOCK.getDefaultState();
-				canopyAccent = Blocks.SEA_LANTERN.getDefaultState();
 			}
 			case 2 -> {
-				// Эфирное кварцево-вишнёвое дерево со стеклом
 				trunk = Blocks.QUARTZ_PILLAR.getDefaultState();
 				canopyPrimary = Blocks.CHERRY_LEAVES.getDefaultState();
-				canopyAccent = arenaGlass;
 			}
 			default -> {
-				// Багрово-чернитное мистическое дерево с грибосветом
 				trunk = Blocks.BLACKSTONE.getDefaultState();
 				canopyPrimary = Blocks.NETHER_WART_BLOCK.getDefaultState();
-				canopyAccent = Blocks.SHROOMLIGHT.getDefaultState();
 			}
 		}
 
@@ -214,7 +317,7 @@ public final class MysterySkyManager {
 			world.setBlockState(m, trunk, FAST_BLOCK_FLAGS);
 		}
 
-		// Необычная многоярусная крона со свисающими ветвями
+		// Необычная многоярусная крона с обильными витражными вставками и свисающими нитями цветного стекла
 		int topY = y + height;
 		for (int dx = -3; dx <= 3; dx++) {
 			for (int dz = -3; dz <= 3; dz++) {
@@ -223,15 +326,16 @@ public final class MysterySkyManager {
 					continue;
 				}
 				m.set(curX + dx, topY, curZ + dz);
-				world.setBlockState(m, (dist == 2 && random.nextInt(3) == 0) ? canopyAccent : canopyPrimary, FAST_BLOCK_FLAGS);
+				boolean useGlass = (dist >= 2 && ((dx + dz) & 1) == 0) || random.nextInt(3) == 0;
+				world.setBlockState(m, useGlass ? canopyAccent : canopyPrimary, FAST_BLOCK_FLAGS);
 
 				if (dist <= 2) {
 					m.set(curX + dx, topY + 1, curZ + dz);
-					world.setBlockState(m, canopyPrimary, FAST_BLOCK_FLAGS);
+					world.setBlockState(m, dist == 2 ? canopyAccent : canopyPrimary, FAST_BLOCK_FLAGS);
 				}
-				// Свисающие лозы стекла / кристаллов по краям
-				if (dist == 3 && random.nextBoolean()) {
-					int drop = 1 + random.nextInt(3);
+				// Длинные свисающие лозы цветного стекла по краям кроны
+				if (dist >= 3 && random.nextInt(3) != 0) {
+					int drop = 2 + random.nextInt(3);
 					for (int k = 1; k <= drop; k++) {
 						m.set(curX + dx, topY - k, curZ + dz);
 						world.setBlockState(m, canopyAccent, FAST_BLOCK_FLAGS);
@@ -240,14 +344,37 @@ public final class MysterySkyManager {
 			}
 		}
 		m.set(curX, topY + 2, curZ);
+		world.setBlockState(m, Blocks.SEA_LANTERN.getDefaultState(), FAST_BLOCK_FLAGS);
+		m.set(curX, topY + 3, curZ);
 		world.setBlockState(m, canopyAccent, FAST_BLOCK_FLAGS);
 	}
 
 	/**
-	 * Проверяет активные сессии каждый тик: не даёт убежать от автомата, поддерживает эффект Темноты.
+	 * Проверяет отложенный перенос (после Темноты) и активные сессии каждый тик.
 	 */
 	public static void tickSkyArenas(MinecraftServer server) {
 		ModPersistentState state = ModPersistentState.get(server);
+
+		// 1. Обрабатываем игроков, у которых уже наложена Темнота и идёт отсчёт до телепорта
+		for (ServerPlayerEntity p : server.getPlayerManager().getPlayerList()) {
+			ModPersistentState.PlayerFinanceData acc = state.getAccount(p.getUuid());
+			if (acc.pendingOblivionTicks > 0) {
+				if (!p.isAlive() || p.isSpectator()) {
+					acc.pendingOblivionTicks = 0;
+					state.markDirty();
+					continue;
+				}
+				if (!p.hasStatusEffect(StatusEffects.DARKNESS)) {
+					p.addStatusEffect(new StatusEffectInstance(StatusEffects.DARKNESS, 20 * 600, 0, false, false, true));
+				}
+				acc.pendingOblivionTicks--;
+				state.markDirty();
+				if (acc.pendingOblivionTicks <= 0) {
+					enterMysteryArena(p);
+				}
+			}
+		}
+
 		if (state.getActiveSkyArenas().isEmpty()) {
 			return;
 		}
@@ -265,12 +392,10 @@ public final class MysterySkyManager {
 				continue;
 			}
 
-			// Поддерживаем эффект темноты
 			if (!player.hasStatusEffect(StatusEffects.DARKNESS)) {
 				player.addStatusEffect(new StatusEffectInstance(StatusEffects.DARKNESS, 200, 0, false, false, true));
 			}
 
-			// Если игрок пытается убежать от автомата или спрыгнуть — телепортирует обратно к автомату!
 			double dx = player.getX() - (s.machineX + 0.5D);
 			double dz = player.getZ() - (s.machineZ + 0.5D);
 			double horizDistSq = dx * dx + dz * dz;
@@ -297,10 +422,7 @@ public final class MysterySkyManager {
 	}
 
 	/**
-	 * Розыгрыш в автомате:
-	 * 50% — Жетон на одно возрождение
-	 * 25% — Ничего (просто возвращает)
-	 * 25% — Смерть
+	 * Розыгрыш в Автомате судьбы с учётом настроек вероятностей (по умолчанию 50% / 25% / 25%).
 	 */
 	public static void rollFateMachine(ServerPlayerEntity player, BlockPos clickedPos) {
 		MinecraftServer server = player.getServer();
@@ -311,10 +433,28 @@ public final class MysterySkyManager {
 		ModPersistentState.SkyArenaSession session = state.removeSkyArena(player.getUuid());
 		ServerWorld overworld = server.getOverworld();
 
-		double roll = overworld.getRandom().nextDouble(); // [0.0, 1.0)
+		ModPersistentState.MachineOddsConfig odds = state.getOddsConfig();
+		int wToken = Math.max(0, odds.fateTokenChance);
+		int wNothing = Math.max(0, odds.fateNothingChance);
+		int wDeath = Math.max(0, odds.fateDeathChance);
+		int total = wToken + wNothing + wDeath;
+
+		int outcome; // 0 = token, 1 = nothing, 2 = death
+		if (total <= 0) {
+			outcome = 1;
+		} else {
+			int pick = overworld.getRandom().nextInt(total);
+			if (pick < wToken) {
+				outcome = 0;
+			} else if (pick < wToken + wNothing) {
+				outcome = 1;
+			} else {
+				outcome = 2;
+			}
+		}
+
 		player.removeStatusEffect(StatusEffects.DARKNESS);
 
-		// Возвращаем игрока на исходное место ПЕРЕД очисткой небесной платформы
 		if (session != null) {
 			ServerWorld returnWorld = resolveWorld(server, session.returnDim);
 			player.teleport(
@@ -325,14 +465,12 @@ public final class MysterySkyManager {
 					session.returnYaw,
 					session.returnPitch
 			);
-			// Полностью уничтожаем структуру в небе, чтобы её нельзя было случайно найти!
 			eraseSkyPlatform(overworld, session);
 		} else {
 			overworld.setBlockState(clickedPos, Blocks.AIR.getDefaultState(), FAST_BLOCK_FLAGS);
 		}
 
-		if (roll < 0.50D) {
-			// 50% — Выигрыш Жетона возрождения!
+		if (outcome == 0) {
 			ItemStack token = new ItemStack(ModItems.REVIVAL_TOKEN, 1);
 			if (!player.getInventory().insertStack(token)) {
 				player.dropItem(token, false);
@@ -343,15 +481,13 @@ public final class MysterySkyManager {
 					Text.literal("★ Судьба улыбнулась тебе! Ты выиграл Жетон возрождения!").formatted(Formatting.GOLD, Formatting.BOLD),
 					false
 			);
-		} else if (roll < 0.75D) {
-			// 25% — Ничего, просто возвращает обратно
+		} else if (outcome == 1) {
 			player.getServerWorld().playSound(null, player.getBlockPos(), SoundEvents.BLOCK_DISPENSER_FAIL, SoundCategory.PLAYERS, 1.0F, 0.8F);
 			player.sendMessage(
 					Text.literal("Пустота... Ты ничего не выиграл, но остался жив.").formatted(Formatting.GRAY, Formatting.ITALIC),
 					false
 			);
 		} else {
-			// 25% — Смерть!
 			player.getServerWorld().playSound(null, player.getBlockPos(), SoundEvents.ENTITY_WITHER_SPAWN, SoundCategory.PLAYERS, 0.9F, 0.6F);
 			player.sendMessage(
 					Text.literal("☠ Ставка не сыграла. Твоя жизнь принадлежит казино.").formatted(Formatting.DARK_RED, Formatting.BOLD),
@@ -371,14 +507,12 @@ public final class MysterySkyManager {
 			for (int dz = -s.radius; dz <= s.radius; dz++) {
 				int x = s.centerX + dx;
 				int z = s.centerZ + dz;
-				// Слой морских фонарей и стекла есть везде
 				m.set(x, s.baseY, z);
 				overworld.setBlockState(m, air, FAST_BLOCK_FLAGS);
 				m.set(x, s.baseY + 1, z);
 				overworld.setBlockState(m, air, FAST_BLOCK_FLAGS);
 
-				// Выше убираем только непустые блоки (деревья, помост и автомат)
-				for (int dy = 2; dy <= 16; dy++) {
+				for (int dy = 2; dy <= 22; dy++) {
 					m.set(x, s.baseY + dy, z);
 					if (!overworld.getBlockState(m).isAir()) {
 						overworld.setBlockState(m, air, FAST_BLOCK_FLAGS);

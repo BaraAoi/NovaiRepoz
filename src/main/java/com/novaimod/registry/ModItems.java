@@ -2,6 +2,7 @@ package com.novaimod.registry;
 
 import com.novaimod.NovaiMod;
 import com.novaimod.item.DrunkenOblivionItem;
+import com.novaimod.item.OddsConfiguratorItem;
 import com.novaimod.item.RevivalTokenItem;
 
 import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
@@ -31,6 +32,16 @@ public final class ModItems {
 			new BlockItem(ModBlocks.REPAIR_STATION, new Item.Settings())
 	);
 
+	public static final Item COINFLIP_TABLE_ITEM = register(
+			"coinflip_table",
+			new BlockItem(ModBlocks.COINFLIP_TABLE, new Item.Settings().rarity(Rarity.UNCOMMON))
+	);
+
+	public static final Item ROULETTE_TABLE_ITEM = register(
+			"roulette_table",
+			new BlockItem(ModBlocks.ROULETTE_TABLE, new Item.Settings().rarity(Rarity.UNCOMMON))
+	);
+
 	public static final Item REVIVAL_TOKEN = register(
 			"revival_token",
 			new RevivalTokenItem(new Item.Settings().maxCount(16).rarity(Rarity.EPIC).fireproof())
@@ -39,6 +50,11 @@ public final class ModItems {
 	public static final Item DRUNKEN_OBLIVION = register(
 			"drunken_oblivion",
 			new DrunkenOblivionItem(new Item.Settings().maxCount(4).rarity(Rarity.RARE))
+	);
+
+	public static final Item ODDS_CONFIGURATOR = register(
+			"odds_configurator",
+			new OddsConfiguratorItem(new Item.Settings().maxCount(1).rarity(Rarity.EPIC))
 	);
 
 	public static final ItemGroup NOVAI_ITEM_GROUP = Registry.register(
@@ -50,9 +66,12 @@ public final class ModItems {
 					.entries((displayContext, entries) -> {
 						entries.add(TRADE_MACHINE_ITEM);
 						entries.add(REPAIR_STATION_ITEM);
+						entries.add(COINFLIP_TABLE_ITEM);
+						entries.add(ROULETTE_TABLE_ITEM);
 						entries.add(FATE_MACHINE_ITEM);
 						entries.add(REVIVAL_TOKEN);
 						entries.add(DRUNKEN_OBLIVION);
+						entries.add(ODDS_CONFIGURATOR);
 					})
 					.build()
 	);

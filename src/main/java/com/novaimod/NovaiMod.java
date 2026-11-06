@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import com.mojang.brigadier.arguments.LongArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.novaimod.data.ModPersistentState;
+import com.novaimod.economy.CasinoGamesManager;
 import com.novaimod.network.ModPayloads;
 import com.novaimod.network.ModServerNetworking;
 import com.novaimod.registry.ModBlocks;
@@ -86,6 +87,7 @@ public class NovaiMod implements ModInitializer {
 		ServerTickEvents.END_SERVER_TICK.register(server -> {
 			MysterySkyManager.tickSkyArenas(server);
 			DetentionManager.tickDebtAndDetentions(server);
+			CasinoGamesManager.tickPendingResolutions(server);
 
 			structureCheckTicker++;
 			if (structureCheckTicker >= 40) {

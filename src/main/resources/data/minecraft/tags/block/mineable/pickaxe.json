@@ -2,6 +2,8 @@
 	"replace": false,
 	"values": [
 		"novaimod:trade_machine",
-		"novaimod:repair_station"
+		"novaimod:repair_station",
+		"novaimod:coinflip_table",
+		"novaimod:roulette_table"
 	]
 }

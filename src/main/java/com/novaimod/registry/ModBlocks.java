@@ -1,8 +1,10 @@
 package com.novaimod.registry;
 
 import com.novaimod.NovaiMod;
+import com.novaimod.block.CoinflipTableBlock;
 import com.novaimod.block.FateMachineBlock;
 import com.novaimod.block.RepairStationBlock;
+import com.novaimod.block.RouletteTableBlock;
 import com.novaimod.block.TradeMachineBlock;
 
 import net.minecraft.block.AbstractBlock;
@@ -44,6 +46,28 @@ public final class ModBlocks {
 							.mapColor(MapColor.DEEPSLATE_GRAY)
 							.strength(4.0F, 12.0F)
 							.sounds(BlockSoundGroup.ANVIL)
+			)
+	);
+
+	public static final Block COINFLIP_TABLE = register(
+			"coinflip_table",
+			new CoinflipTableBlock(
+					AbstractBlock.Settings.create()
+							.mapColor(MapColor.GOLD)
+							.strength(3.0F, 10.0F)
+							.sounds(BlockSoundGroup.WOOD)
+							.luminance(state -> 5)
+			)
+	);
+
+	public static final Block ROULETTE_TABLE = register(
+			"roulette_table",
+			new RouletteTableBlock(
+					AbstractBlock.Settings.create()
+							.mapColor(MapColor.EMERALD_GREEN)
+							.strength(3.0F, 10.0F)
+							.sounds(BlockSoundGroup.WOOD)
+							.luminance(state -> 6)
 			)
 	);
 

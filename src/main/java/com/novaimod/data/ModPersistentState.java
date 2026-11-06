@@ -58,6 +58,12 @@ public class ModPersistentState extends PersistentState {
 		public BlockPos preSizoPos = null;
 		public String preSizoDim = "minecraft:overworld";
 
+		// Рулетка: гарантия 100% второго зелёного подряд после первого выпадения зелёного
+		public boolean rouletteForceNextGreen = false;
+
+		// Отложенный перенос после наложения Темноты от коктейля «Пьяное забвение»
+		public int pendingOblivionTicks = 0;
+
 		public NbtCompound toNbt() {
 			NbtCompound tag = new NbtCompound();
 			tag.putLong("balance", balance);
@@ -90,6 +96,8 @@ public class ModPersistentState extends PersistentState {
 				tag.putLong("preSizoPos", preSizoPos.asLong());
 			}
 			tag.putString("preSizoDim", preSizoDim);
+			tag.putBoolean("rouletteForceNextGreen", rouletteForceNextGreen);
+			tag.putInt("pendingOblivionTicks", pendingOblivionTicks);
 			return tag;
 		}
 
@@ -129,7 +137,53 @@ public class ModPersistentState extends PersistentState {
 			if (tag.contains("preSizoDim")) {
 				d.preSizoDim = tag.getString("preSizoDim");
 			}
+			d.rouletteForceNextGreen = tag.getBoolean("rouletteForceNextGreen");
+			d.pendingOblivionTicks = tag.getInt("pendingOblivionTicks");
 			return d;
+		}
+	}
+
+	public static class MachineOddsConfig {
+		public int fateTokenChance = 50;
+		public int fateNothingChance = 25;
+		public int fateDeathChance = 25;
+		public int coinHeadsChance = 50;
+		public int rouletteGreenChance = 3;
+		public int rouletteRedChance = 48;
+		public int rouletteBlackChance = 49;
+
+		public void resetDefaults() {
+			fateTokenChance = 50;
+			fateNothingChance = 25;
+			fateDeathChance = 25;
+			coinHeadsChance = 50;
+			rouletteGreenChance = 3;
+			rouletteRedChance = 48;
+			rouletteBlackChance = 49;
+		}
+
+		public NbtCompound toNbt() {
+			NbtCompound t = new NbtCompound();
+			t.putInt("fateTokenChance", fateTokenChance);
+			t.putInt("fateNothingChance", fateNothingChance);
+			t.putInt("fateDeathChance", fateDeathChance);
+			t.putInt("coinHeadsChance", coinHeadsChance);
+			t.putInt("rouletteGreenChance", rouletteGreenChance);
+			t.putInt("rouletteRedChance", rouletteRedChance);
+			t.putInt("rouletteBlackChance", rouletteBlackChance);
+			return t;
+		}
+
+		public static MachineOddsConfig fromNbt(NbtCompound t) {
+			MachineOddsConfig c = new MachineOddsConfig();
+			if (t.contains("fateTokenChance")) c.fateTokenChance = Math.max(0, t.getInt("fateTokenChance"));
+			if (t.contains("fateNothingChance")) c.fateNothingChance = Math.max(0, t.getInt("fateNothingChance"));
+			if (t.contains("fateDeathChance")) c.fateDeathChance = Math.max(0, t.getInt("fateDeathChance"));
+			if (t.contains("coinHeadsChance")) c.coinHeadsChance = Math.clamp(t.getInt("coinHeadsChance"), 0, 100);
+			if (t.contains("rouletteGreenChance")) c.rouletteGreenChance = Math.max(0, t.getInt("rouletteGreenChance"));
+			if (t.contains("rouletteRedChance")) c.rouletteRedChance = Math.max(0, t.getInt("rouletteRedChance"));
+			if (t.contains("rouletteBlackChance")) c.rouletteBlackChance = Math.max(0, t.getInt("rouletteBlackChance"));
+			return c;
 		}
 	}
 
@@ -205,12 +259,17 @@ public class ModPersistentState extends PersistentState {
 	private final Set<String> generatedRegionKeys = new HashSet<>();
 	private final List<StructureEntry> generatedStructures = new ArrayList<>();
 	private final Map<UUID, SkyArenaSession> activeSkyArenas = new HashMap<>();
+	private MachineOddsConfig oddsConfig = new MachineOddsConfig();
 	private boolean mfoSpawned = false;
 	private BlockPos mfoPos = null;
 	private int skyArenaCounter = 0;
 
 	public ModPersistentState() {
 		initDefaultEliteStocks();
+	}
+
+	public MachineOddsConfig getOddsConfig() {
+		return oddsConfig;
 	}
 
 	private void initDefaultEliteStocks() {
@@ -345,6 +404,7 @@ public class ModPersistentState extends PersistentState {
 		}
 		nbt.put("activeSkyArenas", arenasList);
 
+		nbt.put("oddsConfig", oddsConfig.toNbt());
 		nbt.putBoolean("mfoSpawned", mfoSpawned);
 		if (mfoPos != null) {
 			nbt.putLong("mfoPos", mfoPos.asLong());
@@ -394,6 +454,9 @@ public class ModPersistentState extends PersistentState {
 				SkyArenaSession s = SkyArenaSession.fromNbt(list.getCompound(i));
 				state.activeSkyArenas.put(s.playerUuid, s);
 			}
+		}
+		if (nbt.contains("oddsConfig", NbtElement.COMPOUND_TYPE)) {
+			state.oddsConfig = MachineOddsConfig.fromNbt(nbt.getCompound("oddsConfig"));
 		}
 		state.mfoSpawned = nbt.getBoolean("mfoSpawned");
 		if (nbt.contains("mfoPos")) {
