@@ -32,11 +32,13 @@ public abstract class LivingEntityMixin {
 
 		if (fromCreeper) {
 			float currentHealth = player.getHealth();
-			float threshold = player.getMaxHealth() - 2.01F; // Полное ХП или не хватает до 1 сердечка включительно
-			if (currentHealth < threshold) {
+			float halfMaxHealth = player.getMaxHealth() * 0.5F;
+			// Если у игрока половина ХП или меньше — урон считается полностью по стандарту
+			if (currentHealth <= halfMaxHealth) {
 				return;
 			}
 
+			// Если у игрока БОЛЬШЕ половины ХП — смертельный взрыв крипера оставляет 0.5 сердечка (1.0 HP)
 			float finalDamage = cir.getReturnValue();
 			float totalPool = currentHealth + player.getAbsorptionAmount();
 			if (totalPool - finalDamage >= 1.0F) {

@@ -58,16 +58,22 @@ public class ModNpcEntity extends PathAwareEntity {
 	};
 
 	private static final String[] GIDLER_LINES = new String[]{
-			"Даже в этом адском пекле климат приятнее, чем в сыром бункере! Держи жетон и передай привет наверху!",
-			"Посмотри на этот лавовый горизонт — какая экспрессия цвета! А в академии художеств мои пейзажи не оценили!",
-			"Я просил холодный лимонад со льдом, а черти опять принесли кипящую магму! Бери жетон, пока я добрый!",
-			"Архитектура Незера абсолютно бездарна — ни одной прямой колоннады! Забирай жетон возрождения и ступай!"
+			"Штайнер всё ещё собирает резервы для контратаки? Я уже целую вечность жду его доклада на этом лавовом пляже!",
+			"Говорили мне штабисты — не воюй сразу на два фронта и не суйся в лютую зиму в летних шинелях... Зато тут круглый год жара!",
+			"Приёмная комиссия Венской академии заявила, что у меня нет чувства перспективы! Пусть взглянут на перспективу этого огненного горизонта!",
+			"В апреле сорок пятого в сыром бункере хотя бы потолок не капал магмой, зато здесь никто не стучит снарядами над головой!",
+			"Мои генералы вечно валили свои просчёты на морозы и распутицу — интересно, что бы они сказали про климат Незера?!",
+			"Мне обещали непобедимое чудо-оружие к весне, а в итоге выписали бессрочную путёвку на раскалённый песок!",
+			"Я чертил грандиозные купола и колоннады, а в этом измерении даже прямой мост через лаву построить не удосужились!",
+			"Карта фронтов опять сгорела прямо на столе — впрочем, в сорок пятом сводки со всех направлений всё равно были скверными!",
+			"Даже под грохот канонады над бункером рейхсканцелярии спалось тише, чем под вечные завывания этих гастов!"
 	};
 
 	private UUID targetPlayerUuid;
 	private BlockPos anchorPos;
 	private boolean fleeing = false;
 	private boolean leavingPeacefully = false;
+	private boolean gidlerTokenGiven = false;
 	private int hitsFromPlayer = 0;
 	private int actionCooldown = 0;
 	private int lifeTicks = 0;
@@ -256,29 +262,19 @@ public class ModNpcEntity extends PathAwareEntity {
 	}
 
 	private void handleGidlerInteraction(ServerPlayerEntity player) {
-		MinecraftServer server = player.getServer();
-		ModPersistentState state = ModPersistentState.get(server);
-		ModPersistentState.PlayerFinanceData acc = state.getAccount(player.getUuid());
-		long now = server.getOverworld().getTime();
-
 		String phrase = GIDLER_LINES[this.getRandom().nextInt(GIDLER_LINES.length)];
 		player.sendMessage(
 				Text.literal("[Адольф Гидлер]: " + phrase).formatted(Formatting.GOLD),
 				false
 		);
 
-		// Выдаёт жетон на возрождение одного игрока (кулдаун 1 игровой день на одного посетителя)
-		if (now - acc.lastGidlerTokenTick < 24000L) {
-			player.sendMessage(
-					Text.literal("[Адольф Гидлер]: Я тебе сегодня уже выдавал жетон! Это курорт, а не фабрика сувениров — приходи завтра!")
-							.formatted(Formatting.RED),
-					false
-			);
+		// 1 конкретный Гидлер может выдать только 1 жетон 1 игроку за всё время (без перезарядки);
+		// при дальнейших нажатиях он просто продолжает произносить свои реплики.
+		if (this.gidlerTokenGiven) {
 			return;
 		}
 
-		acc.lastGidlerTokenTick = now;
-		state.markDirty();
+		this.gidlerTokenGiven = true;
 		ItemStack token = new ItemStack(ModItems.REVIVAL_TOKEN, 1);
 		if (!player.getInventory().insertStack(token)) {
 			player.dropItem(token, false);
@@ -660,6 +656,7 @@ public class ModNpcEntity extends PathAwareEntity {
 			nbt.putLong("AnchorPos", this.anchorPos.asLong());
 		}
 		nbt.putBoolean("Fleeing", this.fleeing);
+		nbt.putBoolean("GidlerTokenGiven", this.gidlerTokenGiven);
 		nbt.putInt("HitsFromPlayer", this.hitsFromPlayer);
 	}
 
@@ -681,6 +678,7 @@ public class ModNpcEntity extends PathAwareEntity {
 			this.anchorPos = BlockPos.fromLong(nbt.getLong("AnchorPos"));
 		}
 		this.fleeing = nbt.getBoolean("Fleeing");
+		this.gidlerTokenGiven = nbt.getBoolean("GidlerTokenGiven");
 		this.hitsFromPlayer = nbt.getInt("HitsFromPlayer");
 	}
 }
