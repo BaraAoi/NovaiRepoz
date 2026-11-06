@@ -15,6 +15,20 @@ public final class ModSounds {
 			SoundEvent.of(YARIS_MEME_ID)
 	);
 
+	public static final Identifier CREEPER_BIRD_ID = Identifier.of(NovaiMod.MOD_ID, "creeper_bird");
+	public static final SoundEvent CREEPER_BIRD = Registry.register(
+			Registries.SOUND_EVENT,
+			CREEPER_BIRD_ID,
+			SoundEvent.of(CREEPER_BIRD_ID)
+	);
+
+	public static final Identifier CREEPER_AKBAR_ID = Identifier.of(NovaiMod.MOD_ID, "creeper_akbar");
+	public static final SoundEvent CREEPER_AKBAR = Registry.register(
+			Registries.SOUND_EVENT,
+			CREEPER_AKBAR_ID,
+			SoundEvent.of(CREEPER_AKBAR_ID)
+	);
+
 	private ModSounds() {
 	}
 

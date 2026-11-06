@@ -9,6 +9,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import com.novaimod.ai.SmartCreeperIgniteGoal;
 import com.novaimod.ai.WallhackCreeperTargetGoal;
+import com.novaimod.registry.ModSounds;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
@@ -20,6 +21,9 @@ import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.entity.mob.CreeperEntity;
 import net.minecraft.entity.mob.HostileEntity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.sound.SoundCategory;
+import net.minecraft.sound.SoundEvent;
+import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 
@@ -79,6 +83,30 @@ public abstract class CreeperEntityMixin extends HostileEntity {
 			}
 			this.setVelocity(vel.x + dir.x, Math.min(0.18D, vel.y + 0.045D), vel.z + dir.z);
 		}
+	}
+
+	@Override
+	public void playSound(SoundEvent sound, float volume, float pitch) {
+		// Вместо стандартного шипения перед взрывом крипер выдаёт 1 из 2 добавленных звуков!
+		if (sound == SoundEvents.ENTITY_CREEPER_PRIMED) {
+			if (!this.isSilent() && !this.getWorld().isClient()) {
+				SoundEvent chosen = this.getRandom().nextBoolean()
+						? ModSounds.CREEPER_BIRD
+						: ModSounds.CREEPER_AKBAR;
+				this.getWorld().playSound(
+						null,
+						this.getX(),
+						this.getY(),
+						this.getZ(),
+						chosen,
+						SoundCategory.HOSTILE,
+						1.8F,
+						1.0F
+				);
+			}
+			return;
+		}
+		super.playSound(sound, volume, pitch);
 	}
 
 	@Override
