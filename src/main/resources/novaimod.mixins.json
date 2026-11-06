@@ -1,0 +1,16 @@
+{
+	"required": true,
+	"package": "com.novaimod.mixin",
+	"compatibilityLevel": "JAVA_21",
+	"mixins": [
+		"CreeperEntityMixin",
+		"LivingEntityMixin",
+		"AbstractSkeletonEntityMixin",
+		"BowAttackGoalMixin",
+		"MobEntityMixin",
+		"ProjectileEntityMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}

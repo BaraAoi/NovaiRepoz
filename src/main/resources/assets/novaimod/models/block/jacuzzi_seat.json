@@ -1,0 +1,8 @@
+{
+	"parent": "minecraft:block/slab",
+	"textures": {
+		"bottom": "novaimod:block/jacuzzi_seat_top",
+		"top": "novaimod:block/jacuzzi_seat_top",
+		"side": "novaimod:block/jacuzzi_seat_side"
+	}
+}

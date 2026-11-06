@@ -1,0 +1,37 @@
+{
+	"schemaVersion": 1,
+	"id": "novaimod",
+	"version": "${version}",
+	"name": "Novai Mod: Криперы, МФО и Заведения",
+	"description": "Глобальное обновление ИИ мобов, МФО, магазины, казино, Лавовый курорт, «Эго-остров» с бело-синей церковью, Подушки 16 цветов и женская Танцующая кукла в 1 блок.",
+	"authors": [
+		"Novai"
+	],
+	"contact": {
+		"sources": "https://github.com/BaraAoi/NovaiRepoz"
+	},
+	"license": "CC0-1.0",
+	"icon": "assets/novaimod/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"com.novaimod.NovaiMod"
+		],
+		"client": [
+			"com.novaimod.client.NovaiModClient"
+		]
+	},
+	"mixins": [
+		"novaimod.mixins.json",
+		{
+			"config": "novaimod.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.15.11",
+		"minecraft": "~1.21.1",
+		"java": ">=21",
+		"fabric-api": "*"
+	}
+}

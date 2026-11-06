@@ -1,0 +1,5 @@
+{
+	"variants": {
+		"": { "model": "novaimod:block/dj_console" }
+	}
+}
