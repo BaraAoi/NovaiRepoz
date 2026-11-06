@@ -23,6 +23,8 @@ import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.ai.goal.GoalSelector;
 import net.minecraft.entity.mob.AbstractSkeletonEntity;
+import net.minecraft.entity.mob.Angerable;
+import net.minecraft.entity.mob.CreeperEntity;
 import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.entity.mob.PathAwareEntity;
 import net.minecraft.entity.mob.SpiderEntity;
@@ -74,6 +76,10 @@ public abstract class MobEntityMixin extends LivingEntity implements EvolvedMobA
 	private boolean novai$shotRepositionPending = false;
 	@Unique
 	private boolean novai$nearTorchLight = false;
+	@Unique
+	private int novai$activeDollId = -1;
+	@Unique
+	private int novai$dollGatherTicks = 0;
 
 	protected MobEntityMixin(EntityType<? extends LivingEntity> entityType, World world) {
 		super(entityType, world);
@@ -84,6 +90,64 @@ public abstract class MobEntityMixin extends LivingEntity implements EvolvedMobA
 		if (target != null && (PartyDollEntity.isUnderActiveDollAura(this) || PartyDollEntity.isUnderActiveDollAura(target))) {
 			ci.cancel();
 		}
+	}
+
+	@Inject(method = "tickNewAi", at = @At("HEAD"), cancellable = true)
+	private void novai$gatherAndStandStillForPartyDoll(CallbackInfo ci) {
+		MobEntity self = (MobEntity) (Object) this;
+		PartyDollEntity activeDoll = PartyDollEntity.findNearestActiveDoll(self);
+		if (activeDoll == null) {
+			this.novai$activeDollId = -1;
+			this.novai$dollGatherTicks = 0;
+			return;
+		}
+
+		if (this.novai$activeDollId != activeDoll.getId()) {
+			this.novai$activeDollId = activeDoll.getId();
+			this.novai$dollGatherTicks = 0;
+		}
+		this.novai$dollGatherTicks++;
+
+		// 1. Полное дружелюбие: сбрасываем цели, атаку, шипение крипера и злость
+		if (self.getTarget() != null) {
+			self.setTarget(null);
+		}
+		self.setAttacking(false);
+		if (self instanceof CreeperEntity creeper) {
+			creeper.setFuseSpeed(-1);
+		}
+		if (self instanceof Angerable angerable) {
+			angerable.stopAnger();
+		}
+
+		// 2. Если моб ещё далеко (> 4.2 блока) в первые 3.5 сек после включения — подбегает поближе к кукле,
+		//    а затем (или сразу, если уже рядом) ВСТАЁТ НА МЕСТЕ И НЕ ДВИГАЕТСЯ (только крутится и плющится!)
+		double distSq = self.squaredDistanceTo(activeDoll);
+		if (distSq > 4.2D * 4.2D && this.novai$dollGatherTicks <= 70) {
+			double angle = self.getId() * 2.399963D;
+			double ringRadius = 2.3D + (Math.abs(self.getId()) % 3) * 0.65D;
+			double tx = activeDoll.getX() + Math.cos(angle) * ringRadius;
+			double tz = activeDoll.getZ() + Math.sin(angle) * ringRadius;
+			if (this.novai$dollGatherTicks % 8 == 1) {
+				self.getNavigation().startMovingTo(tx, activeDoll.getY(), tz, 1.25D);
+			}
+			self.getNavigation().tick();
+			self.getMoveControl().tick();
+			self.getJumpControl().tick();
+			ci.cancel();
+			return;
+		}
+
+		// Полная остановка на месте (никакой ходьбы и прыжков — только визуальное сплющивание и вращение!)
+		self.getNavigation().stop();
+		self.setForwardSpeed(0.0F);
+		self.setSidewaysSpeed(0.0F);
+		self.setUpwardSpeed(0.0F);
+		Vec3d vel = self.getVelocity();
+		if (vel.x != 0.0D || vel.z != 0.0D) {
+			self.setVelocity(0.0D, vel.y, 0.0D);
+		}
+		ci.cancel();
 	}
 
 	@Inject(method = "<init>", at = @At("TAIL"))

@@ -17,6 +17,7 @@ import com.novaimod.registry.ModBlocks;
 import com.novaimod.registry.ModEntities;
 import com.novaimod.registry.ModItems;
 import com.novaimod.registry.ModScreenHandlers;
+import com.novaimod.registry.ModSounds;
 import com.novaimod.world.DetentionManager;
 import com.novaimod.world.EgoPartyManager;
 import com.novaimod.world.ModStructureGenerator;
@@ -50,6 +51,7 @@ public class NovaiMod implements ModInitializer {
 
 	@Override
 	public void onInitialize() {
+		ModSounds.init();
 		ModBlocks.init();
 		ModItems.init();
 		ModScreenHandlers.init();

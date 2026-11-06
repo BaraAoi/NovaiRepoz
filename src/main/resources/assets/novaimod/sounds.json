@@ -1,0 +1,11 @@
+{
+	"yaris_meme": {
+		"subtitle": "subtitles.novaimod.yaris_meme",
+		"sounds": [
+			{
+				"name": "novaimod:yaris_meme",
+				"stream": false
+			}
+		]
+	}
+}

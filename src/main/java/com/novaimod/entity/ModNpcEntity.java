@@ -393,6 +393,11 @@ public class ModNpcEntity extends PathAwareEntity {
 			this.actionCooldown--;
 		}
 
+		// Пока рядом активна Танцующая кукла — NPC замирают на месте и плющатся/крутятся вместе со всеми!
+		if (PartyDollEntity.isUnderActiveDollAura(this)) {
+			return;
+		}
+
 		NpcRole role = getNpcRole();
 		if (role.isStationaryShopNpc()) {
 			tickStationaryNpc(role);

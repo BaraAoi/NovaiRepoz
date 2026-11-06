@@ -109,16 +109,18 @@ public class PartyDollEntityRenderer extends EntityRenderer<PartyDollEntity> {
 		matrices.push();
 
 		if (entity.isActive()) {
-			float time = entity.age + tickDelta;
-			float wave = 0.5F - 0.5F * MathHelper.cos(time * 0.48F);
+			entity.updateWorldRegistry(true);
+			float worldTime = (entity.getWorld().getTime() % 240000L) + tickDelta;
+			float wave = 0.5F - 0.5F * MathHelper.cos(worldTime * PartyDollEntity.YARIS_BEAT_RAD_PER_TICK);
 			float squish = wave * wave * (3.0F - 2.0F * wave);
-			float scaleY = MathHelper.lerp(squish, 1.0F, 0.28F);
-			float scaleXZ = MathHelper.lerp(squish, 1.0F, 1.36F);
-			float spinDeg = (time * 18.0F) % 360.0F;
+			float scaleY = MathHelper.lerp(squish, 1.0F, 0.25F);
+			float scaleXZ = MathHelper.lerp(squish, 1.0F, 1.40F);
+			float spinDeg = (worldTime * 20.25F) % 360.0F;
 
 			matrices.scale(scaleXZ, scaleY, scaleXZ);
 			matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(-entity.getDollYaw() + spinDeg));
 		} else {
+			entity.updateWorldRegistry(false);
 			matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(-entity.getDollYaw()));
 		}
 
