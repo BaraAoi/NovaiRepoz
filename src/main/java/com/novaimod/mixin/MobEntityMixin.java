@@ -17,6 +17,7 @@ import com.novaimod.ai.evolution.RetreatAndRecoverGoal;
 import com.novaimod.ai.evolution.SkeletonTacticalCombatGoal;
 import com.novaimod.ai.evolution.TerrainAmbushGoal;
 import com.novaimod.ai.evolution.TrailPursuitAndSearchGoal;
+import com.novaimod.entity.PartyDollEntity;
 
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
@@ -76,6 +77,13 @@ public abstract class MobEntityMixin extends LivingEntity implements EvolvedMobA
 
 	protected MobEntityMixin(EntityType<? extends LivingEntity> entityType, World world) {
 		super(entityType, world);
+	}
+
+	@Inject(method = "setTarget", at = @At("HEAD"), cancellable = true)
+	private void novai$friendlyWhilePartyDollActive(LivingEntity target, CallbackInfo ci) {
+		if (target != null && (PartyDollEntity.isUnderActiveDollAura(this) || PartyDollEntity.isUnderActiveDollAura(target))) {
+			ci.cancel();
+		}
 	}
 
 	@Inject(method = "<init>", at = @At("TAIL"))

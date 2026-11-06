@@ -9,6 +9,7 @@ import com.novaimod.ai.evolution.MobEvolutionManager;
 import com.novaimod.data.ModPersistentState;
 import com.novaimod.economy.CasinoGamesManager;
 import com.novaimod.entity.CushionEntity;
+import com.novaimod.entity.PartyDollEntity;
 import com.novaimod.item.CushionItem;
 import com.novaimod.network.ModPayloads;
 import com.novaimod.network.ModServerNetworking;
@@ -29,6 +30,8 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
+import net.minecraft.entity.LivingEntity;
+import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -104,6 +107,19 @@ public class NovaiMod implements ModInitializer {
 
 		ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) -> {
 			ModServerNetworking.syncAccount(newPlayer);
+		});
+
+		// Пока рядом активна женская Танцующая кукла — и мобы, и игроки становятся дружелюбными друг к другу!
+		ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> {
+			if (source.getAttacker() instanceof LivingEntity attacker) {
+				if (PartyDollEntity.isUnderActiveDollAura(entity) || PartyDollEntity.isUnderActiveDollAura(attacker)) {
+					if (entity.getWorld() instanceof ServerWorld sw) {
+						sw.spawnParticles(ParticleTypes.HEART, entity.getX(), entity.getBodyY(0.7D), entity.getZ(), 2, 0.25D, 0.2D, 0.25D, 0.01D);
+					}
+					return false;
+				}
+			}
+			return true;
 		});
 
 		ServerLivingEntityEvents.AFTER_DEATH.register((entity, damageSource) -> {

@@ -29,5 +29,7 @@
 	"item.novaimod.blue_cushion": "Синяя подушка",
 	"item.novaimod.purple_cushion": "Фиолетовая подушка",
 	"item.novaimod.magenta_cushion": "Пурпурная подушка",
-	"item.novaimod.pink_cushion": "Розовая подушка"
+	"item.novaimod.pink_cushion": "Розовая подушка",
+	"item.novaimod.party_doll": "Танцующая кукла",
+	"entity.novaimod.party_doll": "Танцующая кукла"
 }

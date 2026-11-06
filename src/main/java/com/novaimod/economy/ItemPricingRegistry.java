@@ -54,6 +54,7 @@ public final class ItemPricingRegistry {
 		put(Items.OBSIDIAN, 35);
 		put(Items.CRYING_OBSIDIAN, 55);
 		put(ModItems.STRANGE_MEAT, 89);
+		put(ModItems.PARTY_DOLL, 350);
 
 		// Древесина
 		put(Items.OAK_LOG, 6);

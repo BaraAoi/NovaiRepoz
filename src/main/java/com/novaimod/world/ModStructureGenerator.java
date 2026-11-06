@@ -5,6 +5,7 @@ import com.novaimod.data.ModPersistentState;
 import com.novaimod.entity.CushionEntity;
 import com.novaimod.entity.ModNpcEntity;
 import com.novaimod.entity.NpcRole;
+import com.novaimod.entity.PartyDollEntity;
 import com.novaimod.registry.ModBlocks;
 import com.novaimod.registry.ModEntities;
 import com.novaimod.registry.ModItems;
@@ -879,7 +880,10 @@ public final class ModStructureGenerator {
 		buildTropicalPalm(world, origin.add(17, 1, -14));
 		buildTropicalPalm(world, origin.add(17, 1, 11));
 
-		// 8. Гости вечеринки на Эго-острове со своими скинами и фразами!
+		// 8. Гости вечеринки на Эго-острове со своими скинами и фразами + женская Танцующая кукла в центре площади!
+		setBlock(world, origin.add(0, 0, 0), Blocks.CHISELED_QUARTZ_BLOCK.getDefaultState());
+		PartyDollEntity.placeDoll(world, origin.add(0, 0, 0), 180.0F);
+
 		spawnNpcAt(world, origin.add(5, 1, 5), NpcRole.EINSTEIN, "");
 		spawnNpcAt(world, origin.add(-5, 1, 4), NpcRole.STALIN, "");
 		spawnNpcAt(world, origin.add(4, 1, -6), NpcRole.SWEETIE_FIK, "");

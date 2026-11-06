@@ -7,6 +7,7 @@ import com.novaimod.NovaiMod;
 import com.novaimod.item.CushionItem;
 import com.novaimod.item.DrunkenOblivionItem;
 import com.novaimod.item.OddsConfiguratorItem;
+import com.novaimod.item.PartyDollItem;
 import com.novaimod.item.RevivalTokenItem;
 import com.novaimod.item.StrangeMeatItem;
 
@@ -79,6 +80,11 @@ public final class ModItems {
 			new StrangeMeatItem(new Item.Settings().maxCount(64).rarity(Rarity.UNCOMMON))
 	);
 
+	public static final Item PARTY_DOLL = register(
+			"party_doll",
+			new PartyDollItem(new Item.Settings().maxCount(16).rarity(Rarity.RARE))
+	);
+
 	public static final Map<DyeColor, Item> CUSHIONS = new EnumMap<>(DyeColor.class);
 
 	static {
@@ -110,6 +116,7 @@ public final class ModItems {
 						entries.add(REVIVAL_TOKEN);
 						entries.add(DRUNKEN_OBLIVION);
 						entries.add(STRANGE_MEAT);
+						entries.add(PARTY_DOLL);
 						entries.add(ODDS_CONFIGURATOR);
 						for (DyeColor color : DyeColor.values()) {
 							entries.add(CUSHIONS.get(color));
