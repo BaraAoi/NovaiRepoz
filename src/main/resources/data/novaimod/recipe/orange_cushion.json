@@ -1,0 +1,16 @@
+{
+	"type": "minecraft:crafting_shaped",
+	"group": "cushion",
+	"pattern": [
+		"###"
+	],
+	"key": {
+		"#": {
+			"item": "minecraft:orange_carpet"
+		}
+	},
+	"result": {
+		"id": "novaimod:orange_cushion",
+		"count": 1
+	}
+}

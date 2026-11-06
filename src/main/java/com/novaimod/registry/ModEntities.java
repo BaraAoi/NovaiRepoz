@@ -1,6 +1,7 @@
 package com.novaimod.registry;
 
 import com.novaimod.NovaiMod;
+import com.novaimod.entity.CushionEntity;
 import com.novaimod.entity.ModNpcEntity;
 import com.novaimod.entity.SeatEntity;
 
@@ -30,6 +31,16 @@ public final class ModEntities {
 					.maxTrackingRange(6)
 					.trackingTickInterval(10)
 					.build("seat")
+	);
+
+	public static final EntityType<CushionEntity> CUSHION_ENTITY = Registry.register(
+			Registries.ENTITY_TYPE,
+			Identifier.of(NovaiMod.MOD_ID, "cushion"),
+			EntityType.Builder.<CushionEntity>create(CushionEntity::new, SpawnGroup.MISC)
+					.dimensions(0.75F, 0.24F)
+					.maxTrackingRange(8)
+					.trackingTickInterval(10)
+					.build("cushion")
 	);
 
 	private ModEntities() {

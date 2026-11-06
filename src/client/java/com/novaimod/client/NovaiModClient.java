@@ -1,6 +1,7 @@
 package com.novaimod.client;
 
 import com.novaimod.client.hud.AccountHudOverlay;
+import com.novaimod.client.render.CushionEntityRenderer;
 import com.novaimod.client.render.ModNpcRenderer;
 import com.novaimod.client.screen.AccountShopScreen;
 import com.novaimod.client.screen.CoinflipScreen;
@@ -29,8 +30,13 @@ public class NovaiModClient implements ClientModInitializer {
 				ModNpcRenderer.NPC_MODEL_LAYER,
 				ModNpcRenderer::getTexturedModelData
 		);
+		EntityModelLayerRegistry.registerModelLayer(
+				CushionEntityRenderer.CUSHION_MODEL_LAYER,
+				CushionEntityRenderer::getTexturedModelData
+		);
 		EntityRendererRegistry.register(ModEntities.MOD_NPC, ModNpcRenderer::new);
 		EntityRendererRegistry.register(ModEntities.SEAT_ENTITY, EmptyEntityRenderer::new);
+		EntityRendererRegistry.register(ModEntities.CUSHION_ENTITY, CushionEntityRenderer::new);
 
 		// Экран Торгового аппарата
 		HandledScreens.register(ModScreenHandlers.VENDING_SCREEN_HANDLER, VendingScreen::new);

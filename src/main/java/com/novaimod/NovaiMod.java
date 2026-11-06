@@ -8,6 +8,8 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.novaimod.ai.evolution.MobEvolutionManager;
 import com.novaimod.data.ModPersistentState;
 import com.novaimod.economy.CasinoGamesManager;
+import com.novaimod.entity.CushionEntity;
+import com.novaimod.item.CushionItem;
 import com.novaimod.network.ModPayloads;
 import com.novaimod.network.ModServerNetworking;
 import com.novaimod.registry.ModBlocks;
@@ -25,13 +27,17 @@ import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
+import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
+import net.minecraft.util.ActionResult;
 import net.minecraft.util.Formatting;
+import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Box;
 
 public class NovaiMod implements ModInitializer {
 	public static final String MOD_ID = "novaimod";
@@ -56,6 +62,29 @@ public class NovaiMod implements ModInitializer {
 	}
 
 	private void registerEvents() {
+		// Клик ПКМ по ступеньке/блоку, на котором уже лежит Подушка, плавно сажает игрока на эту подушку
+		UseBlockCallback.EVENT.register((player, world, hand, hitResult) -> {
+			if (hand != Hand.MAIN_HAND || player.isSpectator() || player.shouldCancelInteraction()) {
+				return ActionResult.PASS;
+			}
+			if (player.getStackInHand(hand).getItem() instanceof CushionItem) {
+				return ActionResult.PASS;
+			}
+			BlockPos pos = hitResult.getBlockPos();
+			var cushions = world.getEntitiesByClass(
+					CushionEntity.class,
+					new Box(pos).expand(0.25D, 0.75D, 0.25D),
+					c -> !c.isRemoved() && pos.equals(c.getSupportPos())
+			);
+			if (!cushions.isEmpty()) {
+				if (!world.isClient()) {
+					cushions.get(0).sitPlayer(player);
+				}
+				return ActionResult.SUCCESS;
+			}
+			return ActionResult.PASS;
+		});
+
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
 			ServerPlayerEntity player = handler.getPlayer();
 			ModServerNetworking.syncAccount(player);

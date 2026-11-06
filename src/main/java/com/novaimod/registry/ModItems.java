@@ -1,6 +1,10 @@
 package com.novaimod.registry;
 
+import java.util.EnumMap;
+import java.util.Map;
+
 import com.novaimod.NovaiMod;
+import com.novaimod.item.CushionItem;
 import com.novaimod.item.DrunkenOblivionItem;
 import com.novaimod.item.OddsConfiguratorItem;
 import com.novaimod.item.RevivalTokenItem;
@@ -14,6 +18,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.text.Text;
+import net.minecraft.util.DyeColor;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Rarity;
 
@@ -43,6 +48,7 @@ public final class ModItems {
 			new BlockItem(ModBlocks.ROULETTE_TABLE, new Item.Settings().rarity(Rarity.UNCOMMON))
 	);
 
+	// Сохраняется в реестре только для совместимости старых чанков
 	public static final Item JACUZZI_SEAT_ITEM = register(
 			"jacuzzi_seat",
 			new BlockItem(ModBlocks.JACUZZI_SEAT, new Item.Settings())
@@ -73,6 +79,21 @@ public final class ModItems {
 			new StrangeMeatItem(new Item.Settings().maxCount(64).rarity(Rarity.UNCOMMON))
 	);
 
+	public static final Map<DyeColor, Item> CUSHIONS = new EnumMap<>(DyeColor.class);
+
+	static {
+		for (DyeColor color : DyeColor.values()) {
+			CUSHIONS.put(
+					color,
+					register(color.asString() + "_cushion", new CushionItem(color, new Item.Settings().maxCount(16)))
+			);
+		}
+	}
+
+	public static Item getCushionItem(DyeColor color) {
+		return CUSHIONS.getOrDefault(color, CUSHIONS.get(DyeColor.WHITE));
+	}
+
 	public static final ItemGroup NOVAI_ITEM_GROUP = Registry.register(
 			Registries.ITEM_GROUP,
 			Identifier.of(NovaiMod.MOD_ID, "novai_group"),
@@ -84,13 +105,15 @@ public final class ModItems {
 						entries.add(REPAIR_STATION_ITEM);
 						entries.add(COINFLIP_TABLE_ITEM);
 						entries.add(ROULETTE_TABLE_ITEM);
-						entries.add(JACUZZI_SEAT_ITEM);
 						entries.add(DJ_CONSOLE_ITEM);
 						entries.add(FATE_MACHINE_ITEM);
 						entries.add(REVIVAL_TOKEN);
 						entries.add(DRUNKEN_OBLIVION);
 						entries.add(STRANGE_MEAT);
 						entries.add(ODDS_CONFIGURATOR);
+						for (DyeColor color : DyeColor.values()) {
+							entries.add(CUSHIONS.get(color));
+						}
 					})
 					.build()
 	);

@@ -12,5 +12,22 @@
 	"item.novaimod.odds_configurator": "Пульт вероятностей",
 	"item.novaimod.strange_meat": "Странное мясо",
 	"entity.novaimod.mod_npc": "NPC",
-	"entity.novaimod.seat": "Seat"
+	"entity.novaimod.seat": "Seat",
+	"entity.novaimod.cushion": "Cushion",
+	"item.novaimod.white_cushion": "Белая подушка",
+	"item.novaimod.light_gray_cushion": "Светло-серая подушка",
+	"item.novaimod.gray_cushion": "Серая подушка",
+	"item.novaimod.black_cushion": "Чёрная подушка",
+	"item.novaimod.brown_cushion": "Коричневая подушка",
+	"item.novaimod.red_cushion": "Красная подушка",
+	"item.novaimod.orange_cushion": "Оранжевая подушка",
+	"item.novaimod.yellow_cushion": "Жёлтая подушка",
+	"item.novaimod.lime_cushion": "Лаймовая подушка",
+	"item.novaimod.green_cushion": "Зелёная подушка",
+	"item.novaimod.cyan_cushion": "Бирюзовая подушка",
+	"item.novaimod.light_blue_cushion": "Голубая подушка",
+	"item.novaimod.blue_cushion": "Синяя подушка",
+	"item.novaimod.purple_cushion": "Фиолетовая подушка",
+	"item.novaimod.magenta_cushion": "Пурпурная подушка",
+	"item.novaimod.pink_cushion": "Розовая подушка"
 }
