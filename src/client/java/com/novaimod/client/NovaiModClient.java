@@ -6,7 +6,9 @@ import com.novaimod.client.hud.AccountHudOverlay;
 import com.novaimod.client.render.CelestialOrbEntityRenderer;
 import com.novaimod.client.render.CushionEntityRenderer;
 import com.novaimod.client.render.ModNpcRenderer;
+import com.novaimod.client.render.OrbitalLaserEntityRenderer;
 import com.novaimod.client.render.PartyDollEntityRenderer;
+import com.novaimod.client.render.RealitySlashEntityRenderer;
 import com.novaimod.client.render.SingularityOrbEntityRenderer;
 import com.novaimod.client.screen.AccountShopScreen;
 import com.novaimod.client.screen.CoinflipScreen;
@@ -63,6 +65,9 @@ public class NovaiModClient implements ClientModInitializer {
 		EntityRendererRegistry.register(ModEntities.SINGULARITY_ORB_ENTITY, SingularityOrbEntityRenderer::new);
 		EntityRendererRegistry.register(ModEntities.CELESTIAL_METEOR_ENTITY, ctx -> new FlyingItemEntityRenderer<>(ctx, 2.40F, true));
 		EntityRendererRegistry.register(ModEntities.CELESTIAL_ORB_ENTITY, CelestialOrbEntityRenderer::new);
+		EntityRendererRegistry.register(ModEntities.ORBITAL_LASER_ENTITY, OrbitalLaserEntityRenderer::new);
+		EntityRendererRegistry.register(ModEntities.REALITY_SLASH_ENTITY, RealitySlashEntityRenderer::new);
+		EntityRendererRegistry.register(ModEntities.TERRA_CATACLYSM_ENTITY, EmptyEntityRenderer::new);
 
 		// Экран Торгового аппарата
 		HandledScreens.register(ModScreenHandlers.VENDING_SCREEN_HANDLER, VendingScreen::new);

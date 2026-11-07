@@ -6,6 +6,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import com.novaimod.ai.evolution.MobEvolutionManager;
+import com.novaimod.equipment.UltimateArmorManager;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
@@ -24,6 +25,18 @@ public abstract class LivingEntityMixin {
 	@Inject(method = "modifyAppliedDamage", at = @At("RETURN"), cancellable = true)
 	private void novai$modifyDamageRules(DamageSource source, float amount, CallbackInfoReturnable<Float> cir) {
 		if (!((Object) this instanceof PlayerEntity player)) {
+			return;
+		}
+
+		// АЛЬТИМЕЙТ БРОНЯ (4/4): поглощает 100% ВСЕГО урона (включая взрывы криперов, пустоту, лаву, стрелы и боссов),
+		// пропуская ИСКЛЮЧИТЕЛЬНО чистый Процентный урон (без физического урона оружия)!
+		if (player instanceof ServerPlayerEntity ultimatePlayer && UltimateArmorManager.isWearingFullUltimateArmor(ultimatePlayer)) {
+			if (!UltimateArmorManager.isPercentageDamageHit(source)) {
+				cir.setReturnValue(0.0F);
+				return;
+			}
+			float purePercentOnly = UltimateArmorManager.computePurePercentageDamageOnly(ultimatePlayer, source);
+			cir.setReturnValue(purePercentOnly);
 			return;
 		}
 

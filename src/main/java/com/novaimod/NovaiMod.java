@@ -11,6 +11,7 @@ import com.novaimod.economy.CasinoGamesManager;
 import com.novaimod.entity.CushionEntity;
 import com.novaimod.entity.PartyDollEntity;
 import com.novaimod.equipment.MfoArmorSetManager;
+import com.novaimod.equipment.UltimateArmorManager;
 import com.novaimod.item.CushionItem;
 import com.novaimod.network.ModPayloads;
 import com.novaimod.network.ModServerNetworking;
@@ -124,8 +125,17 @@ public class NovaiMod implements ModInitializer {
 			ModServerNetworking.syncAccount(newPlayer);
 		});
 
-		// Пока рядом активна женская Танцующая кукла — и мобы, и игроки становятся дружелюбными друг к другу!
+		// 1) Альтимейт Броня (4/4): поглощает 100% любого урона в игре КРОМЕ процентного урона!
+		// 2) Пока рядом активна женская Танцующая кукла — и мобы, и игроки становятся дружелюбными друг к другу!
 		ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> {
+			if (entity instanceof ServerPlayerEntity sp && UltimateArmorManager.isWearingFullUltimateArmor(sp)) {
+				if (!UltimateArmorManager.isPercentageDamageHit(source)) {
+					if (sp.getWorld() instanceof ServerWorld sw && sp.age % 6 == 0) {
+						sw.spawnParticles(ParticleTypes.END_ROD, sp.getX(), sp.getBodyY(0.55D), sp.getZ(), 3, 0.35D, 0.35D, 0.35D, 0.02D);
+					}
+					return false;
+				}
+			}
 			if (source.getAttacker() instanceof LivingEntity attacker) {
 				if (PartyDollEntity.isUnderActiveDollAura(entity) || PartyDollEntity.isUnderActiveDollAura(attacker)) {
 					if (entity.getWorld() instanceof ServerWorld sw) {
@@ -164,6 +174,7 @@ public class NovaiMod implements ModInitializer {
 			ApocalypseEventManager.tickServer(server);
 			TimeStopManager.tickServer(server);
 			EgoPartyManager.tickRaves(server);
+			UltimateArmorManager.tickPlayers(server);
 
 			if (structureCheckTicker % 5 == 0) {
 				MfoArmorSetManager.tickPlayers(server);

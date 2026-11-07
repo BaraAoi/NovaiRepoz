@@ -7,9 +7,12 @@ import com.novaimod.entity.CushionEntity;
 import com.novaimod.entity.InfinityEyeEntity;
 import com.novaimod.entity.InfinityPearlEntity;
 import com.novaimod.entity.ModNpcEntity;
+import com.novaimod.entity.OrbitalLaserEntity;
 import com.novaimod.entity.PartyDollEntity;
+import com.novaimod.entity.RealitySlashEntity;
 import com.novaimod.entity.SeatEntity;
 import com.novaimod.entity.SingularityOrbEntity;
+import com.novaimod.entity.TerraCataclysmEntity;
 
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
 import net.minecraft.entity.EntityType;
@@ -112,6 +115,39 @@ public final class ModEntities {
 					.maxTrackingRange(16)
 					.trackingTickInterval(2)
 					.build("celestial_orb_entity")
+	);
+
+	public static final EntityType<OrbitalLaserEntity> ORBITAL_LASER_ENTITY = Registry.register(
+			Registries.ENTITY_TYPE,
+			Identifier.of(NovaiMod.MOD_ID, "orbital_laser_entity"),
+			EntityType.Builder.<OrbitalLaserEntity>create(OrbitalLaserEntity::new, SpawnGroup.MISC)
+					.dimensions(1.5F, 3.0F)
+					.makeFireImmune()
+					.maxTrackingRange(20)
+					.trackingTickInterval(1)
+					.build("orbital_laser_entity")
+	);
+
+	public static final EntityType<RealitySlashEntity> REALITY_SLASH_ENTITY = Registry.register(
+			Registries.ENTITY_TYPE,
+			Identifier.of(NovaiMod.MOD_ID, "reality_slash_entity"),
+			EntityType.Builder.<RealitySlashEntity>create(RealitySlashEntity::new, SpawnGroup.MISC)
+					.dimensions(1.8F, 0.8F)
+					.makeFireImmune()
+					.maxTrackingRange(18)
+					.trackingTickInterval(1)
+					.build("reality_slash_entity")
+	);
+
+	public static final EntityType<TerraCataclysmEntity> TERRA_CATACLYSM_ENTITY = Registry.register(
+			Registries.ENTITY_TYPE,
+			Identifier.of(NovaiMod.MOD_ID, "terra_cataclysm_entity"),
+			EntityType.Builder.<TerraCataclysmEntity>create(TerraCataclysmEntity::new, SpawnGroup.MISC)
+					.dimensions(0.5F, 0.5F)
+					.makeFireImmune()
+					.maxTrackingRange(12)
+					.trackingTickInterval(4)
+					.build("terra_cataclysm_entity")
 	);
 
 	private ModEntities() {

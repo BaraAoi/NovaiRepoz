@@ -56,8 +56,10 @@ public final class MfoArmorSetManager {
 	public static final String NBT_ENCHANT_LOCKED = "novai_enchant_locked";
 	public static final String NBT_V32_CURSED = "novai_v32_cursed";
 	public static final String NBT_V33_TRIMMED = "novai_v33_trimmed";
+	public static final String NBT_V36_SWORDSMAN_LORE = "novai_v36_sword_lore";
 	public static final String SET_SWORDSMAN = "swordsman";
 	public static final String SET_ARCHER = "archer";
+	public static final double SWORDSMAN_FULL_SET_HP_BONUS = 6.0D; // +6 ХП (+3 сердечка: было +1 сердечко, добавлено ещё +2 сердечка!)
 
 	private static final Identifier SWORDSMAN_HP_MOD_ID = Identifier.of(NovaiMod.MOD_ID, "swordsman_full_set_hp");
 
@@ -83,9 +85,12 @@ public final class MfoArmorSetManager {
 
 		stack.set(DataComponentTypes.LORE, new LoreComponent(List.of(
 				Text.literal("Сет Мечника МФО").formatted(Formatting.GOLD),
-				Text.literal("Бонус полного сета (4/4): +2 ХП").formatted(Formatting.GREEN),
+				Text.literal("Бонус полного сета (4/4): +6 ХП (+3 сердечка)").formatted(Formatting.GREEN),
 				Text.literal("Бонус сохраняется при улучшении до незерита!").formatted(Formatting.GRAY)
 		)));
+		NbtCompound nbtLore = stack.getOrDefault(DataComponentTypes.CUSTOM_DATA, NbtComponent.DEFAULT).copyNbt();
+		nbtLore.putBoolean(NBT_V36_SWORDSMAN_LORE, true);
+		stack.set(DataComponentTypes.CUSTOM_DATA, NbtComponent.of(nbtLore));
 		return stack;
 	}
 
@@ -287,8 +292,11 @@ public final class MfoArmorSetManager {
 			resultStack.set(DataComponentTypes.CUSTOM_NAME, Text.literal(pieceTitle).formatted(Formatting.LIGHT_PURPLE, Formatting.BOLD));
 			resultStack.set(DataComponentTypes.LORE, new LoreComponent(List.of(
 					Text.literal("Сет Мечника МФО (улучшен до незерита)").formatted(Formatting.GOLD),
-					Text.literal("Бонус полного сета (4/4): +2 ХП").formatted(Formatting.GREEN)
+					Text.literal("Бонус полного сета (4/4): +6 ХП (+3 сердечка)").formatted(Formatting.GREEN)
 			)));
+			NbtCompound nbtUp = resultStack.getOrDefault(DataComponentTypes.CUSTOM_DATA, NbtComponent.DEFAULT).copyNbt();
+			nbtUp.putBoolean(NBT_V36_SWORDSMAN_LORE, true);
+			resultStack.set(DataComponentTypes.CUSTOM_DATA, NbtComponent.of(nbtUp));
 		}
 	}
 
@@ -332,18 +340,20 @@ public final class MfoArmorSetManager {
 			// 0. Авто-обновление уже купленной брони МФО из старых версий мира под новые правила проклятий, скрытых чар и ванильной отделки (ArmorTrim)
 			migrateLegacyMfoArmor(player, server.getRegistryManager(), enchRegistry);
 
-			// 1. Проверка полного Сета Мечника (4/4): +2 ХП (+2.0 Max Health)
+			// 1. Проверка полного Сета Мечника (4/4): +6 ХП (+3 сердечка!)
 			boolean fullSwordsman = isWearingFullSet(player, SET_SWORDSMAN);
 			EntityAttributeInstance maxHpAttr = player.getAttributeInstance(EntityAttributes.GENERIC_MAX_HEALTH);
 			if (maxHpAttr != null) {
-				boolean hasBonus = maxHpAttr.getModifier(SWORDSMAN_HP_MOD_ID) != null;
-				if (fullSwordsman && !hasBonus) {
-					maxHpAttr.addPersistentModifier(new EntityAttributeModifier(
-							SWORDSMAN_HP_MOD_ID,
-							2.0D,
-							EntityAttributeModifier.Operation.ADD_VALUE
-					));
-				} else if (!fullSwordsman && hasBonus) {
+				EntityAttributeModifier existing = maxHpAttr.getModifier(SWORDSMAN_HP_MOD_ID);
+				if (fullSwordsman) {
+					if (existing == null || existing.value() != SWORDSMAN_FULL_SET_HP_BONUS) {
+						maxHpAttr.overwritePersistentModifier(new EntityAttributeModifier(
+								SWORDSMAN_HP_MOD_ID,
+								SWORDSMAN_FULL_SET_HP_BONUS,
+								EntityAttributeModifier.Operation.ADD_VALUE
+						));
+					}
+				} else if (existing != null) {
 					maxHpAttr.removeModifier(SWORDSMAN_HP_MOD_ID);
 					if (player.getHealth() > player.getMaxHealth()) {
 						player.setHealth(player.getMaxHealth());
@@ -376,6 +386,9 @@ public final class MfoArmorSetManager {
 				if (!comp.contains(NBT_V33_TRIMMED)) {
 					applyVanillaSetTrim(armor, setId, registriesLookup);
 				}
+				if (SET_SWORDSMAN.equals(setId) && !comp.contains(NBT_V36_SWORDSMAN_LORE)) {
+					refreshSwordsmanLore(armor);
+				}
 			}
 		}
 		for (ItemStack main : player.getInventory().main) {
@@ -388,8 +401,33 @@ public final class MfoArmorSetManager {
 				if (!comp.contains(NBT_V33_TRIMMED)) {
 					applyVanillaSetTrim(main, setId, registriesLookup);
 				}
+				if (SET_SWORDSMAN.equals(setId) && !comp.contains(NBT_V36_SWORDSMAN_LORE)) {
+					refreshSwordsmanLore(main);
+				}
 			}
 		}
+	}
+
+	private static void refreshSwordsmanLore(ItemStack stack) {
+		boolean isNetherite = stack.isOf(Items.NETHERITE_HELMET)
+				|| stack.isOf(Items.NETHERITE_CHESTPLATE)
+				|| stack.isOf(Items.NETHERITE_LEGGINGS)
+				|| stack.isOf(Items.NETHERITE_BOOTS);
+		if (isNetherite) {
+			stack.set(DataComponentTypes.LORE, new LoreComponent(List.of(
+					Text.literal("Сет Мечника МФО (улучшен до незерита)").formatted(Formatting.GOLD),
+					Text.literal("Бонус полного сета (4/4): +6 ХП (+3 сердечка)").formatted(Formatting.GREEN)
+			)));
+		} else {
+			stack.set(DataComponentTypes.LORE, new LoreComponent(List.of(
+					Text.literal("Сет Мечника МФО").formatted(Formatting.GOLD),
+					Text.literal("Бонус полного сета (4/4): +6 ХП (+3 сердечка)").formatted(Formatting.GREEN),
+					Text.literal("Бонус сохраняется при улучшении до незерита!").formatted(Formatting.GRAY)
+			)));
+		}
+		NbtCompound nbt = stack.getOrDefault(DataComponentTypes.CUSTOM_DATA, NbtComponent.DEFAULT).copyNbt();
+		nbt.putBoolean(NBT_V36_SWORDSMAN_LORE, true);
+		stack.set(DataComponentTypes.CUSTOM_DATA, NbtComponent.of(nbt));
 	}
 
 	private static boolean shouldRevertUberGun(ServerPlayerEntity player, ItemStack st) {

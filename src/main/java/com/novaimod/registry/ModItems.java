@@ -4,21 +4,27 @@ import java.util.EnumMap;
 import java.util.Map;
 
 import com.novaimod.NovaiMod;
+import com.novaimod.equipment.UltimateArmorItem;
+import com.novaimod.item.AstralGateItem;
 import com.novaimod.item.CelestialWrathItem;
 import com.novaimod.item.ChronoScepterItem;
 import com.novaimod.item.CushionItem;
 import com.novaimod.item.DrunkenOblivionItem;
 import com.novaimod.item.InfinityEyeItem;
 import com.novaimod.item.OddsConfiguratorItem;
+import com.novaimod.item.OrbitalLaserItem;
 import com.novaimod.item.PartyDollItem;
 import com.novaimod.item.PlayerTeleporterItem;
+import com.novaimod.item.RealityRiftBladeItem;
 import com.novaimod.item.RevivalTokenItem;
 import com.novaimod.item.SingularityOrbItem;
 import com.novaimod.item.StrangeMeatItem;
+import com.novaimod.item.TerraHeaverItem;
 import com.novaimod.item.UberGunItem;
 import com.novaimod.item.UnknownArtifactItem;
 
 import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
+import net.minecraft.item.ArmorItem;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemGroup;
@@ -134,6 +140,47 @@ public final class ModItems {
 			new ChronoScepterItem(new Item.Settings().maxCount(1).rarity(Rarity.EPIC).fireproof())
 	);
 
+	// === АЛЬТИМЕЙТ БРОНЯ И НОВЫЕ КРЕАТИВНЫЕ АРТЕФАКТЫ (v3.6.0) ===
+	public static final Item ULTIMATE_HELMET = register(
+			"ultimate_helmet",
+			new UltimateArmorItem(ArmorItem.Type.HELMET, new Item.Settings().maxCount(1).rarity(Rarity.EPIC).fireproof())
+	);
+
+	public static final Item ULTIMATE_CHESTPLATE = register(
+			"ultimate_chestplate",
+			new UltimateArmorItem(ArmorItem.Type.CHESTPLATE, new Item.Settings().maxCount(1).rarity(Rarity.EPIC).fireproof())
+	);
+
+	public static final Item ULTIMATE_LEGGINGS = register(
+			"ultimate_leggings",
+			new UltimateArmorItem(ArmorItem.Type.LEGGINGS, new Item.Settings().maxCount(1).rarity(Rarity.EPIC).fireproof())
+	);
+
+	public static final Item ULTIMATE_BOOTS = register(
+			"ultimate_boots",
+			new UltimateArmorItem(ArmorItem.Type.BOOTS, new Item.Settings().maxCount(1).rarity(Rarity.EPIC).fireproof())
+	);
+
+	public static final Item REALITY_RIFT_BLADE = register(
+			"reality_rift_blade",
+			new RealityRiftBladeItem(new Item.Settings().maxCount(1).rarity(Rarity.EPIC).fireproof())
+	);
+
+	public static final Item ORBITAL_LASER = register(
+			"orbital_laser",
+			new OrbitalLaserItem(new Item.Settings().maxCount(1).rarity(Rarity.EPIC).fireproof())
+	);
+
+	public static final Item TERRA_HEAVER = register(
+			"terra_heaver",
+			new TerraHeaverItem(new Item.Settings().maxCount(1).rarity(Rarity.EPIC).fireproof())
+	);
+
+	public static final Item ASTRAL_GATE = register(
+			"astral_gate",
+			new AstralGateItem(new Item.Settings().maxCount(1).rarity(Rarity.EPIC).fireproof())
+	);
+
 	public static final Map<DyeColor, Item> CUSHIONS = new EnumMap<>(DyeColor.class);
 
 	static {
@@ -173,6 +220,14 @@ public final class ModItems {
 						entries.add(SINGULARITY_ORB);
 						entries.add(CELESTIAL_WRATH);
 						entries.add(CHRONO_SCEPTER);
+						entries.add(REALITY_RIFT_BLADE);
+						entries.add(ORBITAL_LASER);
+						entries.add(TERRA_HEAVER);
+						entries.add(ASTRAL_GATE);
+						entries.add(ULTIMATE_HELMET);
+						entries.add(ULTIMATE_CHESTPLATE);
+						entries.add(ULTIMATE_LEGGINGS);
+						entries.add(ULTIMATE_BOOTS);
 						entries.add(ODDS_CONFIGURATOR);
 						for (DyeColor color : DyeColor.values()) {
 							entries.add(CUSHIONS.get(color));
@@ -185,9 +240,17 @@ public final class ModItems {
 			Registries.ITEM_GROUP,
 			Identifier.of(NovaiMod.MOD_ID, "novai_creative_group"),
 			FabricItemGroup.builder()
-					.icon(() -> new ItemStack(INFINITY_EYE))
+					.icon(() -> new ItemStack(ULTIMATE_CHESTPLATE))
 					.displayName(Text.translatable("itemGroup.novaimod.novai_creative_group"))
 					.entries((displayContext, entries) -> {
+						entries.add(ULTIMATE_HELMET);
+						entries.add(ULTIMATE_CHESTPLATE);
+						entries.add(ULTIMATE_LEGGINGS);
+						entries.add(ULTIMATE_BOOTS);
+						entries.add(REALITY_RIFT_BLADE);
+						entries.add(ORBITAL_LASER);
+						entries.add(TERRA_HEAVER);
+						entries.add(ASTRAL_GATE);
 						entries.add(INFINITY_EYE);
 						entries.add(SINGULARITY_ORB);
 						entries.add(CELESTIAL_WRATH);
