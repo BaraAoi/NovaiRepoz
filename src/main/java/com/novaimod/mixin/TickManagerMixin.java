@@ -10,6 +10,7 @@ import com.novaimod.entity.CelestialOrbEntity;
 import com.novaimod.entity.InfinityEyeEntity;
 import com.novaimod.entity.InfinityPearlEntity;
 import com.novaimod.entity.OrbitalLaserEntity;
+import com.novaimod.entity.PokeballProjectileEntity;
 import com.novaimod.entity.RealitySlashEntity;
 import com.novaimod.entity.SingularityOrbEntity;
 import com.novaimod.entity.TerraCataclysmEntity;
@@ -38,6 +39,7 @@ public abstract class TickManagerMixin {
 				|| entity instanceof OrbitalLaserEntity
 				|| entity instanceof RealitySlashEntity
 				|| entity instanceof TerraCataclysmEntity
+				|| entity instanceof PokeballProjectileEntity
 				|| entity instanceof EvokerFangsEntity
 				|| entity instanceof LightningEntity
 				|| entity.getCommandTags().contains(TerraCataclysmEntity.TAG_CREATIVE_BOULDER)

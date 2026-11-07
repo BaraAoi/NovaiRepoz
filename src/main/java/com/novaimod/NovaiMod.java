@@ -23,11 +23,13 @@ import com.novaimod.registry.ModEntities;
 import com.novaimod.registry.ModItems;
 import com.novaimod.registry.ModScreenHandlers;
 import com.novaimod.registry.ModSounds;
+import com.novaimod.world.AbandonedLabManager;
 import com.novaimod.world.ApocalypseEventManager;
 import com.novaimod.world.DetentionManager;
 import com.novaimod.world.EgoPartyManager;
 import com.novaimod.world.ModStructureGenerator;
 import com.novaimod.world.MysterySkyManager;
+import com.novaimod.world.PokeballDimensionManager;
 import com.novaimod.world.TimeStopManager;
 import com.novaimod.world.WhiteCapWorldManager;
 
@@ -91,6 +93,10 @@ public class NovaiMod implements ModInitializer {
 			}
 			if (player.getStackInHand(hand).getItem() instanceof CushionItem) {
 				return ActionResult.PASS;
+			}
+			if (!world.isClient() && player instanceof ServerPlayerEntity sp
+					&& PokeballDimensionManager.tryExitFromInsideLatch(sp, pos)) {
+				return ActionResult.SUCCESS;
 			}
 			var cushions = world.getEntitiesByClass(
 					CushionEntity.class,
@@ -157,6 +163,12 @@ public class NovaiMod implements ModInitializer {
 		});
 
 		PlayerBlockBreakEvents.BEFORE.register((world, player, pos, state, blockEntity) -> {
+			if (world instanceof ServerWorld sw && PokeballDimensionManager.isProtectedPokeballShell(sw, pos)) {
+				if (player instanceof ServerPlayerEntity sp) {
+					sp.sendMessage(Text.literal("Оболочка Покебола неразрушима! Нажмите ПКМ по белой кнопке Покебола для выхода.").formatted(Formatting.RED), true);
+				}
+				return false;
+			}
 			if (!world.isClient() && DetentionManager.isPlayerRestrictedFromBreaking(player)) {
 				if (player instanceof ServerPlayerEntity sp) {
 					sp.sendMessage(Text.literal("Здесь нельзя ломать блоки!").formatted(Formatting.RED), true);
@@ -197,6 +209,7 @@ public class NovaiMod implements ModInitializer {
 				structureCheckTicker = 0;
 				ModStructureGenerator.tickWorldGeneration(server);
 				WhiteCapWorldManager.tickClanWorld(server);
+				AbandonedLabManager.tickLabs(server);
 			}
 		});
 	}
@@ -251,6 +264,10 @@ public class NovaiMod implements ModInitializer {
 											case "camp", "white_cap_camp" -> {
 												WhiteCapWorldManager.buildFieldCamp(world, pos);
 												ModPersistentState.get(world.getServer()).recordStructure("white_cap_camp", world.getRegistryKey().getValue().toString(), pos);
+											}
+											case "lab", "abandoned_lab" -> {
+												AbandonedLabManager.buildAbandonedScientistLab(world, pos);
+												ModPersistentState.get(world.getServer()).recordStructure("abandoned_lab", world.getRegistryKey().getValue().toString(), pos);
 											}
 											default -> ModStructureGenerator.buildBiomeCasino(world, pos, "plains");
 										}

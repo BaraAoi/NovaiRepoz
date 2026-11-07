@@ -6,6 +6,7 @@ import java.util.Map;
 import com.novaimod.NovaiMod;
 import com.novaimod.equipment.UltimateArmorItem;
 import com.novaimod.item.AstralGateItem;
+import com.novaimod.item.CatgirlSpawnEggItem;
 import com.novaimod.item.CelestialWrathItem;
 import com.novaimod.item.ChronoScepterItem;
 import com.novaimod.item.CushionItem;
@@ -16,6 +17,7 @@ import com.novaimod.item.OrbitalLaserItem;
 import com.novaimod.item.PartyDollItem;
 import com.novaimod.item.PlagueCaneItem;
 import com.novaimod.item.PlayerTeleporterItem;
+import com.novaimod.item.PokeballItem;
 import com.novaimod.item.RealityRiftBladeItem;
 import com.novaimod.item.RevivalTokenItem;
 import com.novaimod.item.ScaleRayItem;
@@ -230,6 +232,17 @@ public final class ModItems {
 			new WhiteCapSpawnEggItem(true, new Item.Settings().maxCount(64).rarity(Rarity.EPIC))
 	);
 
+	// === v3.9.0: ПОКЕБОЛЫ (С ЖИЛЫМ МИНИ-ПРОСТРАНСТВОМ ДЛЯ ИГРОКОВ) И КОШКОДЕВОЧКИ ===
+	public static final Item POKEBALL = register(
+			"pokeball",
+			new PokeballItem(new Item.Settings().maxCount(16).rarity(Rarity.RARE).fireproof())
+	);
+
+	public static final Item CATGIRL_SPAWN_EGG = register(
+			"catgirl_spawn_egg",
+			new CatgirlSpawnEggItem(new Item.Settings().maxCount(64).rarity(Rarity.EPIC))
+	);
+
 	public static final Map<DyeColor, Item> CUSHIONS = new EnumMap<>(DyeColor.class);
 
 	static {
@@ -279,8 +292,10 @@ public final class ModItems {
 						entries.add(PLAGUE_CANE);
 						entries.add(WHITE_CAP_FLASK);
 						entries.add(WHITE_CAP_COMPASS);
+						entries.add(POKEBALL);
 						entries.add(WHITE_CAP_SPAWN_EGG);
 						entries.add(WHITE_CAP_BOSS_SPAWN_EGG);
+						entries.add(CATGIRL_SPAWN_EGG);
 						entries.add(ODDS_CONFIGURATOR);
 						for (DyeColor color : DyeColor.values()) {
 							entries.add(CUSHIONS.get(color));
@@ -301,8 +316,10 @@ public final class ModItems {
 						entries.add(WHITE_CAP_HOOD);
 						entries.add(PLAGUE_CANE);
 						entries.add(WHITE_CAP_COMPASS);
+						entries.add(POKEBALL);
 						entries.add(WHITE_CAP_SPAWN_EGG);
 						entries.add(WHITE_CAP_BOSS_SPAWN_EGG);
+						entries.add(CATGIRL_SPAWN_EGG);
 						entries.add(REALITY_RIFT_BLADE);
 						entries.add(ORBITAL_LASER);
 						entries.add(TERRA_HEAVER);

@@ -1,6 +1,7 @@
 package com.novaimod.registry;
 
 import com.novaimod.NovaiMod;
+import com.novaimod.entity.CatgirlEntity;
 import com.novaimod.entity.CelestialMeteorEntity;
 import com.novaimod.entity.CelestialOrbEntity;
 import com.novaimod.entity.CushionEntity;
@@ -10,6 +11,7 @@ import com.novaimod.entity.ModNpcEntity;
 import com.novaimod.entity.OrbitalLaserEntity;
 import com.novaimod.entity.PartyDollEntity;
 import com.novaimod.entity.PlagueFlaskEntity;
+import com.novaimod.entity.PokeballProjectileEntity;
 import com.novaimod.entity.RealitySlashEntity;
 import com.novaimod.entity.SeatEntity;
 import com.novaimod.entity.SingularityOrbEntity;
@@ -172,11 +174,31 @@ public final class ModEntities {
 					.build("plague_flask")
 	);
 
+	public static final EntityType<CatgirlEntity> CATGIRL_ENTITY = Registry.register(
+			Registries.ENTITY_TYPE,
+			Identifier.of(NovaiMod.MOD_ID, "catgirl"),
+			EntityType.Builder.<CatgirlEntity>create(CatgirlEntity::new, SpawnGroup.CREATURE)
+					.dimensions(0.55F, 1.82F)
+					.maxTrackingRange(10)
+					.build("catgirl")
+	);
+
+	public static final EntityType<PokeballProjectileEntity> POKEBALL_PROJECTILE_ENTITY = Registry.register(
+			Registries.ENTITY_TYPE,
+			Identifier.of(NovaiMod.MOD_ID, "pokeball_entity"),
+			EntityType.Builder.<PokeballProjectileEntity>create(PokeballProjectileEntity::new, SpawnGroup.MISC)
+					.dimensions(0.28F, 0.28F)
+					.maxTrackingRange(8)
+					.trackingTickInterval(2)
+					.build("pokeball_entity")
+	);
+
 	private ModEntities() {
 	}
 
 	public static void init() {
 		FabricDefaultAttributeRegistry.register(MOD_NPC, ModNpcEntity.createNpcAttributes());
 		FabricDefaultAttributeRegistry.register(WHITE_CAP_ENTITY, WhiteCapEntity.createWhiteCapAttributes());
+		FabricDefaultAttributeRegistry.register(CATGIRL_ENTITY, CatgirlEntity.createCatgirlAttributes());
 	}
 }

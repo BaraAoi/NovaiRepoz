@@ -3,10 +3,12 @@ package com.novaimod.item;
 import java.util.List;
 
 import com.novaimod.data.ModPersistentState;
+import com.novaimod.world.AbandonedLabManager;
 import com.novaimod.world.WhiteCapWorldManager;
 
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.NbtComponent;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -25,13 +27,20 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.World;
 
 /**
- * «Компас Белых Колпаков»:
- * - ПКМ: находит ближайшую базу/лагерь Клана Белых Колпаков и показывает точное направление и дистанцию!
- * - Shift + ПКМ: переключает фильтр (Все объекты Клана / Главная Цитадель / Карантинный Форт / Полевой Лагерь).
- * - В Креативе: если посмотреть вертикально себе под ноги и нажать ПКМ — мгновенно телепортирует ко входу найденной базы!
+ * Интерактивный вращающийся «Компас Белых Колпаков» (`novaimod:white_cap_compass`):
+ * - Стрелка плавно крутится и пружинит в реальном времени (32 кадра + физика инерции стрелки),
+ *   всегда указывая прямо на выбранную базу/лагерь или Заброшенную Лабораторию Учёных!
+ * - ПКМ — показывает точное расстояние и название цели.
+ * - Shift + ПКМ — переключает цель поиска (Базы Клана / Цитадель / Форты / Лагеря / Заброшенные Базы Учёных).
+ * - Имеет крафт на верстаке!
  */
 public class WhiteCapCompassItem extends Item {
-	private static final String KEY_FILTER = "ClanCompassFilter";
+	public static final String KEY_FILTER = "ClanCompassFilter";
+	public static final String KEY_HAS_TARGET = "HasTarget";
+	public static final String KEY_TARGET_X = "TargetX";
+	public static final String KEY_TARGET_Y = "TargetY";
+	public static final String KEY_TARGET_Z = "TargetZ";
+	public static final String KEY_TARGET_DIM = "TargetDim";
 
 	public WhiteCapCompassItem(Settings settings) {
 		super(settings);
@@ -42,14 +51,7 @@ public class WhiteCapCompassItem extends Item {
 		if (custom == null) {
 			return 0;
 		}
-		return MathHelper.clamp(custom.copyNbt().getInt(KEY_FILTER), 0, 3);
-	}
-
-	private static void setFilter(ItemStack stack, int filter) {
-		NbtComponent custom = stack.get(DataComponentTypes.CUSTOM_DATA);
-		NbtCompound nbt = custom != null ? custom.copyNbt() : new NbtCompound();
-		nbt.putInt(KEY_FILTER, MathHelper.clamp(filter, 0, 3));
-		stack.set(DataComponentTypes.CUSTOM_DATA, NbtComponent.of(nbt));
+		return MathHelper.clamp(custom.copyNbt().getInt(KEY_FILTER), 0, 4);
 	}
 
 	public static String filterTitle(int filter) {
@@ -57,8 +59,73 @@ public class WhiteCapCompassItem extends Item {
 			case 1 -> "Главная Цитадель Белых Колпаков";
 			case 2 -> "Карантинный Форт-Лаборатория";
 			case 3 -> "Полевые Лагеря Клана";
-			default -> "Любая база / лагерь Клана";
+			case 4 -> "Заброшенная База Учёных (Проект НЕКО)";
+			default -> "Любая база / лагерь Белых Колпаков";
 		};
+	}
+
+	@Override
+	public void inventoryTick(ItemStack stack, World world, Entity entity, int slot, boolean selected) {
+		super.inventoryTick(stack, world, entity, slot, selected);
+		if (world.isClient() || !(world instanceof ServerWorld sw) || !(entity instanceof ServerPlayerEntity sp)) {
+			return;
+		}
+		// Обновляем координаты ближайшей цели раз в 15 тиков (перезаписываем NBT ТОЛЬКО при изменении точки, чтобы предмет не дёргался в руке!)
+		if ((sp.age + slot) % 15 != 0) {
+			return;
+		}
+		refreshTrackedTarget(stack, sw, sp);
+	}
+
+	public static ModPersistentState.StructureEntry refreshTrackedTarget(ItemStack stack, ServerWorld sw, ServerPlayerEntity sp) {
+		ModPersistentState state = ModPersistentState.get(sw.getServer());
+		WhiteCapWorldManager.ensureInitialStructuresNearPlayer(sw, sp, state);
+		AbandonedLabManager.ensureInitialLabNearPlayer(sw, sp, state);
+
+		int filter = getFilter(stack);
+		String dimId = sw.getRegistryKey().getValue().toString();
+
+		ModPersistentState.StructureEntry best = null;
+		double bestDistSq = Double.MAX_VALUE;
+		for (ModPersistentState.StructureEntry se : state.getGeneratedStructures()) {
+			if (!dimId.equals(se.dimension) || !matchesFilter(se.type, filter)) {
+				continue;
+			}
+			double dSq = se.pos.getSquaredDistance(sp.getBlockPos());
+			if (dSq < bestDistSq) {
+				bestDistSq = dSq;
+				best = se;
+			}
+		}
+
+		NbtComponent existing = stack.get(DataComponentTypes.CUSTOM_DATA);
+		NbtCompound nbt = existing != null ? existing.copyNbt() : new NbtCompound();
+		boolean prevHas = nbt.getBoolean(KEY_HAS_TARGET);
+
+		if (best == null) {
+			if (prevHas) {
+				nbt.putBoolean(KEY_HAS_TARGET, false);
+				stack.set(DataComponentTypes.CUSTOM_DATA, NbtComponent.of(nbt));
+			}
+			return null;
+		}
+
+		int tx = best.pos.getX();
+		int ty = best.pos.getY();
+		int tz = best.pos.getZ();
+		if (!prevHas
+				|| nbt.getInt(KEY_TARGET_X) != tx
+				|| nbt.getInt(KEY_TARGET_Y) != ty
+				|| nbt.getInt(KEY_TARGET_Z) != tz
+				|| !dimId.equals(nbt.getString(KEY_TARGET_DIM))) {
+			nbt.putBoolean(KEY_HAS_TARGET, true);
+			nbt.putInt(KEY_TARGET_X, tx);
+			nbt.putInt(KEY_TARGET_Y, ty);
+			nbt.putInt(KEY_TARGET_Z, tz);
+			nbt.putString(KEY_TARGET_DIM, dimId);
+			stack.set(DataComponentTypes.CUSTOM_DATA, NbtComponent.of(nbt));
+		}
+		return best;
 	}
 
 	@Override
@@ -72,74 +139,58 @@ public class WhiteCapCompassItem extends Item {
 		}
 
 		if (sp.isSneaking()) {
-			int next = (getFilter(stack) + 1) % 4;
-			setFilter(stack, next);
+			int next = (getFilter(stack) + 1) % 5;
+			NbtComponent custom = stack.get(DataComponentTypes.CUSTOM_DATA);
+			NbtCompound nbt = custom != null ? custom.copyNbt() : new NbtCompound();
+			nbt.putInt(KEY_FILTER, next);
+			nbt.putBoolean(KEY_HAS_TARGET, false);
+			stack.set(DataComponentTypes.CUSTOM_DATA, NbtComponent.of(nbt));
+
+			refreshTrackedTarget(stack, sw, sp);
 			sw.playSound(null, sp.getBlockPos(), SoundEvents.BLOCK_AMETHYST_BLOCK_CHIME, SoundCategory.PLAYERS, 0.9F, 1.25F);
-			sp.sendMessage(Text.literal("🧭 Поиск Компаса: ").formatted(Formatting.GRAY)
+			sp.sendMessage(Text.literal("🧭 Режим Компаса: ").formatted(Formatting.GRAY)
 					.append(Text.literal(filterTitle(next)).formatted(Formatting.AQUA, Formatting.BOLD)), true);
 			return TypedActionResult.success(stack, false);
 		}
 
+		ModPersistentState.StructureEntry best = refreshTrackedTarget(stack, sw, sp);
 		int filter = getFilter(stack);
-		String dimId = sw.getRegistryKey().getValue().toString();
-		ModPersistentState state = ModPersistentState.get(sw.getServer());
-
-		// Убедимся, что хотя бы ближайшая структура в текущем регионе проверена
-		WhiteCapWorldManager.ensureInitialStructuresNearPlayer(sw, sp, state);
-
-		ModPersistentState.StructureEntry best = null;
-		double bestDistSq = Double.MAX_VALUE;
-		for (ModPersistentState.StructureEntry se : state.getGeneratedStructures()) {
-			if (!dimId.equals(se.dimension)) {
-				continue;
-			}
-			if (!matchesFilter(se.type, filter)) {
-				continue;
-			}
-			double dSq = se.pos.getSquaredDistance(sp.getBlockPos());
-			if (dSq < bestDistSq) {
-				bestDistSq = dSq;
-				best = se;
-			}
-		}
-
 		if (best == null) {
-			sp.sendMessage(Text.literal("🧭 Поблизости ещё не разведаны объекты «" + filterTitle(filter) + "» — пройдитесь немного по миру!").formatted(Formatting.YELLOW), true);
+			sp.sendMessage(Text.literal("🧭 Поблизости ещё нет «" + filterTitle(filter) + "» — пройдитесь немного по миру, стрелка подхватит цель!").formatted(Formatting.YELLOW), true);
 			return TypedActionResult.success(stack, false);
 		}
 
 		BlockPos dest = best.pos;
 		String label = prettyStructureName(best.type);
 
-		// В Креативе при взгляде под ноги — быстрый перенос ко входу базы!
 		if (sp.isCreative() && sp.getPitch() > 68.0F) {
-			sp.teleport(sw, dest.getX() + 0.5D, dest.getY() + 1.0D, dest.getZ() + 15.5D, sp.getYaw(), 0.0F);
+			int zOff = "abandoned_lab".equals(best.type) ? 6 : 15;
+			sp.teleport(sw, dest.getX() + 0.5D, dest.getY() + 1.0D, dest.getZ() + zOff + 0.5D, 180.0F, 0.0F);
 			sw.playSound(null, sp.getBlockPos(), SoundEvents.ENTITY_ENDERMAN_TELEPORT, SoundCategory.PLAYERS, 1.0F, 1.15F);
 			sp.sendMessage(Text.literal("🧭 Перенос ко входу: " + label + "!").formatted(Formatting.GREEN, Formatting.BOLD), true);
 			return TypedActionResult.success(stack, false);
 		}
 
-		int dist = (int) Math.round(Math.sqrt(bestDistSq));
-		String arrow = computeDirectionArrow(sp, dest);
-		sw.playSound(null, sp.getBlockPos(), SoundEvents.ITEM_LODESTONE_COMPASS_LOCK, SoundCategory.PLAYERS, 0.9F, 1.15F);
+		int dist = (int) Math.round(Math.sqrt(dest.getSquaredDistance(sp.getBlockPos())));
+		sw.playSound(null, sp.getBlockPos(), SoundEvents.ITEM_LODESTONE_COMPASS_LOCK, SoundCategory.PLAYERS, 0.85F, 1.2F);
 		sp.sendMessage(
-				Text.literal("🧭 " + label + ": ").formatted(Formatting.WHITE, Formatting.BOLD)
-						.append(Text.literal(dist + " бл. " + arrow).formatted(Formatting.AQUA, Formatting.BOLD))
-						.append(Text.literal(" [" + dest.getX() + ", " + dest.getY() + ", " + dest.getZ() + "]").formatted(Formatting.GRAY)),
+				Text.literal("🧭 Стрелка ведёт к «" + label + "» — осталось ").formatted(Formatting.WHITE)
+						.append(Text.literal(dist + " бл.").formatted(Formatting.AQUA, Formatting.BOLD)),
 				true
 		);
 		return TypedActionResult.success(stack, false);
 	}
 
 	private static boolean matchesFilter(String type, int filter) {
-		if (type == null || !type.startsWith("white_cap_")) {
+		if (type == null) {
 			return false;
 		}
 		return switch (filter) {
 			case 1 -> "white_cap_citadel".equals(type);
 			case 2 -> "white_cap_outpost".equals(type);
 			case 3 -> "white_cap_camp".equals(type) || "white_cap_nether_camp".equals(type);
-			default -> true;
+			case 4 -> "abandoned_lab".equals(type);
+			default -> type.startsWith("white_cap_");
 		};
 	}
 
@@ -148,31 +199,17 @@ public class WhiteCapCompassItem extends Item {
 			case "white_cap_citadel" -> "Главная Цитадель Белых Колпаков";
 			case "white_cap_outpost" -> "Карантинный Форт Колпаков";
 			case "white_cap_nether_camp" -> "Адский Лагерь Белых Колпаков";
+			case "abandoned_lab" -> "Заброшенная База Учёных (Проект НЕКО)";
 			default -> "Полевой Лагерь Белых Колпаков";
 		};
 	}
 
-	private static String computeDirectionArrow(ServerPlayerEntity sp, BlockPos dest) {
-		double dx = (dest.getX() + 0.5D) - sp.getX();
-		double dz = (dest.getZ() + 0.5D) - sp.getZ();
-		double targetYaw = Math.toDegrees(Math.atan2(-dx, dz));
-		double rel = MathHelper.wrapDegrees(targetYaw - sp.getYaw());
-		if (rel >= -22.5D && rel < 22.5D) return "⬆ ПРЯМО";
-		if (rel >= 22.5D && rel < 67.5D) return "↗ ВПРАВО-ВПЕРЁД";
-		if (rel >= 67.5D && rel < 112.5D) return "➡ НАПРАВО";
-		if (rel >= 112.5D && rel < 157.5D) return "↘ НАЗАД-ВПРАВО";
-		if (rel < -22.5D && rel >= -67.5D) return "↖ ВЛЕВО-ВПЕРЁД";
-		if (rel < -67.5D && rel >= -112.5D) return "⬅ НАЛЕВО";
-		if (rel < -112.5D && rel >= -157.5D) return "↙ НАЗАД-ВЛЕВО";
-		return "⬇ СЗАДИ";
-	}
-
 	@Override
 	public void appendTooltip(ItemStack stack, TooltipContext context, List<Text> tooltip, TooltipType type) {
-		tooltip.add(Text.literal("Навигатор Клана Белых Колпаков").formatted(Formatting.AQUA, Formatting.BOLD));
-		tooltip.add(Text.literal("• ПКМ — указать путь к ближайшей Цитадели или лагерю Клана").formatted(Formatting.GRAY));
-		tooltip.add(Text.literal("• Shift + ПКМ — фильтр: ").formatted(Formatting.DARK_GRAY)
+		tooltip.add(Text.literal("Интерактивный компас (вращающаяся стрелка!)").formatted(Formatting.AQUA, Formatting.BOLD));
+		tooltip.add(Text.literal("• Цель стрелки: ").formatted(Formatting.GRAY)
 				.append(Text.literal(filterTitle(getFilter(stack))).formatted(Formatting.WHITE)));
-		tooltip.add(Text.literal("• В Креативе (взгляд под ноги + ПКМ) — мгновенный телепорт к базе!").formatted(Formatting.GOLD));
+		tooltip.add(Text.literal("• ПКМ — проверить дистанцию | Shift + ПКМ — сменить цель").formatted(Formatting.GREEN));
+		tooltip.add(Text.literal("• Крафт: 4 железа, 3 белой шерсти, 1 редстоун и 1 обычный компас").formatted(Formatting.DARK_GRAY));
 	}
 }

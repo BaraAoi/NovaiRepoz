@@ -294,15 +294,67 @@ public class ModPersistentState extends PersistentState {
 		}
 	}
 
+	public static class PokeballPocketSession {
+		public int pocketId;
+		public UUID occupantUuid;
+		public BlockPos centerPos;
+		public String returnDim = "minecraft:overworld";
+		public double returnX;
+		public double returnY;
+		public double returnZ;
+		public float returnYaw;
+		public float returnPitch;
+		public boolean built = false;
+
+		public NbtCompound toNbt() {
+			NbtCompound t = new NbtCompound();
+			t.putInt("pocketId", pocketId);
+			if (occupantUuid != null) {
+				t.putString("occupantUuid", occupantUuid.toString());
+			}
+			t.putLong("centerPos", centerPos.asLong());
+			t.putString("returnDim", returnDim);
+			t.putDouble("returnX", returnX);
+			t.putDouble("returnY", returnY);
+			t.putDouble("returnZ", returnZ);
+			t.putFloat("returnYaw", returnYaw);
+			t.putFloat("returnPitch", returnPitch);
+			t.putBoolean("built", built);
+			return t;
+		}
+
+		public static PokeballPocketSession fromNbt(NbtCompound t) {
+			PokeballPocketSession s = new PokeballPocketSession();
+			s.pocketId = t.getInt("pocketId");
+			if (t.contains("occupantUuid")) {
+				try {
+					s.occupantUuid = UUID.fromString(t.getString("occupantUuid"));
+				} catch (IllegalArgumentException ignored) {
+				}
+			}
+			s.centerPos = BlockPos.fromLong(t.getLong("centerPos"));
+			s.returnDim = t.getString("returnDim");
+			s.returnX = t.getDouble("returnX");
+			s.returnY = t.getDouble("returnY");
+			s.returnZ = t.getDouble("returnZ");
+			s.returnYaw = t.getFloat("returnYaw");
+			s.returnPitch = t.getFloat("returnPitch");
+			s.built = t.getBoolean("built");
+			return s;
+		}
+	}
+
 	private final Map<UUID, PlayerFinanceData> accounts = new HashMap<>();
 	private final Map<String, Integer> eliteStocks = new HashMap<>();
 	private final Set<String> generatedRegionKeys = new HashSet<>();
 	private final List<StructureEntry> generatedStructures = new ArrayList<>();
 	private final Map<UUID, SkyArenaSession> activeSkyArenas = new HashMap<>();
+	private final Map<Integer, PokeballPocketSession> pokeballPockets = new HashMap<>();
 	private MachineOddsConfig oddsConfig = new MachineOddsConfig();
 	private boolean mfoSpawned = false;
 	private BlockPos mfoPos = null;
 	private int skyArenaCounter = 0;
+	private int pokeballCounter = 0;
 
 	// Событие первого данж-сундука с Неизвестным предметом (10-минутный апокалипсис мобов)
 	private boolean firstDungeonChestOpened = false;
@@ -411,6 +463,21 @@ public class ModPersistentState extends PersistentState {
 		skyArenaCounter++;
 		markDirty();
 		return skyArenaCounter;
+	}
+
+	public int nextPokeballPocketId() {
+		pokeballCounter++;
+		markDirty();
+		return pokeballCounter;
+	}
+
+	public Map<Integer, PokeballPocketSession> getPokeballPockets() {
+		return pokeballPockets;
+	}
+
+	public void putPokeballPocket(PokeballPocketSession session) {
+		pokeballPockets.put(session.pocketId, session);
+		markDirty();
 	}
 
 	public Map<UUID, SkyArenaSession> getActiveSkyArenas() {
@@ -523,6 +590,13 @@ public class ModPersistentState extends PersistentState {
 		}
 		nbt.put("activeSkyArenas", arenasList);
 
+		NbtList pokeballsList = new NbtList();
+		for (PokeballPocketSession ps : pokeballPockets.values()) {
+			pokeballsList.add(ps.toNbt());
+		}
+		nbt.put("pokeballPockets", pokeballsList);
+		nbt.putInt("pokeballCounter", pokeballCounter);
+
 		nbt.put("oddsConfig", oddsConfig.toNbt());
 		nbt.putBoolean("mfoSpawned", mfoSpawned);
 		if (mfoPos != null) {
@@ -585,6 +659,14 @@ public class ModPersistentState extends PersistentState {
 				state.activeSkyArenas.put(s.playerUuid, s);
 			}
 		}
+		if (nbt.contains("pokeballPockets", NbtElement.LIST_TYPE)) {
+			NbtList list = nbt.getList("pokeballPockets", NbtElement.COMPOUND_TYPE);
+			for (int i = 0; i < list.size(); i++) {
+				PokeballPocketSession ps = PokeballPocketSession.fromNbt(list.getCompound(i));
+				state.pokeballPockets.put(ps.pocketId, ps);
+			}
+		}
+		state.pokeballCounter = nbt.getInt("pokeballCounter");
 		if (nbt.contains("oddsConfig", NbtElement.COMPOUND_TYPE)) {
 			state.oddsConfig = MachineOddsConfig.fromNbt(nbt.getCompound("oddsConfig"));
 		}
