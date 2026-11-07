@@ -304,6 +304,7 @@ public class ModPersistentState extends PersistentState {
 	private int pendingArtifactAwakenTicks = 0;
 	private boolean apocalypseActive = false;
 	private int apocalypseTicksLeft = 0;
+	private boolean apocalypseDollUsed = false;
 	private final Set<UUID> diedDuringApocalypse = new HashSet<>();
 
 	public ModPersistentState() {
