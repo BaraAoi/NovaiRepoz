@@ -10,6 +10,7 @@ import com.novaimod.economy.CasinoGamesManager;
 import com.novaimod.economy.ShopCatalogs;
 import com.novaimod.entity.ModNpcEntity;
 import com.novaimod.entity.NpcRole;
+import com.novaimod.equipment.UltimateArmorManager;
 import com.novaimod.item.PlayerTeleporterItem;
 import com.novaimod.item.UberGunItem;
 import com.novaimod.registry.ModItems;
@@ -93,6 +94,11 @@ public final class ModServerNetworking {
 			ServerPlayerEntity player = context.player();
 			handleCycleUberGunMode(player);
 		});
+
+		ServerPlayNetworking.registerGlobalReceiver(ModPayloads.SeatPadSlotActionPayload.ID, (payload, context) -> {
+			ServerPlayerEntity player = context.player();
+			UltimateArmorManager.handleSeatPadSlotAction(player, payload.action(), payload.invSlot());
+		});
 	}
 
 	public static void openCoinflipScreen(ServerPlayerEntity player) {
@@ -159,6 +165,7 @@ public final class ModServerNetworking {
 		ModPersistentState.PlayerFinanceData acc = state.getAccount(player.getUuid());
 		int sizoSec = (acc.sizoRemainingTicks + 19) / 20;
 		ServerPlayNetworking.send(player, new ModPayloads.AccountSyncPayload(acc.balance, acc.debt, sizoSec));
+		ServerPlayNetworking.send(player, new ModPayloads.SeatPadSyncPayload(acc.seatPadEquipped));
 	}
 
 	public static void openLoanScreen(ServerPlayerEntity player) {

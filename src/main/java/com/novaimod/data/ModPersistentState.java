@@ -67,6 +67,9 @@ public class ModPersistentState extends PersistentState {
 		// Отложенный перенос после наложения Темноты от коктейля «Пьяное забвение»
 		public int pendingOblivionTicks = 0;
 
+		// Надет ли единый невидимый предмет Альтимейт-брони («Поджопник») в секретный слот инвентаря
+		public boolean seatPadEquipped = false;
+
 		// Плавное развитие мобов (прогресс игрока и учёт смертей от конкретных типов мобов)
 		public long ticksLivedInWorld = 0L;
 		public int highestGearScore = 0;
@@ -108,6 +111,7 @@ public class ModPersistentState extends PersistentState {
 			tag.putString("preSizoDim", preSizoDim);
 			tag.putBoolean("rouletteForceNextGreen", rouletteForceNextGreen);
 			tag.putInt("pendingOblivionTicks", pendingOblivionTicks);
+			tag.putBoolean("seatPadEquipped", seatPadEquipped);
 
 			tag.putLong("ticksLivedInWorld", ticksLivedInWorld);
 			tag.putInt("highestGearScore", highestGearScore);
@@ -164,6 +168,7 @@ public class ModPersistentState extends PersistentState {
 			}
 			d.rouletteForceNextGreen = tag.getBoolean("rouletteForceNextGreen");
 			d.pendingOblivionTicks = tag.getInt("pendingOblivionTicks");
+			d.seatPadEquipped = tag.getBoolean("seatPadEquipped");
 
 			d.ticksLivedInWorld = tag.getLong("ticksLivedInWorld");
 			d.highestGearScore = tag.getInt("highestGearScore");

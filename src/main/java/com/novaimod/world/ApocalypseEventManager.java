@@ -797,6 +797,7 @@ public final class ApocalypseEventManager {
 				ModItems.ORBITAL_LASER,
 				ModItems.TERRA_HEAVER,
 				ModItems.ASTRAL_GATE,
+				ModItems.SCALE_RAY,
 				ModItems.CELESTIAL_WRATH,
 				ModItems.SINGULARITY_ORB,
 				ModItems.CHRONO_SCEPTER,

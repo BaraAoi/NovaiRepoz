@@ -323,7 +323,7 @@ public final class SeamlessTeleportManager {
 		player.addStatusEffect(new StatusEffectInstance(StatusEffects.RESISTANCE, 30, 3, true, false, false));
 		player.addStatusEffect(new StatusEffectInstance(StatusEffects.FIRE_RESISTANCE, 100, 0, true, false, false));
 
-		// 6. Астральная вспышка и звук в точке прибытия
+		// 6. Астральная вспышка и звук в точке прибытия (без вывода координат!)
 		targetWorld.spawnParticles(ParticleTypes.REVERSE_PORTAL, dest.x, dest.y + 1.0D, dest.z, 36, 0.45D, 0.8D, 0.45D, 0.16D);
 		targetWorld.spawnParticles(ParticleTypes.END_ROD, dest.x, dest.y + 1.0D, dest.z, 16, 0.4D, 0.6D, 0.4D, 0.06D);
 		targetWorld.playSound(
@@ -333,24 +333,6 @@ public final class SeamlessTeleportManager {
 				SoundCategory.PLAYERS,
 				0.95F,
 				crossDimension ? 1.45F : 1.18F
-		);
-
-		String dimTitle = switch (dimPath) {
-			case "the_nether" -> "Незер";
-			case "the_end" -> "Энд";
-			default -> "Верхний мир";
-		};
-		Formatting dimColor = switch (dimPath) {
-			case "the_nether" -> Formatting.RED;
-			case "the_end" -> Formatting.LIGHT_PURPLE;
-			default -> Formatting.AQUA;
-		};
-		player.sendMessage(
-				Text.literal("✦ Око Бескрайности -> ")
-						.formatted(Formatting.DARK_PURPLE)
-						.append(Text.literal("[" + dimTitle + "] ").formatted(dimColor, Formatting.BOLD))
-						.append(Text.literal(String.format("X:%d Y:%d Z:%d", destBlock.getX(), destBlock.getY(), destBlock.getZ())).formatted(Formatting.WHITE)),
-				true
 		);
 	}
 }

@@ -13,6 +13,7 @@ import com.novaimod.entity.OrbitalLaserEntity;
 import com.novaimod.entity.RealitySlashEntity;
 import com.novaimod.entity.SingularityOrbEntity;
 import com.novaimod.entity.TerraCataclysmEntity;
+import com.novaimod.item.ScaleRayItem;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LightningEntity;
@@ -40,7 +41,8 @@ public abstract class TickManagerMixin {
 				|| entity instanceof EvokerFangsEntity
 				|| entity instanceof LightningEntity
 				|| entity.getCommandTags().contains(TerraCataclysmEntity.TAG_CREATIVE_BOULDER)
-				|| entity.getCommandTags().contains(TerraCataclysmEntity.TAG_ASTRAL_LIFTED)) {
+				|| entity.getCommandTags().contains(TerraCataclysmEntity.TAG_ASTRAL_LIFTED)
+				|| entity.getCommandTags().contains(ScaleRayItem.TAG_THROWN_BOMB)) {
 			cir.setReturnValue(false);
 			return;
 		}

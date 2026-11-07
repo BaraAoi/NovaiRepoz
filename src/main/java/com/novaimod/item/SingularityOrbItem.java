@@ -87,8 +87,8 @@ public class SingularityOrbItem extends Item {
 		boolean breakBlocks = isBreakBlocksEnabled(stack);
 		tooltip.add(Text.literal("Креативный артефакт (Без ограничений)").formatted(Formatting.LIGHT_PURPLE, Formatting.BOLD));
 		tooltip.add(Text.literal("ПКМ — запускает объёмную 3D Чёрную дыру,").formatted(Formatting.GRAY));
-		tooltip.add(Text.literal("стягивающую всё живое в радиусе 40 блоков,").formatted(Formatting.GRAY));
-		tooltip.add(Text.literal("и взрывающуюся сверхновой в финале!").formatted(Formatting.GOLD));
+		tooltip.add(Text.literal("которая засасывает мобов (40 бл.) и реальные БЛОКИ").formatted(Formatting.AQUA));
+		tooltip.add(Text.literal("прямо в горизонт событий, где они бесследно исчезают!").formatted(Formatting.GOLD));
 		tooltip.add(
 				Text.literal("Shift + ПКМ — коллапс: ").formatted(Formatting.DARK_GRAY)
 						.append(Text.literal(breakBlocks ? "С разрушением ландшафта" : "Без порчи построек")

@@ -13,6 +13,7 @@ import com.novaimod.entity.PartyDollEntity;
 import com.novaimod.equipment.MfoArmorSetManager;
 import com.novaimod.equipment.UltimateArmorManager;
 import com.novaimod.item.CushionItem;
+import com.novaimod.item.ScaleRayItem;
 import com.novaimod.network.ModPayloads;
 import com.novaimod.network.ModServerNetworking;
 import com.novaimod.registry.ModBlocks;
@@ -125,14 +126,11 @@ public class NovaiMod implements ModInitializer {
 			ModServerNetworking.syncAccount(newPlayer);
 		});
 
-		// 1) Альтимейт Броня (4/4): поглощает 100% любого урона в игре КРОМЕ процентного урона!
+		// 1) Единый невидимый «Поджопник»: поглощает 100% любого урона в игре КРОМЕ процентного урона (и никак не виден на игроке!)
 		// 2) Пока рядом активна женская Танцующая кукла — и мобы, и игроки становятся дружелюбными друг к другу!
 		ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> {
 			if (entity instanceof ServerPlayerEntity sp && UltimateArmorManager.isWearingFullUltimateArmor(sp)) {
 				if (!UltimateArmorManager.isPercentageDamageHit(source)) {
-					if (sp.getWorld() instanceof ServerWorld sw && sp.age % 6 == 0) {
-						sw.spawnParticles(ParticleTypes.END_ROD, sp.getX(), sp.getBodyY(0.55D), sp.getZ(), 3, 0.35D, 0.35D, 0.35D, 0.02D);
-					}
 					return false;
 				}
 			}
@@ -175,6 +173,7 @@ public class NovaiMod implements ModInitializer {
 			TimeStopManager.tickServer(server);
 			EgoPartyManager.tickRaves(server);
 			UltimateArmorManager.tickPlayers(server);
+			ScaleRayItem.tickTelekinesis(server);
 
 			if (structureCheckTicker % 5 == 0) {
 				MfoArmorSetManager.tickPlayers(server);

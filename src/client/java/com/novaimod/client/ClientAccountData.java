@@ -4,6 +4,7 @@ public final class ClientAccountData {
 	private static long balance = 0L;
 	private static long debt = 0L;
 	private static int sizoSecondsLeft = 0;
+	private static boolean seatPadEquipped = false;
 
 	// Мимолётный силуэт подкрадывающегося моба на периферии зрения
 	private static long shadowCueStartMs = 0L;
@@ -47,5 +48,13 @@ public final class ClientAccountData {
 
 	public static int getSizoSecondsLeft() {
 		return sizoSecondsLeft;
+	}
+
+	public static boolean isSeatPadEquipped() {
+		return seatPadEquipped;
+	}
+
+	public static void setSeatPadEquipped(boolean equipped) {
+		seatPadEquipped = equipped;
 	}
 }

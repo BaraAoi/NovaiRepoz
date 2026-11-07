@@ -194,5 +194,9 @@ public class NovaiModClient implements ClientModInitializer {
 					payload.targetZ()
 			);
 		});
+
+		ClientPlayNetworking.registerGlobalReceiver(ModPayloads.SeatPadSyncPayload.ID, (payload, context) -> {
+			ClientAccountData.setSeatPadEquipped(payload.equipped());
+		});
 	}
 }

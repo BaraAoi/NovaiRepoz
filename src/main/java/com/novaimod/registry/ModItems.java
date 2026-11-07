@@ -17,10 +17,12 @@ import com.novaimod.item.PartyDollItem;
 import com.novaimod.item.PlayerTeleporterItem;
 import com.novaimod.item.RealityRiftBladeItem;
 import com.novaimod.item.RevivalTokenItem;
+import com.novaimod.item.ScaleRayItem;
 import com.novaimod.item.SingularityOrbItem;
 import com.novaimod.item.StrangeMeatItem;
 import com.novaimod.item.TerraHeaverItem;
 import com.novaimod.item.UberGunItem;
+import com.novaimod.item.UltimateSeatPadItem;
 import com.novaimod.item.UnknownArtifactItem;
 
 import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
@@ -181,6 +183,17 @@ public final class ModItems {
 			new AstralGateItem(new Item.Settings().maxCount(1).rarity(Rarity.EPIC).fireproof())
 	);
 
+	// === v3.7.0: ЕДИНЫЙ НЕВИДИМЫЙ «ПОДЖОПНИК» И «ПУШКА АБСУРДНОГО МАСШТАБА» ===
+	public static final Item ULTIMATE_SEAT_PAD = register(
+			"ultimate_seat_pad",
+			new UltimateSeatPadItem(new Item.Settings().maxCount(1).rarity(Rarity.EPIC).fireproof())
+	);
+
+	public static final Item SCALE_RAY = register(
+			"scale_ray",
+			new ScaleRayItem(new Item.Settings().maxCount(1).rarity(Rarity.EPIC).fireproof())
+	);
+
 	public static final Map<DyeColor, Item> CUSHIONS = new EnumMap<>(DyeColor.class);
 
 	static {
@@ -224,10 +237,8 @@ public final class ModItems {
 						entries.add(ORBITAL_LASER);
 						entries.add(TERRA_HEAVER);
 						entries.add(ASTRAL_GATE);
-						entries.add(ULTIMATE_HELMET);
-						entries.add(ULTIMATE_CHESTPLATE);
-						entries.add(ULTIMATE_LEGGINGS);
-						entries.add(ULTIMATE_BOOTS);
+						entries.add(SCALE_RAY);
+						entries.add(ULTIMATE_SEAT_PAD);
 						entries.add(ODDS_CONFIGURATOR);
 						for (DyeColor color : DyeColor.values()) {
 							entries.add(CUSHIONS.get(color));
@@ -240,13 +251,11 @@ public final class ModItems {
 			Registries.ITEM_GROUP,
 			Identifier.of(NovaiMod.MOD_ID, "novai_creative_group"),
 			FabricItemGroup.builder()
-					.icon(() -> new ItemStack(ULTIMATE_CHESTPLATE))
+					.icon(() -> new ItemStack(ULTIMATE_SEAT_PAD))
 					.displayName(Text.translatable("itemGroup.novaimod.novai_creative_group"))
 					.entries((displayContext, entries) -> {
-						entries.add(ULTIMATE_HELMET);
-						entries.add(ULTIMATE_CHESTPLATE);
-						entries.add(ULTIMATE_LEGGINGS);
-						entries.add(ULTIMATE_BOOTS);
+						entries.add(ULTIMATE_SEAT_PAD);
+						entries.add(SCALE_RAY);
 						entries.add(REALITY_RIFT_BLADE);
 						entries.add(ORBITAL_LASER);
 						entries.add(TERRA_HEAVER);

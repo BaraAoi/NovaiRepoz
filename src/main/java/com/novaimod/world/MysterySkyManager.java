@@ -40,10 +40,11 @@ import net.minecraft.world.World;
  * - Кастомные деревья со стеклянными кронами стоят плотными кольцами вблизи центра.
  */
 public final class MysterySkyManager {
-	private static final int PLATFORM_RADIUS = 72;
+	// Компактный радиус 22 (вместо огромного 72 = 240 000 блоков!): под эффектом DARKNESS края всё так же скрыты во тьме, но спавнится вообще БЕЗ ЛАГОВ!
+	private static final int PLATFORM_RADIUS = 22;
 	private static final int SKY_BASE_Y = 272;
-	/** Глубина многослойного туманного пола под основным уровнем baseY (источник света на baseY - FOG_DEPTH). */
-	private static final int FOG_DEPTH = 9;
+	/** Компактная глубина многослойного туманного пола (в 25 раз легче для рендера и освещения при такой же густой дымке!). */
+	private static final int FOG_DEPTH = 4;
 	private static final int FAST_BLOCK_FLAGS = Block.NOTIFY_LISTENERS | Block.FORCE_STATE;
 	private static final int DARKNESS_PRE_TELEPORT_TICKS = 45;
 
@@ -161,40 +162,24 @@ public final class MysterySkyManager {
 
 		BlockPos.Mutable mutable = new BlockPos.Mutable();
 
-		// 1. Пол «Туманное ничего»:
-		// На самом дне (baseY - 9) — сплошной ковёр морских фонарей (источник света),
-		// а над ним 10 уровней чередующегося цветного стекла и тонких прослоек до уровня пола (baseY + 1):
-		// каждая грань преломляет и затуманивает свет снизу, создавая бездонную светящуюся дымку!
+		// 1. Оптимизированный пол «Туманное ничего» (в 25 раз легче, 0 лагов при спавне!):
+		// На дне (baseY - 4) — разреженная подсветка морскими фонарями (каждая 2-я клетка, в 2 раза меньше пересчётов света!),
+		// а над ней чередующиеся слои цветного и дымчатого стекла с воздушной прослойкой до (baseY + 1).
 		for (int dx = -s.radius; dx <= s.radius; dx++) {
 			for (int dz = -s.radius; dz <= s.radius; dz++) {
 				int x = s.centerX + dx;
 				int z = s.centerZ + dz;
 
-				// Скрытый глубоко внизу источник света
-				mutable.set(x, s.baseY - FOG_DEPTH, z);
-				world.setBlockState(mutable, lanternState, FAST_BLOCK_FLAGS);
-
-				// Многослойный пирог стекла над источником света (чередование слоёв для максимальной плотности тумана)
-				mutable.set(x, s.baseY - 8, z);
-				world.setBlockState(mutable, glassState, FAST_BLOCK_FLAGS);
-
-				mutable.set(x, s.baseY - 7, z);
-				world.setBlockState(mutable, hazeState, FAST_BLOCK_FLAGS);
-
-				mutable.set(x, s.baseY - 6, z);
-				world.setBlockState(mutable, glassState, FAST_BLOCK_FLAGS);
-
-				mutable.set(x, s.baseY - 5, z);
-				world.setBlockState(mutable, airState, FAST_BLOCK_FLAGS);
-
-				mutable.set(x, s.baseY - 4, z);
-				world.setBlockState(mutable, glassState, FAST_BLOCK_FLAGS);
+				if (((dx + dz) & 1) == 0) {
+					mutable.set(x, s.baseY - FOG_DEPTH, z);
+					world.setBlockState(mutable, lanternState, FAST_BLOCK_FLAGS);
+				}
 
 				mutable.set(x, s.baseY - 3, z);
-				world.setBlockState(mutable, hazeState, FAST_BLOCK_FLAGS);
+				world.setBlockState(mutable, glassState, FAST_BLOCK_FLAGS);
 
 				mutable.set(x, s.baseY - 2, z);
-				world.setBlockState(mutable, glassState, FAST_BLOCK_FLAGS);
+				world.setBlockState(mutable, hazeState, FAST_BLOCK_FLAGS);
 
 				mutable.set(x, s.baseY - 1, z);
 				world.setBlockState(mutable, airState, FAST_BLOCK_FLAGS);
@@ -208,8 +193,8 @@ public final class MysterySkyManager {
 			}
 		}
 
-		// 2. Концентрические витражные кольца вокруг площади
-		int[] glassRings = new int[]{6, 11, 18, 26};
+		// 2. Концентрические витражные кольца вокруг площади (в пределах компактного радиуса 22)
+		int[] glassRings = new int[]{6, 11, 17};
 		for (int ringR : glassRings) {
 			for (int dx = -ringR; dx <= ringR; dx++) {
 				for (int dz = -ringR; dz <= ringR; dz++) {
@@ -294,11 +279,11 @@ public final class MysterySkyManager {
 		);
 		world.setBlockState(machinePos.up(), glassState, FAST_BLOCK_FLAGS);
 
-		// 6. Кастомные деревья вблизи центра (плотное внутреннее кольцо 8..14 блоков и среднее 15..42 блока)
-		int innerTrees = 18;
+		// 6. Компактные кольца деревьев вокруг центра (без перегрузки чанков!)
+		int innerTrees = 10;
 		for (int i = 0; i < innerTrees; i++) {
 			double angle = (Math.PI * 2.0D * i) / innerTrees + (random.nextDouble() - 0.5D) * 0.18D;
-			int dist = 8 + random.nextInt(7);
+			int dist = 8 + random.nextInt(5);
 			int tx = s.centerX + (int) Math.round(Math.cos(angle) * dist);
 			int tz = s.centerZ + (int) Math.round(Math.sin(angle) * dist);
 			if (Math.abs(tx - s.centerX) <= 4 && tz >= s.centerZ - 7 && tz <= s.centerZ + 5) {
@@ -307,10 +292,10 @@ public final class MysterySkyManager {
 			buildCustomTree(world, tx, s.baseY + 2, tz, i % 4, glassState, random);
 		}
 
-		int outerTrees = 36;
+		int outerTrees = 8;
 		for (int i = 0; i < outerTrees; i++) {
 			double angle = random.nextDouble() * Math.PI * 2.0D;
-			int dist = 15 + random.nextInt(28);
+			int dist = 13 + random.nextInt(6);
 			int tx = s.centerX + (int) Math.round(Math.cos(angle) * dist);
 			int tz = s.centerZ + (int) Math.round(Math.sin(angle) * dist);
 			if (Math.abs(tx - s.centerX) <= 4 && tz >= s.centerZ - 7 && tz <= s.centerZ + 5) {
@@ -541,8 +526,8 @@ public final class MysterySkyManager {
 			for (int dz = -s.radius; dz <= s.radius; dz++) {
 				int x = s.centerX + dx;
 				int z = s.centerZ + dz;
-				// Очищаем все слои туманного пола от (baseY - FOG_DEPTH) до (baseY + 1)
-				for (int dy = -FOG_DEPTH; dy <= 1; dy++) {
+				// Очищаем все слои туманного пола (включая старые сессии с глубиной -9)
+				for (int dy = -9; dy <= 1; dy++) {
 					m.set(x, s.baseY + dy, z);
 					if (!overworld.getBlockState(m).isAir()) {
 						overworld.setBlockState(m, air, FAST_BLOCK_FLAGS);

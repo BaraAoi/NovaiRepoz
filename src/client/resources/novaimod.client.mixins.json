@@ -6,7 +6,8 @@
 		"LivingEntityRendererMixin",
 		"MinecraftClientMixin",
 		"WorldRendererMixin",
-		"ParticleManagerMixin"
+		"ParticleManagerMixin",
+		"HandledScreenMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

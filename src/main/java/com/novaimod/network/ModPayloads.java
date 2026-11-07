@@ -613,6 +613,47 @@ public final class ModPayloads {
 		}
 	}
 
+	public record SeatPadSyncPayload(boolean equipped) implements CustomPayload {
+		public static final CustomPayload.Id<SeatPadSyncPayload> ID =
+				new CustomPayload.Id<>(Identifier.of(NovaiMod.MOD_ID, "seat_pad_sync"));
+		public static final PacketCodec<RegistryByteBuf, SeatPadSyncPayload> CODEC =
+				PacketCodec.of(SeatPadSyncPayload::write, SeatPadSyncPayload::read);
+
+		private void write(RegistryByteBuf buf) {
+			buf.writeBoolean(equipped);
+		}
+
+		private static SeatPadSyncPayload read(RegistryByteBuf buf) {
+			return new SeatPadSyncPayload(buf.readBoolean());
+		}
+
+		@Override
+		public Id<? extends CustomPayload> getId() {
+			return ID;
+		}
+	}
+
+	public record SeatPadSlotActionPayload(int action, int invSlot) implements CustomPayload {
+		public static final CustomPayload.Id<SeatPadSlotActionPayload> ID =
+				new CustomPayload.Id<>(Identifier.of(NovaiMod.MOD_ID, "seat_pad_action"));
+		public static final PacketCodec<RegistryByteBuf, SeatPadSlotActionPayload> CODEC =
+				PacketCodec.of(SeatPadSlotActionPayload::write, SeatPadSlotActionPayload::read);
+
+		private void write(RegistryByteBuf buf) {
+			buf.writeVarInt(action);
+			buf.writeVarInt(invSlot);
+		}
+
+		private static SeatPadSlotActionPayload read(RegistryByteBuf buf) {
+			return new SeatPadSlotActionPayload(buf.readVarInt(), buf.readVarInt());
+		}
+
+		@Override
+		public Id<? extends CustomPayload> getId() {
+			return ID;
+		}
+	}
+
 	public static void registerPayloadTypes() {
 		PayloadTypeRegistry.playS2C().register(AccountSyncPayload.ID, AccountSyncPayload.CODEC);
 		PayloadTypeRegistry.playS2C().register(OpenLoanScreenPayload.ID, OpenLoanScreenPayload.CODEC);
@@ -627,6 +668,7 @@ public final class ModPayloads {
 		PayloadTypeRegistry.playS2C().register(ShadowCuePayload.ID, ShadowCuePayload.CODEC);
 		PayloadTypeRegistry.playS2C().register(SeamlessTeleportPayload.ID, SeamlessTeleportPayload.CODEC);
 		PayloadTypeRegistry.playS2C().register(CelestialLightningBeamPayload.ID, CelestialLightningBeamPayload.CODEC);
+		PayloadTypeRegistry.playS2C().register(SeatPadSyncPayload.ID, SeatPadSyncPayload.CODEC);
 
 		PayloadTypeRegistry.playC2S().register(LoanActionPayload.ID, LoanActionPayload.CODEC);
 		PayloadTypeRegistry.playC2S().register(ShopBuyPayload.ID, ShopBuyPayload.CODEC);
@@ -639,5 +681,6 @@ public final class ModPayloads {
 		PayloadTypeRegistry.playC2S().register(UseTeleporterPayload.ID, UseTeleporterPayload.CODEC);
 		PayloadTypeRegistry.playC2S().register(TeleporterFastMoneyPayload.ID, TeleporterFastMoneyPayload.CODEC);
 		PayloadTypeRegistry.playC2S().register(CycleUberGunModePayload.ID, CycleUberGunModePayload.CODEC);
+		PayloadTypeRegistry.playC2S().register(SeatPadSlotActionPayload.ID, SeatPadSlotActionPayload.CODEC);
 	}
 }
