@@ -3,7 +3,6 @@ package com.novaimod.item;
 import java.util.List;
 
 import com.novaimod.entity.ModNpcEntity;
-import com.novaimod.entity.PartyDollEntity;
 import com.novaimod.entity.TerraCataclysmEntity;
 
 import net.minecraft.component.DataComponentTypes;
@@ -133,7 +132,6 @@ public class AstralGateItem extends Item {
 				e -> e.isAlive()
 						&& !(e instanceof PlayerEntity)
 						&& !(e instanceof ModNpcEntity)
-						&& !(e instanceof PartyDollEntity)
 						&& !(e instanceof TameableEntity tame && tame.isTamed())
 		);
 
@@ -200,7 +198,6 @@ public class AstralGateItem extends Item {
 				e -> e.isAlive()
 						&& !(e instanceof PlayerEntity)
 						&& !(e instanceof ModNpcEntity)
-						&& !(e instanceof PartyDollEntity)
 						&& !(e instanceof TameableEntity tame && tame.isTamed())
 		);
 
@@ -255,7 +252,7 @@ public class AstralGateItem extends Item {
 			for (LivingEntity victim : sw.getEntitiesByClass(
 					LivingEntity.class,
 					beamBox,
-					e -> e.isAlive() && e != sp && !(e instanceof PlayerEntity) && !(e instanceof ModNpcEntity) && !(e instanceof PartyDollEntity)
+					e -> e.isAlive() && e != sp && !(e instanceof PlayerEntity) && !(e instanceof ModNpcEntity)
 			)) {
 				victim.hurtTime = 0;
 				victim.timeUntilRegen = 0;

@@ -107,7 +107,14 @@ public class RealityRiftBladeItem extends Item {
 		if (!world.isClient() && world instanceof ServerWorld sw && user instanceof ServerPlayerEntity sp) {
 			if (user.isSneaking()) {
 				// Shift + ПКМ: «Приговор Пространства» (Judgment Cut End) в радиусе 48 блоков!
-				RealitySlashEntity dome = RealitySlashEntity.createDomainSlash(sw, sp, sp.getPos());
+				RealitySlashEntity dome = new RealitySlashEntity(
+						sw,
+						sp.getX(), sp.getY(), sp.getZ(),
+						Vec3d.ZERO,
+						sp.getYaw(), 0.0F,
+						sp.getUuid(),
+						RealitySlashEntity.MODE_JUDGMENT_CUT_END
+				);
 				sw.spawnEntity(dome);
 				sw.playSound(null, sp.getX(), sp.getY(), sp.getZ(), SoundEvents.BLOCK_RESPAWN_ANCHOR_SET_SPAWN, SoundCategory.PLAYERS, 1.8F, 1.45F);
 				sw.playSound(null, sp.getX(), sp.getY(), sp.getZ(), SoundEvents.ENTITY_WARDEN_HEARTBEAT, SoundCategory.PLAYERS, 2.0F, 0.85F);
@@ -117,11 +124,17 @@ public class RealityRiftBladeItem extends Item {
 						true
 				);
 			} else {
-				// ПКМ: Пространственный Разрез (3D-серп, летящий сквозь стены на 85 блоков со случайным наклоном!)
+				// ПКМ: Пространственный Разрез (3D-серп, летящий сквозь стены на 85 блоков!)
 				Vec3d look = sp.getRotationVec(1.0F).normalize();
 				Vec3d spawnPos = sp.getEyePos().add(look.multiply(1.35D)).subtract(0.0D, 0.35D, 0.0D);
-				float roll = (sw.random.nextFloat() - 0.5F) * 110.0F;
-				RealitySlashEntity wave = RealitySlashEntity.createWave(sw, sp, spawnPos, look, sp.getYaw(), sp.getPitch(), roll);
+				RealitySlashEntity wave = new RealitySlashEntity(
+						sw,
+						spawnPos.x, spawnPos.y, spawnPos.z,
+						look.multiply(2.65D),
+						sp.getYaw(), sp.getPitch(),
+						sp.getUuid(),
+						RealitySlashEntity.MODE_CRESCENT_WAVE
+				);
 				sw.spawnEntity(wave);
 				sw.playSound(null, sp.getX(), sp.getY(), sp.getZ(), SoundEvents.ENTITY_PLAYER_ATTACK_SWEEP, SoundCategory.PLAYERS, 1.4F, 0.65F);
 				sw.playSound(null, sp.getX(), sp.getY(), sp.getZ(), SoundEvents.ENTITY_ILLUSIONER_MIRROR_MOVE, SoundCategory.PLAYERS, 1.2F, 1.4F);

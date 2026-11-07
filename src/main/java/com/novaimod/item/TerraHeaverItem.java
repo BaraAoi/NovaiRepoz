@@ -3,7 +3,6 @@ package com.novaimod.item;
 import java.util.List;
 
 import com.novaimod.entity.ModNpcEntity;
-import com.novaimod.entity.PartyDollEntity;
 import com.novaimod.entity.TerraCataclysmEntity;
 
 import net.minecraft.entity.LivingEntity;
@@ -111,7 +110,6 @@ public class TerraHeaverItem extends Item {
 					e -> e.isAlive()
 							&& !(e instanceof PlayerEntity)
 							&& !(e instanceof ModNpcEntity)
-							&& !(e instanceof PartyDollEntity)
 							&& !(e instanceof TameableEntity tame && tame.isTamed())
 			);
 			for (LivingEntity victim : victims) {

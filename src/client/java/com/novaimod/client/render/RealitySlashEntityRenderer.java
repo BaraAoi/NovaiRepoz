@@ -43,7 +43,7 @@ public class RealitySlashEntityRenderer extends EntityRenderer<RealitySlashEntit
 			VertexConsumerProvider vertexConsumers,
 			int light
 	) {
-		if (entity.getSlashMode() == 1) {
+		if (entity.getMode() == RealitySlashEntity.MODE_JUDGMENT_CUT_END) {
 			renderJudgmentCutDomain(entity, tickDelta, matrices, vertexConsumers);
 		} else {
 			renderCrescentWave(entity, matrices, vertexConsumers);
@@ -60,7 +60,8 @@ public class RealitySlashEntityRenderer extends EntityRenderer<RealitySlashEntit
 
 		float yawRad = -entity.getYaw() * MathHelper.RADIANS_PER_DEGREE;
 		float pitchRad = entity.getPitch() * MathHelper.RADIANS_PER_DEGREE;
-		float rollRad = entity.getSlashRoll() * MathHelper.RADIANS_PER_DEGREE;
+		float rollDeg = ((entity.getId() * 41) % 90) - 45.0F;
+		float rollRad = rollDeg * MathHelper.RADIANS_PER_DEGREE;
 
 		matrices.multiply(new Quaternionf().rotationY(yawRad));
 		matrices.multiply(new Quaternionf().rotationX(pitchRad));

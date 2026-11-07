@@ -136,7 +136,6 @@ public class TerraCataclysmEntity extends Entity {
 						&& !e.isSpectator()
 						&& !(e instanceof PlayerEntity)
 						&& !(e instanceof ModNpcEntity)
-						&& !(e instanceof PartyDollEntity)
 						&& !(e instanceof TameableEntity tame && tame.isTamed())
 		);
 		for (LivingEntity target : targets) {
@@ -214,7 +213,7 @@ public class TerraCataclysmEntity extends Entity {
 				List<LivingEntity> hitMobs = sw.getEntitiesByClass(
 						LivingEntity.class,
 						hitBox,
-						m -> m.isAlive() && !(m instanceof PlayerEntity) && !(m instanceof ModNpcEntity) && !(m instanceof PartyDollEntity)
+						m -> m.isAlive() && !(m instanceof PlayerEntity) && !(m instanceof ModNpcEntity)
 				);
 				if (hitGround || !hitMobs.isEmpty() || this.age == 105) {
 					detonateBoulderImpact(sw, ownerEntity, boulder.getPos());
@@ -252,7 +251,6 @@ public class TerraCataclysmEntity extends Entity {
 				e -> e.isAlive()
 						&& !(e instanceof PlayerEntity)
 						&& !(e instanceof ModNpcEntity)
-						&& !(e instanceof PartyDollEntity)
 						&& !(e instanceof TameableEntity tame && tame.isTamed())
 		);
 
@@ -293,7 +291,6 @@ public class TerraCataclysmEntity extends Entity {
 				e -> e.isAlive()
 						&& !(e instanceof PlayerEntity)
 						&& !(e instanceof ModNpcEntity)
-						&& !(e instanceof PartyDollEntity)
 						&& !(e instanceof TameableEntity tame && tame.isTamed())
 		);
 		for (LivingEntity victim : victims) {

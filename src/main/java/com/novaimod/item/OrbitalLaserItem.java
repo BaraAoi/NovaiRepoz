@@ -98,7 +98,7 @@ public class OrbitalLaserItem extends Item {
 				targetPos = new Vec3d(ahead.x, Math.max(sw.getBottomY() + 1, topY), ahead.z);
 			}
 
-			OrbitalLaserEntity laser = new OrbitalLaserEntity(sw, sp, targetPos, shouldCarveTerrain(stack));
+			OrbitalLaserEntity laser = new OrbitalLaserEntity(sw, targetPos.x, targetPos.y, targetPos.z, sp.getUuid(), shouldCarveTerrain(stack));
 			sw.spawnEntity(laser);
 
 			sw.playSound(null, sp.getX(), sp.getY(), sp.getZ(), SoundEvents.BLOCK_BEACON_ACTIVATE, SoundCategory.PLAYERS, 2.0F, 1.55F);

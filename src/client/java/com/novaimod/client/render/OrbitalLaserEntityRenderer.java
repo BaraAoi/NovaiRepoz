@@ -49,8 +49,8 @@ public class OrbitalLaserEntityRenderer extends EntityRenderer<OrbitalLaserEntit
 		matrices.push();
 		VertexConsumer glowVc = vertexConsumers.getBuffer(RenderLayer.getLightning());
 
-		if (exactAge < OrbitalLaserEntity.WARMUP_TICKS) {
-			float prog = MathHelper.clamp(exactAge / OrbitalLaserEntity.WARMUP_TICKS, 0.0F, 1.0F);
+		if (exactAge < OrbitalLaserEntity.LOCK_ON_TICKS) {
+			float prog = MathHelper.clamp(exactAge / OrbitalLaserEntity.LOCK_ON_TICKS, 0.0F, 1.0F);
 			float outerR = MathHelper.lerp(prog, 6.5F, 2.2F);
 
 			// Тонкий прицельный луч с орбиты
@@ -69,9 +69,9 @@ public class OrbitalLaserEntityRenderer extends EntityRenderer<OrbitalLaserEntit
 			drawFlatRing(matrices.peek().getPositionMatrix(), glowVc, outerR * 0.45F, outerR * 0.56F, 255, 215, 95, 220);
 			matrices.pop();
 		} else {
-			float fireTicks = exactAge - OrbitalLaserEntity.WARMUP_TICKS;
+			float fireTicks = exactAge - OrbitalLaserEntity.LOCK_ON_TICKS;
 			float fadeIn = MathHelper.clamp(fireTicks / 4.0F, 0.0F, 1.0F);
-			float fadeOut = MathHelper.clamp((OrbitalLaserEntity.TOTAL_DURATION_TICKS - exactAge) / 10.0F, 0.0F, 1.0F);
+			float fadeOut = MathHelper.clamp((OrbitalLaserEntity.TOTAL_TICKS - exactAge) / 10.0F, 0.0F, 1.0F);
 			float scale = fadeIn * fadeOut * (1.0F + 0.07F * MathHelper.sin(realSec * 28.0F));
 
 			// 1. Внутреннее бело-золотое ядро плазмы
