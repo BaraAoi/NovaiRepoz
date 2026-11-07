@@ -458,6 +458,15 @@ public class ModPersistentState extends PersistentState {
 		this.apocalypseTicksLeft = ticks;
 	}
 
+	public boolean isApocalypseDollUsed() {
+		return apocalypseDollUsed;
+	}
+
+	public void setApocalypseDollUsed(boolean used) {
+		this.apocalypseDollUsed = used;
+		markDirty();
+	}
+
 	public Set<UUID> getDiedDuringApocalypse() {
 		return diedDuringApocalypse;
 	}
@@ -508,6 +517,7 @@ public class ModPersistentState extends PersistentState {
 		nbt.putInt("pendingArtifactAwakenTicks", pendingArtifactAwakenTicks);
 		nbt.putBoolean("apocalypseActive", apocalypseActive);
 		nbt.putInt("apocalypseTicksLeft", apocalypseTicksLeft);
+		nbt.putBoolean("apocalypseDollUsed", apocalypseDollUsed);
 		NbtList deadList = new NbtList();
 		for (UUID u : diedDuringApocalypse) {
 			deadList.add(NbtString.of(u.toString()));
@@ -570,6 +580,7 @@ public class ModPersistentState extends PersistentState {
 		state.pendingArtifactAwakenTicks = nbt.getInt("pendingArtifactAwakenTicks");
 		state.apocalypseActive = nbt.getBoolean("apocalypseActive");
 		state.apocalypseTicksLeft = nbt.getInt("apocalypseTicksLeft");
+		state.apocalypseDollUsed = nbt.getBoolean("apocalypseDollUsed");
 		if (nbt.contains("diedDuringApocalypse", NbtElement.LIST_TYPE)) {
 			NbtList dl = nbt.getList("diedDuringApocalypse", NbtElement.STRING_TYPE);
 			for (int i = 0; i < dl.size(); i++) {

@@ -71,10 +71,12 @@ import net.minecraft.world.WorldEvents;
  *    а также делит между выжившими 64 железа, 32 алмаза и 6 незерита!
  */
 public final class ApocalypseEventManager {
-	public static final int APOCALYPSE_DURATION_TICKS = 20 * 60 * 10; // 10 минут = 12000 тиков
+	public static final int APOCALYPSE_DURATION_TICKS = 20 * 60 * 5; // 5 минут = 6000 тиков
 	private static final String TAG_APOC_GEARED = "novai_apoc_geared";
+	public static final String TAG_APOC_SPEEDSTER = "novai_apoc_speedster";
 
 	private static ServerBossBar bossBar = null;
+	private static int apocalypseMobCounter = 0;
 
 	private ApocalypseEventManager() {
 	}
@@ -158,6 +160,7 @@ public final class ApocalypseEventManager {
 		state.setPendingArtifactAwakenTicks(0);
 		state.setApocalypseActive(true);
 		state.setApocalypseTicksLeft(APOCALYPSE_DURATION_TICKS);
+		state.setApocalypseDollUsed(false);
 		state.getDiedDuringApocalypse().clear();
 		state.markDirty();
 
@@ -169,7 +172,7 @@ public final class ApocalypseEventManager {
 				.append(Text.literal("ПРОКЛЯТИЕ").formatted(Formatting.LIGHT_PURPLE, Formatting.OBFUSCATED))
 				.append(Text.literal(" НЕИЗВЕСТНЫЙ АРТЕФАКТ АКТИВИРОВАН" + who + "! ").formatted(Formatting.RED, Formatting.BOLD))
 				.append(Text.literal("ПРОКЛЯТИЕ").formatted(Formatting.LIGHT_PURPLE, Formatting.OBFUSCATED));
-		Text subAlert = Text.literal("Мобы облачены в зачарованную броню и вооружены до зубов, не горят на солнце, а криперы роют путь и взрывают обсидиан! Продержитесь 10 минут!")
+		Text subAlert = Text.literal("Мобы облачены в зачарованную броню и вооружены, каждый 3-й со скоростью, а лучники бьют в спину с 90% меткостью! Продержитесь 5 минут!")
 				.formatted(Formatting.GOLD, Formatting.BOLD);
 
 		for (ServerPlayerEntity p : server.getPlayerManager().getPlayerList()) {
@@ -192,7 +195,7 @@ public final class ApocalypseEventManager {
 		state.getDiedDuringApocalypse().add(deadPlayer.getUuid());
 		state.markDirty();
 		deadPlayer.sendMessage(
-				Text.literal("[Проклятие]: Вы пали во время испытания 10 минут и выбываете из дележа награды выживших!")
+				Text.literal("[Проклятие]: Вы пали во время испытания 5 минут и выбываете из дележа награды выживших!")
 						.formatted(Formatting.RED, Formatting.BOLD),
 				false
 		);
@@ -275,11 +278,13 @@ public final class ApocalypseEventManager {
 					if (PartyDollEntitySafeCheck.isFriendly(mob)) {
 						continue;
 					}
-					// Сопротивление урону (RESISTANCE) убрано! Вместо него мобы одеваются в настоящую зачарованную броню и вооружаются!
+					// Сопротивление урону убрано! Каждый 3-й моб получает высокую Скорость, чтобы просто убегать от орды было нельзя!
 					mob.removeStatusEffect(StatusEffects.RESISTANCE);
-					mob.addStatusEffect(new StatusEffectInstance(StatusEffects.SPEED, 60, 0, true, false));
 					mob.addStatusEffect(new StatusEffectInstance(StatusEffects.STRENGTH, 60, 0, true, false));
 					equipApocalypseMobIfNeeded(mob, world);
+					if (mob.getCommandTags().contains(TAG_APOC_SPEEDSTER)) {
+						mob.addStatusEffect(new StatusEffectInstance(StatusEffects.SPEED, 60, 2, true, false));
+					}
 
 					if (mob.getTarget() == null && mob.squaredDistanceTo(player) <= 48.0D * 48.0D) {
 						mob.setTarget(player);
@@ -359,6 +364,13 @@ public final class ApocalypseEventManager {
 		if (!mob.addCommandTag(TAG_APOC_GEARED)) {
 			return;
 		}
+		// Ровно каждый 3-й моб во время испытания получает эффект высокой Скорости (Скорость III), чтобы тактика «просто убегать» не работала!
+		apocalypseMobCounter++;
+		if (apocalypseMobCounter % 3 == 0) {
+			mob.addCommandTag(TAG_APOC_SPEEDSTER);
+			mob.addStatusEffect(new StatusEffectInstance(StatusEffects.SPEED, 100, 2, true, false));
+		}
+
 		if (mob instanceof CreeperEntity) {
 			return;
 		}
@@ -709,6 +721,7 @@ public final class ApocalypseEventManager {
 	private static void finishApocalypse(MinecraftServer server, ModPersistentState state) {
 		state.setApocalypseActive(false);
 		state.setApocalypseTicksLeft(0);
+		state.setApocalypseDollUsed(false);
 		if (bossBar != null) {
 			bossBar.clearPlayers();
 			bossBar.setVisible(false);
@@ -726,7 +739,7 @@ public final class ApocalypseEventManager {
 
 		if (survivors.isEmpty()) {
 			server.getPlayerManager().broadcast(
-					Text.literal("☠ 10 минут проклятия истекли, но никто не выжил без смертей — награда сгорела во тьме!")
+					Text.literal("☠ 5 минут проклятия истекли, но никто не выжил без смертей — награда сгорела во тьме!")
 							.formatted(Formatting.RED, Formatting.BOLD),
 					false
 			);
@@ -754,7 +767,7 @@ public final class ApocalypseEventManager {
 			survivor.getServerWorld().playSound(null, survivor.getBlockPos(), SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, SoundCategory.PLAYERS, 1.0F, 1.0F);
 			survivor.getServerWorld().spawnParticles(ParticleTypes.TOTEM_OF_UNDYING, survivor.getX(), survivor.getY() + 1.0D, survivor.getZ(), 60, 0.5D, 0.8D, 0.5D, 0.25D);
 			survivor.sendMessage(
-					Text.literal("✦ ВЫ ВЫЖИЛИ 10 МИНУТ! Награда: +30 000 ₽ на счёт, "
+					Text.literal("✦ ВЫ ВЫЖИЛИ 5 МИНУТ! Награда: +30 000 ₽ на счёт, "
 							+ ironShare + " железа, " + diamondShare + " алмазов, "
 							+ netheriteShare + " незерита и 1 Жетон возрождения!")
 							.formatted(Formatting.GREEN, Formatting.BOLD),

@@ -23,10 +23,16 @@ import net.minecraft.item.BowItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.item.trim.ArmorTrim;
+import net.minecraft.item.trim.ArmorTrimMaterial;
+import net.minecraft.item.trim.ArmorTrimMaterials;
+import net.minecraft.item.trim.ArmorTrimPattern;
+import net.minecraft.item.trim.ArmorTrimPatterns;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.registry.RegistryWrapper;
+import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundCategory;
@@ -49,6 +55,7 @@ public final class MfoArmorSetManager {
 	public static final String NBT_MFO_BOW_KEY = "novai_mfo_bow";
 	public static final String NBT_ENCHANT_LOCKED = "novai_enchant_locked";
 	public static final String NBT_V32_CURSED = "novai_v32_cursed";
+	public static final String NBT_V33_TRIMMED = "novai_v33_trimmed";
 	public static final String SET_SWORDSMAN = "swordsman";
 	public static final String SET_ARCHER = "archer";
 
@@ -60,8 +67,9 @@ public final class MfoArmorSetManager {
 	public static ItemStack createSwordsmanArmorPiece(
 			Item diamondArmorItem,
 			String customTitle,
-			RegistryWrapper.Impl<Enchantment> enchRegistry
+			RegistryWrapper.WrapperLookup registriesLookup
 	) {
+		RegistryWrapper.Impl<Enchantment> enchRegistry = registriesLookup.getWrapperOrThrow(RegistryKeys.ENCHANTMENT);
 		ItemStack stack = new ItemStack(diamondArmorItem);
 		stack.set(DataComponentTypes.CUSTOM_NAME, Text.literal(customTitle).formatted(Formatting.LIGHT_PURPLE, Formatting.BOLD));
 		addEnchant(stack, enchRegistry, Enchantments.PROTECTION, 4);
@@ -71,6 +79,7 @@ public final class MfoArmorSetManager {
 		stack.set(DataComponentTypes.CUSTOM_DATA, NbtComponent.of(nbt));
 
 		applyHiddenCursedArmorRules(stack, enchRegistry);
+		applyVanillaSetTrim(stack, SET_SWORDSMAN, registriesLookup);
 
 		stack.set(DataComponentTypes.LORE, new LoreComponent(List.of(
 				Text.literal("Сет Мечника МФО").formatted(Formatting.GOLD),
@@ -84,8 +93,9 @@ public final class MfoArmorSetManager {
 			ArmorItem diamondArmorItem,
 			String customTitle,
 			double reducedArmor,
-			RegistryWrapper.Impl<Enchantment> enchRegistry
+			RegistryWrapper.WrapperLookup registriesLookup
 	) {
+		RegistryWrapper.Impl<Enchantment> enchRegistry = registriesLookup.getWrapperOrThrow(RegistryKeys.ENCHANTMENT);
 		ItemStack stack = new ItemStack(diamondArmorItem);
 		stack.set(DataComponentTypes.CUSTOM_NAME, Text.literal(customTitle).formatted(Formatting.AQUA, Formatting.BOLD));
 		addEnchant(stack, enchRegistry, Enchantments.PROTECTION, 3);
@@ -99,6 +109,7 @@ public final class MfoArmorSetManager {
 		stack.set(DataComponentTypes.CUSTOM_DATA, NbtComponent.of(nbt));
 
 		applyHiddenCursedArmorRules(stack, enchRegistry);
+		applyVanillaSetTrim(stack, SET_ARCHER, registriesLookup);
 
 		stack.set(DataComponentTypes.LORE, new LoreComponent(List.of(
 				Text.literal("Сет Лучника МФО (облегчённый алмаз)").formatted(Formatting.AQUA),
@@ -106,6 +117,33 @@ public final class MfoArmorSetManager {
 				Text.literal("Бонус сохраняется при улучшении до незерита!").formatted(Formatting.GRAY)
 		)));
 		return stack;
+	}
+
+	/**
+	 * Меняет внешний вид обоих сетов МФО с помощью ванильных кузнечных шаблонов (ArmorTrim) без добавления новых текстур:
+	 * - Сет Мечника: шаблон «Тишина» (Silence) + Золото (Gold) — богатый золотой узор воина.
+	 * - Сет Лучника: шаблон «Поток» (Flow) + Аметист (Amethyst) — стремительный фиолетовый вихрь стрелка.
+	 */
+	public static void applyVanillaSetTrim(ItemStack stack, String setId, RegistryWrapper.WrapperLookup registriesLookup) {
+		Item templateItem = SET_SWORDSMAN.equals(setId)
+				? Items.SILENCE_ARMOR_TRIM_SMITHING_TEMPLATE
+				: Items.FLOW_ARMOR_TRIM_SMITHING_TEMPLATE;
+		Item materialItem = SET_SWORDSMAN.equals(setId)
+				? Items.GOLD_INGOT
+				: Items.AMETHYST_SHARD;
+
+		java.util.Optional<RegistryEntry.Reference<ArmorTrimPattern>> patternOpt =
+				ArmorTrimPatterns.get(registriesLookup, new ItemStack(templateItem));
+		java.util.Optional<RegistryEntry.Reference<ArmorTrimMaterial>> materialOpt =
+				ArmorTrimMaterials.get(registriesLookup, new ItemStack(materialItem));
+
+		if (patternOpt.isPresent() && materialOpt.isPresent()) {
+			stack.set(DataComponentTypes.TRIM, new ArmorTrim(materialOpt.get(), patternOpt.get(), false));
+		}
+
+		NbtCompound nbt = stack.getOrDefault(DataComponentTypes.CUSTOM_DATA, NbtComponent.DEFAULT).copyNbt();
+		nbt.putBoolean(NBT_V33_TRIMMED, true);
+		stack.set(DataComponentTypes.CUSTOM_DATA, NbtComponent.of(nbt));
 	}
 
 	/**
@@ -207,9 +245,13 @@ public final class MfoArmorSetManager {
 			return;
 		}
 
-		// Гарантируем сохранение скрытости всех зачарований и блокировки отдельного зачарования после кузнечного стола
+		// Гарантируем сохранение скрытости всех зачарований и ванильной отделки (ArmorTrim) после кузнечного стола
 		ItemEnchantmentsComponent ench = resultStack.getOrDefault(DataComponentTypes.ENCHANTMENTS, ItemEnchantmentsComponent.DEFAULT);
 		resultStack.set(DataComponentTypes.ENCHANTMENTS, ench.withShowInTooltip(false));
+		ArmorTrim existingTrim = resultStack.get(DataComponentTypes.TRIM);
+		if (existingTrim != null) {
+			resultStack.set(DataComponentTypes.TRIM, existingTrim.withShowInTooltip(false));
+		}
 		NbtCompound nbt = resultStack.getOrDefault(DataComponentTypes.CUSTOM_DATA, NbtComponent.DEFAULT).copyNbt();
 		nbt.putBoolean(NBT_ENCHANT_LOCKED, true);
 		resultStack.set(DataComponentTypes.CUSTOM_DATA, NbtComponent.of(nbt));
@@ -287,8 +329,8 @@ public final class MfoArmorSetManager {
 				continue;
 			}
 
-			// 0. Авто-обновление уже купленной брони МФО из старых версий мира под новые правила проклятий и скрытых чар
-			migrateLegacyMfoArmor(player, enchRegistry);
+			// 0. Авто-обновление уже купленной брони МФО из старых версий мира под новые правила проклятий, скрытых чар и ванильной отделки (ArmorTrim)
+			migrateLegacyMfoArmor(player, server.getRegistryManager(), enchRegistry);
 
 			// 1. Проверка полного Сета Мечника (4/4): +2 ХП (+2.0 Max Health)
 			boolean fullSwordsman = isWearingFullSet(player, SET_SWORDSMAN);
@@ -319,20 +361,32 @@ public final class MfoArmorSetManager {
 		}
 	}
 
-	private static void migrateLegacyMfoArmor(ServerPlayerEntity player, RegistryWrapper.Impl<Enchantment> enchRegistry) {
+	private static void migrateLegacyMfoArmor(
+			ServerPlayerEntity player,
+			RegistryWrapper.WrapperLookup registriesLookup,
+			RegistryWrapper.Impl<Enchantment> enchRegistry
+	) {
 		for (ItemStack armor : player.getInventory().armor) {
-			if (!getArmorSetId(armor).isEmpty()) {
+			String setId = getArmorSetId(armor);
+			if (!setId.isEmpty()) {
 				NbtComponent comp = armor.getOrDefault(DataComponentTypes.CUSTOM_DATA, NbtComponent.DEFAULT);
 				if (!comp.contains(NBT_V32_CURSED)) {
 					applyHiddenCursedArmorRules(armor, enchRegistry);
 				}
+				if (!comp.contains(NBT_V33_TRIMMED)) {
+					applyVanillaSetTrim(armor, setId, registriesLookup);
+				}
 			}
 		}
 		for (ItemStack main : player.getInventory().main) {
-			if (!getArmorSetId(main).isEmpty()) {
+			String setId = getArmorSetId(main);
+			if (!setId.isEmpty()) {
 				NbtComponent comp = main.getOrDefault(DataComponentTypes.CUSTOM_DATA, NbtComponent.DEFAULT);
 				if (!comp.contains(NBT_V32_CURSED)) {
 					applyHiddenCursedArmorRules(main, enchRegistry);
+				}
+				if (!comp.contains(NBT_V33_TRIMMED)) {
+					applyVanillaSetTrim(main, setId, registriesLookup);
 				}
 			}
 		}

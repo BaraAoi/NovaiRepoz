@@ -147,61 +147,61 @@ public final class ShopCatalogs {
 			ItemStack vipBow = MfoArmorSetManager.createMfoBow(enchRegistry);
 			list.add(new OfferEntry("elite_mfo_bow", vipBow, 8990, "VIP ЛИМИТ", state.getEliteStock("elite_mfo_bow", 2)));
 
-			// === ФУЛЛ СЕТ МЕЧНИКА МФО (в магазине ровно 2 сета; за 4/4 даёт бонус +2 ХП!) ===
+			// === ФУЛЛ СЕТ МЕЧНИКА МФО (в магазине ровно 2 сета; за 4/4 даёт бонус +2 ХП! Внешка: золотой узор «Тишина») ===
 			list.add(new OfferEntry(
 					"mfo_sword_helm",
-					MfoArmorSetManager.createSwordsmanArmorPiece(Items.DIAMOND_HELMET, "Шлем Мечника МФО", enchRegistry),
+					MfoArmorSetManager.createSwordsmanArmorPiece(Items.DIAMOND_HELMET, "Шлем Мечника МФО", server.getRegistryManager()),
 					5490,
 					"СЕТ МЕЧНИКА",
 					state.getEliteStock("mfo_sword_helm", 2)
 			));
 			list.add(new OfferEntry(
 					"mfo_sword_chest",
-					MfoArmorSetManager.createSwordsmanArmorPiece(Items.DIAMOND_CHESTPLATE, "Китель Мечника МФО", enchRegistry),
+					MfoArmorSetManager.createSwordsmanArmorPiece(Items.DIAMOND_CHESTPLATE, "Китель Мечника МФО", server.getRegistryManager()),
 					7490,
 					"СЕТ МЕЧНИКА",
 					state.getEliteStock("mfo_sword_chest", 2)
 			));
 			list.add(new OfferEntry(
 					"mfo_sword_legs",
-					MfoArmorSetManager.createSwordsmanArmorPiece(Items.DIAMOND_LEGGINGS, "Поножи Мечника МФО", enchRegistry),
+					MfoArmorSetManager.createSwordsmanArmorPiece(Items.DIAMOND_LEGGINGS, "Поножи Мечника МФО", server.getRegistryManager()),
 					6790,
 					"СЕТ МЕЧНИКА",
 					state.getEliteStock("mfo_sword_legs", 2)
 			));
 			list.add(new OfferEntry(
 					"mfo_sword_boots",
-					MfoArmorSetManager.createSwordsmanArmorPiece(Items.DIAMOND_BOOTS, "Сапоги Мечника МФО", enchRegistry),
+					MfoArmorSetManager.createSwordsmanArmorPiece(Items.DIAMOND_BOOTS, "Сапоги Мечника МФО", server.getRegistryManager()),
 					5190,
 					"СЕТ МЕЧНИКА",
 					state.getEliteStock("mfo_sword_boots", 2)
 			));
 
-			// === ФУЛЛ СЕТ ЛУЧНИКА МФО (алмазный чуть слабее: 2+6+5+2 = 15 брони; в магазине ровно 2 сета; за 4/4 превращает лук в УБЕРГАН!) ===
+			// === ФУЛЛ СЕТ ЛУЧНИКА МФО (алмазный чуть слабее: 2+6+5+2 = 15 брони; за 4/4 превращает лук в УБЕРГАН! Внешка: аметистовый узор «Поток») ===
 			list.add(new OfferEntry(
 					"mfo_archer_helm",
-					MfoArmorSetManager.createArcherArmorPiece((ArmorItem) Items.DIAMOND_HELMET, "Шлем Лучника МФО", 2.0D, enchRegistry),
+					MfoArmorSetManager.createArcherArmorPiece((ArmorItem) Items.DIAMOND_HELMET, "Шлем Лучника МФО", 2.0D, server.getRegistryManager()),
 					4990,
 					"СЕТ ЛУЧНИКА",
 					state.getEliteStock("mfo_archer_helm", 2)
 			));
 			list.add(new OfferEntry(
 					"mfo_archer_chest",
-					MfoArmorSetManager.createArcherArmorPiece((ArmorItem) Items.DIAMOND_CHESTPLATE, "Кираса Лучника МФО", 6.0D, enchRegistry),
+					MfoArmorSetManager.createArcherArmorPiece((ArmorItem) Items.DIAMOND_CHESTPLATE, "Кираса Лучника МФО", 6.0D, server.getRegistryManager()),
 					6890,
 					"СЕТ ЛУЧНИКА",
 					state.getEliteStock("mfo_archer_chest", 2)
 			));
 			list.add(new OfferEntry(
 					"mfo_archer_legs",
-					MfoArmorSetManager.createArcherArmorPiece((ArmorItem) Items.DIAMOND_LEGGINGS, "Поножи Лучника МФО", 5.0D, enchRegistry),
+					MfoArmorSetManager.createArcherArmorPiece((ArmorItem) Items.DIAMOND_LEGGINGS, "Поножи Лучника МФО", 5.0D, server.getRegistryManager()),
 					6190,
 					"СЕТ ЛУЧНИКА",
 					state.getEliteStock("mfo_archer_legs", 2)
 			));
 			list.add(new OfferEntry(
 					"mfo_archer_boots",
-					MfoArmorSetManager.createArcherArmorPiece((ArmorItem) Items.DIAMOND_BOOTS, "Сапоги Лучника МФО", 2.0D, enchRegistry),
+					MfoArmorSetManager.createArcherArmorPiece((ArmorItem) Items.DIAMOND_BOOTS, "Сапоги Лучника МФО", 2.0D, server.getRegistryManager()),
 					4690,
 					"СЕТ ЛУЧНИКА",
 					state.getEliteStock("mfo_archer_boots", 2)

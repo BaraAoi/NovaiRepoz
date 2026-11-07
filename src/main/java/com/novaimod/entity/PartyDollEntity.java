@@ -6,9 +6,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.novaimod.data.ModPersistentState;
 import com.novaimod.registry.ModEntities;
 import com.novaimod.registry.ModItems;
 import com.novaimod.registry.ModSounds;
+import com.novaimod.world.ApocalypseEventManager;
 
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
@@ -19,10 +21,13 @@ import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.data.DataTracker;
 import net.minecraft.entity.data.TrackedData;
 import net.minecraft.entity.data.TrackedDataHandlerRegistry;
+import net.minecraft.entity.mob.HostileEntity;
+import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.packet.s2c.play.StopSoundS2CPacket;
+import net.minecraft.particle.ItemStackParticleEffect;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -34,39 +39,37 @@ import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 
 /**
  * Женская кукла высотой ровно в 1 блок («Танцующая кукла»):
- * - По нажатию ПКМ включается / выключается.
- * - Играет трек мема с прыгающей Toyota Yaris ("Why's this dealer?" — UK Speed Garage 135 BPM).
- * - Пока кукла активна:
- *   1) Все мобы и NPC в радиусе 20 блоков становятся полностью дружелюбными, сбегаются к кукле,
- *      ВСТАЮТ НА МЕСТЕ И НЕ ДВИГАЮТСЯ (кроме визуальных эффектов сплющивания и вращения!).
- *   2) Игроки и мобы в зоне куклы не наносят друг другу урон.
- *   3) ВСЕ сущности в радиусе 20 блоков (мобы, NPC, игроки и сама кукла) синхронно под 135 BPM
- *      сплющиваются вниз-вширь и возвращаются в нормальный размер + крутятся на 360° чисто визуально
- *      (игроки спокойно ходят, на камеру не влияет!).
+ * - В обычной игре работает без ограничений.
+ * - Во время 5-минутного испытания:
+ *   1) Эффект длится ровно 30 секунд (600 тиков).
+ *   2) Ровно через 30 секунд музыка обрывается и ВСЕ мобы разом разворачиваются в сторону ближайшего игрока!
+ *   3) Ещё через 1 секунду (20 тиков) кукла ломается вдребезги, и всё продолжается как было.
+ *   4) При попытке повторного использования до конца испытания кукла не работает («По каким-то причинам она не работает...»).
  */
 public class PartyDollEntity extends Entity {
 	public static final double AURA_RADIUS = 20.0D;
 	public static final double AURA_RADIUS_SQ = AURA_RADIUS * AURA_RADIUS;
-	// 135 BPM = 2.25 ударов/сек = 0.1125 ударов/тик -> 2 * PI * 0.1125 = 0.70685835F рад/тик!
 	public static final float YARIS_BEAT_RAD_PER_TICK = 0.70685835F;
-	private static final int SOUND_LOOP_TICKS = 289; // 14.466 сек — точная длина загруженного трека Toyota Yaris meme edit!
+	private static final int SOUND_LOOP_TICKS = 289;
+
+	private static final int TRIAL_DANCE_TICKS = 20 * 30; // 30 секунд = 600 тиков
+	private static final int TRIAL_BREAK_TICK = TRIAL_DANCE_TICKS + 20; // +1 секунда = 620 тиков
 
 	private static final TrackedData<Boolean> ACTIVE = DataTracker.registerData(PartyDollEntity.class, TrackedDataHandlerRegistry.BOOLEAN);
+	private static final TrackedData<Boolean> STARE_PHASE = DataTracker.registerData(PartyDollEntity.class, TrackedDataHandlerRegistry.BOOLEAN);
 	private static final TrackedData<Float> DOLL_YAW = DataTracker.registerData(PartyDollEntity.class, TrackedDataHandlerRegistry.FLOAT);
 
-	/**
-	 * Храним активные куклы раздельно для ServerWorld и ClientWorld через IdentityHashMap<World, ...>,
-	 * чтобы в одиночной игре серверная и клиентская сущности с одинаковым entityId никогда не перекрывали друг друга!
-	 */
 	private static final Map<World, Map<Integer, PartyDollEntity>> ACTIVE_BY_WORLD =
 			Collections.synchronizedMap(new IdentityHashMap<>());
 
 	private int musicLoopTicker = 0;
+	private int trialActiveTicks = 0;
 
 	public PartyDollEntity(EntityType<?> type, World world) {
 		super(type, world);
@@ -75,6 +78,7 @@ public class PartyDollEntity extends Entity {
 	@Override
 	protected void initDataTracker(DataTracker.Builder builder) {
 		builder.add(ACTIVE, false);
+		builder.add(STARE_PHASE, false);
 		builder.add(DOLL_YAW, 0.0F);
 	}
 
@@ -84,10 +88,21 @@ public class PartyDollEntity extends Entity {
 
 	public void setActive(boolean active) {
 		this.dataTracker.set(ACTIVE, active);
-		updateWorldRegistry(active && !this.isRemoved());
-		if (active) {
+		if (!active) {
+			this.dataTracker.set(STARE_PHASE, false);
+			this.trialActiveTicks = 0;
+		} else {
 			this.musicLoopTicker = 0;
 		}
+		updateWorldRegistry(active && !this.isRemoved());
+	}
+
+	public boolean isStarePhase() {
+		return this.dataTracker.get(STARE_PHASE);
+	}
+
+	public void setStarePhase(boolean stare) {
+		this.dataTracker.set(STARE_PHASE, stare);
 	}
 
 	public float getDollYaw() {
@@ -143,7 +158,6 @@ public class PartyDollEntity extends Entity {
 			}
 		}
 
-		// Подстраховка на самом первом кадре клиента до первого tick() куклы
 		if (best == null) {
 			Box searchBox = entity.getBoundingBox().expand(AURA_RADIUS, 10.0D, AURA_RADIUS);
 			List<PartyDollEntity> found = world.getEntitiesByClass(
@@ -168,6 +182,15 @@ public class PartyDollEntity extends Entity {
 		return findNearestActiveDoll(entity) != null;
 	}
 
+	/**
+	 * Активен ли именно визуальный танец (сплющивание + вращение 360°):
+	 * отключается в финальную 1 секунду испытания, чтобы было чётко видно, как ВСЕ мобы разом развернулись к игроку!
+	 */
+	public static boolean isUnderDancingDollAura(Entity entity) {
+		PartyDollEntity doll = findNearestActiveDoll(entity);
+		return doll != null && !doll.isStarePhase();
+	}
+
 	@Override
 	public boolean canHit() {
 		return !this.isRemoved();
@@ -182,8 +205,30 @@ public class PartyDollEntity extends Entity {
 			return ActionResult.SUCCESS;
 		}
 
+		if (this.getWorld() instanceof ServerWorld sw && ApocalypseEventManager.isActive(sw.getServer())) {
+			ModPersistentState state = ModPersistentState.get(sw.getServer());
+			if (!this.isActive()) {
+				if (state.isApocalypseDollUsed()) {
+					Text msg = Text.literal("По каким-то причинам она не работает...").formatted(Formatting.RED);
+					player.sendMessage(msg, false);
+					player.sendMessage(msg, true);
+					sw.playSound(null, this.getBlockPos(), SoundEvents.BLOCK_DISPENSER_FAIL, SoundCategory.PLAYERS, 0.9F, 0.75F);
+					return ActionResult.CONSUME;
+				}
+				state.setApocalypseDollUsed(true);
+				this.trialActiveTicks = 1;
+				this.setStarePhase(false);
+			} else {
+				// Во время испытания уже запущенная кукла отсчитывает свои 30 секунд и не выключается вручную
+				return ActionResult.CONSUME;
+			}
+		}
+
 		boolean nextState = !this.isActive();
 		this.setActive(nextState);
+		if (nextState && this.getWorld() instanceof ServerWorld sw && ApocalypseEventManager.isActive(sw.getServer())) {
+			this.trialActiveTicks = 1;
+		}
 
 		if (nextState) {
 			if (this.getWorld() instanceof ServerWorld sw) {
@@ -193,7 +238,7 @@ public class PartyDollEntity extends Entity {
 				sw.spawnParticles(ParticleTypes.NOTE, this.getX(), this.getY() + 1.15D, this.getZ(), 10, 0.55D, 0.3D, 0.55D, 0.35D);
 			}
 			player.sendMessage(
-					Text.literal("♫ Кукла включена! Все вокруг замерли на месте и плющатся под бит Toyota Yaris! (ПКМ — выключить)")
+					Text.literal("♫ Кукла включена! Все вокруг замерли на месте и плющатся под бит Toyota Yaris!")
 							.formatted(Formatting.LIGHT_PURPLE, Formatting.BOLD),
 					true
 			);
@@ -219,7 +264,7 @@ public class PartyDollEntity extends Entity {
 		boolean anotherPlaying = !sw.getEntitiesByClass(
 				PartyDollEntity.class,
 				nearby,
-				d -> d != this && !d.isRemoved() && d.isActive()
+				d -> d != this && !d.isRemoved() && d.isActive() && !d.isStarePhase()
 		).isEmpty();
 		if (!anotherPlaying) {
 			StopSoundS2CPacket stopPacket = new StopSoundS2CPacket(ModSounds.YARIS_MEME_ID, SoundCategory.RECORDS);
@@ -249,9 +294,50 @@ public class PartyDollEntity extends Entity {
 		if (this.getWorld().isClient() || !this.isActive()) {
 			return;
 		}
-
 		if (!(this.getWorld() instanceof ServerWorld sw)) {
 			return;
+		}
+
+		// Особое поведение куклы во время 5-минутного испытания!
+		if (ApocalypseEventManager.isActive(sw.getServer())) {
+			ModPersistentState state = ModPersistentState.get(sw.getServer());
+			if (this.trialActiveTicks <= 0) {
+				// Если кукла уже стояла включённой до старта испытания
+				if (state.isApocalypseDollUsed()) {
+					this.setActive(false);
+					stopYarisLoopIfNoOtherActive(sw);
+					return;
+				}
+				state.setApocalypseDollUsed(true);
+				this.trialActiveTicks = 1;
+			} else {
+				this.trialActiveTicks++;
+			}
+
+			if (this.trialActiveTicks == TRIAL_DANCE_TICKS) {
+				// Прошло ровно 30 секунд: музыка резко обрывается, ВСЕ мобы разом разворачиваются к ближайшему игроку!
+				this.setStarePhase(true);
+				stopYarisLoopIfNoOtherActive(sw);
+				sw.playSound(null, this.getBlockPos(), SoundEvents.BLOCK_RESPAWN_ANCHOR_DEPLETE.value(), SoundCategory.HOSTILE, 1.3F, 0.55F);
+				sw.playSound(null, this.getBlockPos(), SoundEvents.ENTITY_ENDERMAN_STARE, SoundCategory.HOSTILE, 0.85F, 0.65F);
+				snapAllNearbyMobsTowardNearestPlayer(sw);
+				return;
+			}
+
+			if (this.trialActiveTicks > TRIAL_DANCE_TICKS && this.trialActiveTicks < TRIAL_BREAK_TICK) {
+				// Секунда гробовой тишины: все мобы смотрят прямо в глаза ближайшему игроку!
+				snapAllNearbyMobsTowardNearestPlayer(sw);
+				return;
+			}
+
+			if (this.trialActiveTicks >= TRIAL_BREAK_TICK) {
+				// Через 1 секунду кукла ломается вдребезги, и мобы мгновенно бросаются в атаку как раньше!
+				shatterDollAndResumeTrial(sw);
+				return;
+			}
+		} else if (this.trialActiveTicks > 0 || this.isStarePhase()) {
+			this.trialActiveTicks = 0;
+			this.setStarePhase(false);
 		}
 
 		if (this.musicLoopTicker <= 0 || this.musicLoopTicker >= SOUND_LOOP_TICKS) {
@@ -266,6 +352,73 @@ public class PartyDollEntity extends Entity {
 		}
 		if (this.age % 22 == 0) {
 			sw.spawnParticles(ParticleTypes.HEART, this.getX(), this.getY() + 1.05D, this.getZ(), 2, 0.4D, 0.2D, 0.4D, 0.01D);
+		}
+	}
+
+	private void snapAllNearbyMobsTowardNearestPlayer(ServerWorld sw) {
+		Box auraBox = this.getBoundingBox().expand(AURA_RADIUS + 4.0D, 12.0D, AURA_RADIUS + 4.0D);
+		List<MobEntity> mobs = sw.getEntitiesByClass(MobEntity.class, auraBox, MobEntity::isAlive);
+		for (MobEntity mob : mobs) {
+			PlayerEntity nearest = sw.getClosestPlayer(mob, 64.0D);
+			if (nearest == null || !nearest.isAlive()) {
+				continue;
+			}
+			snapMobToFace(mob, nearest);
+		}
+	}
+
+	public static void snapMobToFace(MobEntity mob, Entity target) {
+		double dx = target.getX() - mob.getX();
+		double dz = target.getZ() - mob.getZ();
+		double dy = target.getEyeY() - mob.getEyeY();
+		double horiz = Math.hypot(dx, dz);
+		float yaw = (float) (MathHelper.atan2(dz, dx) * (180.0D / Math.PI)) - 90.0F;
+		float pitch = (float) -(MathHelper.atan2(dy, horiz) * (180.0D / Math.PI));
+
+		mob.setYaw(yaw);
+		mob.setHeadYaw(yaw);
+		mob.setBodyYaw(yaw);
+		mob.setPitch(pitch);
+		mob.prevYaw = yaw;
+		mob.prevHeadYaw = yaw;
+		mob.prevBodyYaw = yaw;
+		mob.prevPitch = pitch;
+		mob.getLookControl().lookAt(target.getX(), target.getEyeY(), target.getZ(), 180.0F, 180.0F);
+	}
+
+	private void shatterDollAndResumeTrial(ServerWorld sw) {
+		double cx = this.getX();
+		double cy = this.getY() + 0.5D;
+		double cz = this.getZ();
+
+		this.setActive(false);
+		stopYarisLoopIfNoOtherActive(sw);
+
+		sw.playSound(null, this.getBlockPos(), SoundEvents.ENTITY_ITEM_BREAK, SoundCategory.HOSTILE, 1.3F, 0.85F);
+		sw.playSound(null, this.getBlockPos(), SoundEvents.BLOCK_WOOD_BREAK, SoundCategory.BLOCKS, 1.2F, 0.8F);
+		sw.spawnParticles(
+				new ItemStackParticleEffect(ParticleTypes.ITEM, new ItemStack(ModItems.PARTY_DOLL)),
+				cx,
+				cy,
+				cz,
+				28,
+				0.25D,
+				0.30D,
+				0.25D,
+				0.12D
+		);
+		sw.spawnParticles(ParticleTypes.SMOKE, cx, cy, cz, 18, 0.3D, 0.3D, 0.3D, 0.04D);
+
+		this.discard();
+
+		// Возвращаем агрессию всем враждебным мобам вокруг!
+		Box auraBox = Box.of(new Vec3d(cx, cy, cz), (AURA_RADIUS + 8.0D) * 2.0D, 24.0D, (AURA_RADIUS + 8.0D) * 2.0D);
+		List<HostileEntity> hostiles = sw.getEntitiesByClass(HostileEntity.class, auraBox, HostileEntity::isAlive);
+		for (HostileEntity mob : hostiles) {
+			PlayerEntity nearest = sw.getClosestPlayer(mob.getX(), mob.getY(), mob.getZ(), 64.0D, true);
+			if (nearest != null && nearest.isAlive()) {
+				mob.setTarget(nearest);
+			}
 		}
 	}
 
@@ -304,6 +457,12 @@ public class PartyDollEntity extends Entity {
 		if (nbt.contains("Active")) {
 			this.setActive(nbt.getBoolean("Active"));
 		}
+		if (nbt.contains("StarePhase")) {
+			this.setStarePhase(nbt.getBoolean("StarePhase"));
+		}
+		if (nbt.contains("TrialTicks")) {
+			this.trialActiveTicks = nbt.getInt("TrialTicks");
+		}
 		if (nbt.contains("DollYaw")) {
 			this.setDollYaw(nbt.getFloat("DollYaw"));
 		}
@@ -312,6 +471,8 @@ public class PartyDollEntity extends Entity {
 	@Override
 	protected void writeCustomDataToNbt(NbtCompound nbt) {
 		nbt.putBoolean("Active", this.isActive());
+		nbt.putBoolean("StarePhase", this.isStarePhase());
+		nbt.putInt("TrialTicks", this.trialActiveTicks);
 		nbt.putFloat("DollYaw", this.getDollYaw());
 	}
 

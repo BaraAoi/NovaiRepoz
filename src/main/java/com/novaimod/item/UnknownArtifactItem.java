@@ -57,7 +57,7 @@ public class UnknownArtifactItem extends Item {
 	@Override
 	public void appendTooltip(ItemStack stack, TooltipContext context, List<Text> tooltip, TooltipType type) {
 		tooltip.add(Text.literal("ПРОКЛЯТИЕДРЕВНИХРУИН").formatted(Formatting.DARK_PURPLE, Formatting.OBFUSCATED));
-		tooltip.add(Text.literal("ТЬМАПРОБУЖДАЕТСЯНАДЕСЯТЬМИНУТ").formatted(Formatting.RED, Formatting.OBFUSCATED));
+		tooltip.add(Text.literal("ТЬМАПРОБУЖДАЕТСЯНАПЯТЬМИНУТ").formatted(Formatting.RED, Formatting.OBFUSCATED));
 		tooltip.add(Text.literal("ИСПОЛЬЗУЙПКМЧТОБЫНАЧАТЬ").formatted(Formatting.AQUA, Formatting.OBFUSCATED));
 	}
 }

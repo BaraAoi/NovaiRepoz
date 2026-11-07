@@ -31,6 +31,7 @@ import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.entity.mob.PathAwareEntity;
 import net.minecraft.entity.mob.SpiderEntity;
 import net.minecraft.entity.mob.ZombieEntity;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
@@ -129,7 +130,26 @@ public abstract class MobEntityMixin extends LivingEntity implements EvolvedMobA
 			angerable.stopAnger();
 		}
 
-		// 2. Если моб ещё далеко (> 4.2 блока) в первые 3.5 сек после включения — подбегает поближе к кукле,
+		// 2. В финальную 1 секунду куклы во время испытания (StarePhase) мобы НЕ подбегают к кукле,
+		//    а стоят как вкопанные и разом смотрят прямо на ближайшего игрока!
+		if (activeDoll.isStarePhase()) {
+			self.getNavigation().stop();
+			self.setForwardSpeed(0.0F);
+			self.setSidewaysSpeed(0.0F);
+			self.setUpwardSpeed(0.0F);
+			Vec3d vel = self.getVelocity();
+			if (vel.x != 0.0D || vel.z != 0.0D) {
+				self.setVelocity(0.0D, vel.y, 0.0D);
+			}
+			PlayerEntity nearest = self.getWorld().getClosestPlayer(self, 64.0D);
+			if (nearest != null && nearest.isAlive()) {
+				PartyDollEntity.snapMobToFace(self, nearest);
+			}
+			ci.cancel();
+			return;
+		}
+
+		// 3. Если моб ещё далеко (> 4.2 блока) в первые 3.5 сек после включения — подбегает поближе к кукле,
 		//    а затем (или сразу, если уже рядом) ВСТАЁТ НА МЕСТЕ И НЕ ДВИГАЕТСЯ (только крутится и плющится!)
 		double distSq = self.squaredDistanceTo(activeDoll);
 		if (distSq > 4.2D * 4.2D && this.novai$dollGatherTicks <= 70) {

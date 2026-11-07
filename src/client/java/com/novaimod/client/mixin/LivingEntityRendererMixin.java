@@ -39,7 +39,7 @@ public abstract class LivingEntityRendererMixin<T extends LivingEntity> {
 			int light,
 			CallbackInfo ci
 	) {
-		if (!PartyDollEntity.isUnderActiveDollAura(entity)) {
+		if (!PartyDollEntity.isUnderDancingDollAura(entity)) {
 			return;
 		}
 
