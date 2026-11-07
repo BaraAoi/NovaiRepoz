@@ -10,6 +10,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import com.novaimod.ai.SmartCreeperIgniteGoal;
 import com.novaimod.ai.WallhackCreeperTargetGoal;
 import com.novaimod.registry.ModSounds;
+import com.novaimod.world.ApocalypseEventManager;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
@@ -21,6 +22,7 @@ import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.entity.mob.CreeperEntity;
 import net.minecraft.entity.mob.HostileEntity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.sound.SoundEvents;
@@ -82,6 +84,16 @@ public abstract class CreeperEntityMixin extends HostileEntity {
 				dir = dir.normalize().multiply(0.04D);
 			}
 			this.setVelocity(vel.x + dir.x, Math.min(0.18D, vel.y + 0.045D), vel.z + dir.z);
+		}
+		if (this.getWorld() instanceof ServerWorld sw) {
+			ApocalypseEventManager.tickCreeperTunneling((CreeperEntity) (Object) this, sw);
+		}
+	}
+
+	@Inject(method = "explode", at = @At("HEAD"))
+	private void novai$shatterObsidianDuringApocalypse(CallbackInfo ci) {
+		if (this.getWorld() instanceof ServerWorld sw) {
+			ApocalypseEventManager.shatterObsidianOnCreeperExplode((CreeperEntity) (Object) this, sw);
 		}
 	}
 

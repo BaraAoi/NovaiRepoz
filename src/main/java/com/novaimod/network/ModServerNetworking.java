@@ -11,6 +11,7 @@ import com.novaimod.economy.ShopCatalogs;
 import com.novaimod.entity.ModNpcEntity;
 import com.novaimod.entity.NpcRole;
 import com.novaimod.item.PlayerTeleporterItem;
+import com.novaimod.item.UberGunItem;
 import com.novaimod.registry.ModItems;
 import com.novaimod.screen.VendingScreenHandler;
 import com.novaimod.world.DetentionManager;
@@ -19,6 +20,7 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -80,6 +82,16 @@ public final class ModServerNetworking {
 		ServerPlayNetworking.registerGlobalReceiver(ModPayloads.UseTeleporterPayload.ID, (payload, context) -> {
 			ServerPlayerEntity player = context.player();
 			handleUseTeleporter(player, payload.targetUuid(), payload.bringTargetToMe());
+		});
+
+		ServerPlayNetworking.registerGlobalReceiver(ModPayloads.TeleporterFastMoneyPayload.ID, (payload, context) -> {
+			ServerPlayerEntity player = context.player();
+			handleTeleporterFastMoney(player);
+		});
+
+		ServerPlayNetworking.registerGlobalReceiver(ModPayloads.CycleUberGunModePayload.ID, (payload, context) -> {
+			ServerPlayerEntity player = context.player();
+			handleCycleUberGunMode(player);
 		});
 	}
 
@@ -351,6 +363,19 @@ public final class ModServerNetworking {
 			player.dropItem(reward, false);
 		}
 
+		// При покупке лука в МФО сразу выдаём в комплекте стак стрел (64 шт.) + на луке уже стоит Бесконечность!
+		if ("elite_mfo_bow".equals(offerId) || "elite_bow".equals(offerId)) {
+			ItemStack bonusArrows = new ItemStack(Items.ARROW, 64);
+			if (!player.getInventory().insertStack(bonusArrows)) {
+				player.dropItem(bonusArrows, false);
+			}
+			player.sendMessage(
+					Text.literal("[МФО]: В комплекте с Луком Взыскателя (Бесконечность) вам выдано 64 стрелы!")
+							.formatted(Formatting.GOLD),
+					false
+			);
+		}
+
 		player.getWorld().playSound(null, player.getBlockPos(), SoundEvents.ENTITY_VILLAGER_YES, SoundCategory.PLAYERS, 0.85F, 1.1F);
 		syncAccount(player);
 		openShopScreen(player, getShopTitle(shopKey), shopKey);
@@ -519,6 +544,53 @@ public final class ModServerNetworking {
 							.formatted(Formatting.LIGHT_PURPLE, Formatting.BOLD),
 					false
 			);
+		}
+	}
+
+	private static void handleTeleporterFastMoney(ServerPlayerEntity player) {
+		boolean hasTeleporter = player.getMainHandStack().isOf(ModItems.PLAYER_TELEPORTER)
+				|| player.getOffHandStack().isOf(ModItems.PLAYER_TELEPORTER);
+		if (!hasTeleporter) {
+			return;
+		}
+		MinecraftServer server = player.getServer();
+		ModPersistentState state = ModPersistentState.get(server);
+		ModPersistentState.PlayerFinanceData acc = state.getAccount(player.getUuid());
+
+		// Кнопка «Фаст деньги» срабатывает только когда у игрока не хватает денег на телепорт (< 1000 ₽) и даёт +10 000 ₽ в долг каждый такой раз!
+		if (acc.balance >= PlayerTeleporterItem.TELEPORT_USE_COST) {
+			return;
+		}
+
+		long fastLoan = 10_000L;
+		boolean wasDebtFree = acc.debt <= 0L;
+		acc.balance = Math.min(Long.MAX_VALUE / 4L, acc.balance + fastLoan);
+		acc.debt = Math.min(Long.MAX_VALUE / 4L, acc.debt + fastLoan);
+		acc.mfoLockedHalf = Math.max(acc.mfoLockedHalf, Math.max(1L, (acc.debt + 1L) / 2L));
+		acc.hiddenDailyRate = 0.20D;
+		if (wasDebtFree) {
+			acc.lastInterestDay = server.getOverworld().getTime() / 24000L;
+			acc.daysOverdue = 0;
+			acc.bankPatience = 100;
+			acc.enforcementStage = 0;
+			acc.nextVisitTick = server.getOverworld().getTime() + 24000L;
+		}
+		state.markDirty();
+		syncAccount(player);
+
+		player.getServerWorld().playSound(null, player.getBlockPos(), SoundEvents.BLOCK_NOTE_BLOCK_CHIME.value(), SoundCategory.PLAYERS, 1.0F, 1.25F);
+		player.sendMessage(
+				Text.literal("[Фаст деньги МФО]: На счёт мгновенно зачислено +10 000 ₽ в долг! Телепорт готов к работе.")
+						.formatted(Formatting.GOLD, Formatting.BOLD),
+				false
+		);
+	}
+
+	private static void handleCycleUberGunMode(ServerPlayerEntity player) {
+		if (player.getMainHandStack().isOf(ModItems.UBER_GUN)) {
+			UberGunItem.cycleMode(player, player.getMainHandStack());
+		} else if (player.getOffHandStack().isOf(ModItems.UBER_GUN)) {
+			UberGunItem.cycleMode(player, player.getOffHandStack());
 		}
 	}
 }

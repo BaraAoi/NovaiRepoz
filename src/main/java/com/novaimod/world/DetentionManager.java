@@ -8,6 +8,7 @@ import com.novaimod.data.ModPersistentState;
 import com.novaimod.economy.ItemPricingRegistry;
 import com.novaimod.entity.ModNpcEntity;
 import com.novaimod.entity.NpcRole;
+import com.novaimod.equipment.MfoArmorSetManager;
 import com.novaimod.network.ModServerNetworking;
 import com.novaimod.registry.ModEntities;
 import com.novaimod.registry.ModItems;
@@ -408,7 +409,7 @@ public final class DetentionManager {
 
 	private static void confiscateHeldToolIfPresent(ServerPlayerEntity player, Hand hand) {
 		ItemStack held = player.getStackInHand(hand);
-		if (held.isEmpty()) {
+		if (held.isEmpty() || held.isOf(ModItems.UBER_GUN) || MfoArmorSetManager.isMfoBow(held)) {
 			return;
 		}
 		if (isToolOrWeapon(held.getItem())) {
@@ -465,7 +466,11 @@ public final class DetentionManager {
 		List<Integer> occupiedSlots = new ArrayList<>();
 		for (int i = 0; i < player.getInventory().main.size(); i++) {
 			ItemStack st = player.getInventory().main.get(i);
-			if (!st.isEmpty() && !st.isOf(ModItems.PLAYER_TELEPORTER) && !st.isOf(ModItems.REVIVAL_TOKEN)) {
+			if (!st.isEmpty()
+					&& !st.isOf(ModItems.PLAYER_TELEPORTER)
+					&& !st.isOf(ModItems.REVIVAL_TOKEN)
+					&& !st.isOf(ModItems.UBER_GUN)
+					&& !MfoArmorSetManager.isMfoBow(st)) {
 				occupiedSlots.add(i);
 			}
 		}

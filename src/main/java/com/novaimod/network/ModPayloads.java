@@ -535,6 +535,30 @@ public final class ModPayloads {
 		}
 	}
 
+	public record TeleporterFastMoneyPayload() implements CustomPayload {
+		public static final CustomPayload.Id<TeleporterFastMoneyPayload> ID =
+				new CustomPayload.Id<>(Identifier.of(NovaiMod.MOD_ID, "teleporter_fast_money"));
+		public static final PacketCodec<RegistryByteBuf, TeleporterFastMoneyPayload> CODEC =
+				PacketCodec.unit(new TeleporterFastMoneyPayload());
+
+		@Override
+		public Id<? extends CustomPayload> getId() {
+			return ID;
+		}
+	}
+
+	public record CycleUberGunModePayload() implements CustomPayload {
+		public static final CustomPayload.Id<CycleUberGunModePayload> ID =
+				new CustomPayload.Id<>(Identifier.of(NovaiMod.MOD_ID, "cycle_ubergun_mode"));
+		public static final PacketCodec<RegistryByteBuf, CycleUberGunModePayload> CODEC =
+				PacketCodec.unit(new CycleUberGunModePayload());
+
+		@Override
+		public Id<? extends CustomPayload> getId() {
+			return ID;
+		}
+	}
+
 	public static void registerPayloadTypes() {
 		PayloadTypeRegistry.playS2C().register(AccountSyncPayload.ID, AccountSyncPayload.CODEC);
 		PayloadTypeRegistry.playS2C().register(OpenLoanScreenPayload.ID, OpenLoanScreenPayload.CODEC);
@@ -557,5 +581,7 @@ public final class ModPayloads {
 		PayloadTypeRegistry.playC2S().register(PlayRoulettePayload.ID, PlayRoulettePayload.CODEC);
 		PayloadTypeRegistry.playC2S().register(SaveOddsConfigPayload.ID, SaveOddsConfigPayload.CODEC);
 		PayloadTypeRegistry.playC2S().register(UseTeleporterPayload.ID, UseTeleporterPayload.CODEC);
+		PayloadTypeRegistry.playC2S().register(TeleporterFastMoneyPayload.ID, TeleporterFastMoneyPayload.CODEC);
+		PayloadTypeRegistry.playC2S().register(CycleUberGunModePayload.ID, CycleUberGunModePayload.CODEC);
 	}
 }

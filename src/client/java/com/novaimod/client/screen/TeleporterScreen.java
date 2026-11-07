@@ -15,18 +15,20 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 
 /**
- * Экран Карманного телепорта (единственный экземпляр в мире, продаётся только в МФО):
- * позволяет за 1000 ₽ со счёта телепортировать выбранного игрока к себе ИЛИ себя к выбранному игроку.
+ * Экран Карманного телепорта:
+ * - Позволяет за 1000 ₽ телепортировать игрока к себе ИЛИ себя к игроку.
+ * - Если на счету меньше 1000 ₽, появляется кнопка «⚡ Фаст деньги (+10 000 ₽)», выдающая 10 000 ₽ в долг каждый раз, когда не хватает!
  */
 public class TeleporterScreen extends Screen {
 	private static final int PANEL_W = 286;
-	private static final int PANEL_H = 204;
+	private static final int PANEL_H = 216;
 	private static final int VISIBLE_ROWS = 4;
 	private static final int ROW_H = 26;
 
 	private final List<ModPayloads.ReviveCandidateNet> targets;
 	private final List<ButtonWidget> toTargetButtons = new ArrayList<>();
 	private final List<ButtonWidget> toMeButtons = new ArrayList<>();
+	private ButtonWidget fastMoneyButton;
 	private int scrollOffset = 0;
 
 	public TeleporterScreen(long initialBalance, List<ModPayloads.ReviveCandidateNet> targets) {
@@ -80,11 +82,19 @@ public class TeleporterScreen extends Screen {
 			this.toMeButtons.add(bringToMeBtn);
 		}
 
+		// Кнопка «Фаст деньги» появляется ТОЛЬКО тогда, когда у игрока не хватает средств на телепорт (< 1000 ₽), и выдаёт +10 000 ₽ в долг!
+		this.fastMoneyButton = this.addDrawableChild(
+				ButtonWidget.builder(
+						Text.literal("⚡ Фаст деньги (+10 000 ₽)").formatted(Formatting.GOLD, Formatting.BOLD),
+						btn -> ClientPlayNetworking.send(new ModPayloads.TeleporterFastMoneyPayload())
+				).dimensions(left + 12, top + PANEL_H - 28, 174, 20).build()
+		);
+
 		this.addDrawableChild(
 				ButtonWidget.builder(
 						Text.literal("Закрыть"),
 						btn -> this.close()
-				).dimensions(left + (PANEL_W - 88) / 2, top + PANEL_H - 26, 88, 20).build()
+				).dimensions(left + PANEL_W - 92, top + PANEL_H - 28, 80, 20).build()
 		);
 
 		refreshButtons();
@@ -92,6 +102,10 @@ public class TeleporterScreen extends Screen {
 
 	private void refreshButtons() {
 		boolean canAfford = ClientAccountData.getBalance() >= PlayerTeleporterItem.TELEPORT_USE_COST;
+		if (this.fastMoneyButton != null) {
+			this.fastMoneyButton.visible = !canAfford;
+			this.fastMoneyButton.active = !canAfford;
+		}
 		for (int row = 0; row < VISIBLE_ROWS; row++) {
 			int idx = this.scrollOffset + row;
 			ButtonWidget b1 = this.toTargetButtons.get(row);
@@ -172,7 +186,7 @@ public class TeleporterScreen extends Screen {
 				this.textRenderer,
 				balance >= cost
 						? Text.literal("Выберите игрока («К игроку» или «К себе»):").formatted(Formatting.GRAY)
-						: Text.literal("Недостаточно средств (нужно " + cost + " ₽ на счету)").formatted(Formatting.RED),
+						: Text.literal("Не хватает средств! Нажмите «Фаст деньги (+10 000 ₽)»").formatted(Formatting.GOLD),
 				this.width / 2,
 				top + 40,
 				0xCCCCCC

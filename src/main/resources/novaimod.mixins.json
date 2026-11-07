@@ -8,7 +8,8 @@
 		"AbstractSkeletonEntityMixin",
 		"BowAttackGoalMixin",
 		"MobEntityMixin",
-		"ProjectileEntityMixin"
+		"ProjectileEntityMixin",
+		"SmithingTransformRecipeMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

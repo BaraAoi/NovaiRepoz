@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.novaimod.data.ModPersistentState;
+import com.novaimod.equipment.MfoArmorSetManager;
 import com.novaimod.registry.ModItems;
 
 import net.minecraft.component.DataComponentTypes;
@@ -12,6 +13,7 @@ import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.Enchantments;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
+import net.minecraft.item.ArmorItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.potion.Potion;
@@ -104,7 +106,7 @@ public final class ShopCatalogs {
 		}
 
 		if ("elite_mfo".equals(shopKey) || "elite_mfo_1".equals(shopKey)) {
-			// Торговец №1 в МФО (Элитный оружейник): эксклюзивное оружие, инструменты и броня с повышенным ценником
+			// Торговец №1 в МФО (Элитный оружейник): оружие + 2 полных Сета Мечника (+2 ХП) + 2 полных Сета Лучника (Уберган!)
 			ModPersistentState state = ModPersistentState.get(server);
 
 			ItemStack vipSword = named(new ItemStack(Items.DIAMOND_SWORD), "Клинок Магната", Formatting.LIGHT_PURPLE);
@@ -117,22 +119,69 @@ public final class ShopCatalogs {
 			enchant(vipPick, enchRegistry, Enchantments.FORTUNE, 3);
 			list.add(new OfferEntry("elite_pickaxe", vipPick, 9490, "VIP ЛИМИТ", state.getEliteStock("elite_pickaxe", 2)));
 
-			ItemStack vipChest = named(new ItemStack(Items.DIAMOND_CHESTPLATE), "Бриллиантовый китель", Formatting.LIGHT_PURPLE);
-			enchant(vipChest, enchRegistry, Enchantments.PROTECTION, 4);
-			enchant(vipChest, enchRegistry, Enchantments.UNBREAKING, 3);
-			list.add(new OfferEntry("elite_chestplate", vipChest, 7190, "VIP ЛИМИТ", state.getEliteStock("elite_chestplate", 2)));
+			// Лук Взыскателя (Бесконечность + Сила IV + Горящая стрела + Прочность III + 64 стрелы при покупке; в фулл сете Лучника превращается в УБЕРГАН!)
+			ItemStack vipBow = MfoArmorSetManager.createMfoBow(enchRegistry);
+			list.add(new OfferEntry("elite_mfo_bow", vipBow, 8990, "VIP ЛИМИТ", state.getEliteStock("elite_mfo_bow", 2)));
 
-			ItemStack vipLegs = named(new ItemStack(Items.DIAMOND_LEGGINGS), "Брюки Банкира", Formatting.LIGHT_PURPLE);
-			enchant(vipLegs, enchRegistry, Enchantments.PROTECTION, 4);
-			enchant(vipLegs, enchRegistry, Enchantments.UNBREAKING, 3);
-			list.add(new OfferEntry("elite_leggings", vipLegs, 6490, "VIP ЛИМИТ", state.getEliteStock("elite_leggings", 2)));
+			// === ФУЛЛ СЕТ МЕЧНИКА МФО (в магазине ровно 2 сета; за 4/4 даёт бонус +2 ХП!) ===
+			list.add(new OfferEntry(
+					"mfo_sword_helm",
+					MfoArmorSetManager.createSwordsmanArmorPiece(Items.DIAMOND_HELMET, "Шлем Мечника МФО", enchRegistry),
+					5490,
+					"СЕТ МЕЧНИКА",
+					state.getEliteStock("mfo_sword_helm", 2)
+			));
+			list.add(new OfferEntry(
+					"mfo_sword_chest",
+					MfoArmorSetManager.createSwordsmanArmorPiece(Items.DIAMOND_CHESTPLATE, "Китель Мечника МФО", enchRegistry),
+					7490,
+					"СЕТ МЕЧНИКА",
+					state.getEliteStock("mfo_sword_chest", 2)
+			));
+			list.add(new OfferEntry(
+					"mfo_sword_legs",
+					MfoArmorSetManager.createSwordsmanArmorPiece(Items.DIAMOND_LEGGINGS, "Поножи Мечника МФО", enchRegistry),
+					6790,
+					"СЕТ МЕЧНИКА",
+					state.getEliteStock("mfo_sword_legs", 2)
+			));
+			list.add(new OfferEntry(
+					"mfo_sword_boots",
+					MfoArmorSetManager.createSwordsmanArmorPiece(Items.DIAMOND_BOOTS, "Сапоги Мечника МФО", enchRegistry),
+					5190,
+					"СЕТ МЕЧНИКА",
+					state.getEliteStock("mfo_sword_boots", 2)
+			));
 
-			ItemStack vipBow = named(new ItemStack(Items.BOW), "Лук Взыскателя", Formatting.GOLD);
-			enchant(vipBow, enchRegistry, Enchantments.POWER, 4);
-			enchant(vipBow, enchRegistry, Enchantments.INFINITY, 1);
-			enchant(vipBow, enchRegistry, Enchantments.FLAME, 1);
-			enchant(vipBow, enchRegistry, Enchantments.UNBREAKING, 3);
-			list.add(new OfferEntry("elite_bow", vipBow, 8990, "VIP ЛИМИТ", state.getEliteStock("elite_bow", 1)));
+			// === ФУЛЛ СЕТ ЛУЧНИКА МФО (алмазный чуть слабее: 2+6+5+2 = 15 брони; в магазине ровно 2 сета; за 4/4 превращает лук в УБЕРГАН!) ===
+			list.add(new OfferEntry(
+					"mfo_archer_helm",
+					MfoArmorSetManager.createArcherArmorPiece((ArmorItem) Items.DIAMOND_HELMET, "Шлем Лучника МФО", 2.0D, enchRegistry),
+					4990,
+					"СЕТ ЛУЧНИКА",
+					state.getEliteStock("mfo_archer_helm", 2)
+			));
+			list.add(new OfferEntry(
+					"mfo_archer_chest",
+					MfoArmorSetManager.createArcherArmorPiece((ArmorItem) Items.DIAMOND_CHESTPLATE, "Кираса Лучника МФО", 6.0D, enchRegistry),
+					6890,
+					"СЕТ ЛУЧНИКА",
+					state.getEliteStock("mfo_archer_chest", 2)
+			));
+			list.add(new OfferEntry(
+					"mfo_archer_legs",
+					MfoArmorSetManager.createArcherArmorPiece((ArmorItem) Items.DIAMOND_LEGGINGS, "Поножи Лучника МФО", 5.0D, enchRegistry),
+					6190,
+					"СЕТ ЛУЧНИКА",
+					state.getEliteStock("mfo_archer_legs", 2)
+			));
+			list.add(new OfferEntry(
+					"mfo_archer_boots",
+					MfoArmorSetManager.createArcherArmorPiece((ArmorItem) Items.DIAMOND_BOOTS, "Сапоги Лучника МФО", 2.0D, enchRegistry),
+					4690,
+					"СЕТ ЛУЧНИКА",
+					state.getEliteStock("mfo_archer_boots", 2)
+			));
 			return list;
 		}
 

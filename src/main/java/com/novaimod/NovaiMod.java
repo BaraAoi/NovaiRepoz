@@ -10,6 +10,7 @@ import com.novaimod.data.ModPersistentState;
 import com.novaimod.economy.CasinoGamesManager;
 import com.novaimod.entity.CushionEntity;
 import com.novaimod.entity.PartyDollEntity;
+import com.novaimod.equipment.MfoArmorSetManager;
 import com.novaimod.item.CushionItem;
 import com.novaimod.network.ModPayloads;
 import com.novaimod.network.ModServerNetworking;
@@ -18,6 +19,7 @@ import com.novaimod.registry.ModEntities;
 import com.novaimod.registry.ModItems;
 import com.novaimod.registry.ModScreenHandlers;
 import com.novaimod.registry.ModSounds;
+import com.novaimod.world.ApocalypseEventManager;
 import com.novaimod.world.DetentionManager;
 import com.novaimod.world.EgoPartyManager;
 import com.novaimod.world.ModStructureGenerator;
@@ -67,15 +69,22 @@ public class NovaiMod implements ModInitializer {
 	}
 
 	private void registerEvents() {
-		// Клик ПКМ по ступеньке/блоку, на котором уже лежит Подушка, плавно сажает игрока на эту подушку
+		// Клик ПКМ по ступеньке/блоку, на котором уже лежит Подушка, плавно сажает игрока на эту подушку;
+		// а при открытии ПЕРВОГО натурального сундука в данже помещает внутрь Неизвестный предмет (§k)!
 		UseBlockCallback.EVENT.register((player, world, hand, hitResult) -> {
-			if (hand != Hand.MAIN_HAND || player.isSpectator() || player.shouldCancelInteraction()) {
+			if (hand != Hand.MAIN_HAND || player.isSpectator()) {
+				return ActionResult.PASS;
+			}
+			BlockPos pos = hitResult.getBlockPos();
+			if (!world.isClient() && !player.shouldCancelInteraction() && world instanceof ServerWorld sw && player instanceof ServerPlayerEntity sp) {
+				ApocalypseEventManager.checkFirstDungeonChestOpen(sw, pos, sp);
+			}
+			if (player.shouldCancelInteraction()) {
 				return ActionResult.PASS;
 			}
 			if (player.getStackInHand(hand).getItem() instanceof CushionItem) {
 				return ActionResult.PASS;
 			}
-			BlockPos pos = hitResult.getBlockPos();
 			var cushions = world.getEntitiesByClass(
 					CushionEntity.class,
 					new Box(pos).expand(0.25D, 0.75D, 0.25D),
@@ -127,6 +136,7 @@ public class NovaiMod implements ModInitializer {
 		ServerLivingEntityEvents.AFTER_DEATH.register((entity, damageSource) -> {
 			if (entity instanceof ServerPlayerEntity deadPlayer) {
 				MobEvolutionManager.recordPlayerDeath(deadPlayer, damageSource);
+				ApocalypseEventManager.onPlayerDeath(deadPlayer);
 			} else {
 				MobEvolutionManager.onMobDeath(entity);
 			}
@@ -147,7 +157,12 @@ public class NovaiMod implements ModInitializer {
 			DetentionManager.tickDebtAndDetentions(server);
 			CasinoGamesManager.tickPendingResolutions(server);
 			MobEvolutionManager.tickServer(server);
+			ApocalypseEventManager.tickServer(server);
 			EgoPartyManager.tickRaves(server);
+
+			if (structureCheckTicker % 5 == 0) {
+				MfoArmorSetManager.tickPlayers(server);
+			}
 
 			structureCheckTicker++;
 			if (structureCheckTicker >= 40) {
@@ -212,6 +227,11 @@ public class NovaiMod implements ModInitializer {
 										ctx.getSource().sendFeedback(() -> Text.literal("Баланс установлен: " + amt + " ₽").formatted(Formatting.GREEN), false);
 										return 1;
 									})))
+							.then(CommandManager.literal("apocalypse").executes(ctx -> {
+								ServerPlayerEntity p = ctx.getSource().getPlayer();
+								ApocalypseEventManager.startApocalypse(ctx.getSource().getServer(), p);
+								return 1;
+							}))
 			);
 		});
 	}

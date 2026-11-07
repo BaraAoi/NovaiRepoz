@@ -1,0 +1,28 @@
+{
+	"parent": "minecraft:item/bow",
+	"textures": {
+		"layer0": "novaimod:item/uber_gun"
+	},
+	"overrides": [
+		{
+			"predicate": {
+				"pulling": 1
+			},
+			"model": "novaimod:item/uber_gun_pulling_0"
+		},
+		{
+			"predicate": {
+				"pulling": 1,
+				"pull": 0.65
+			},
+			"model": "novaimod:item/uber_gun_pulling_1"
+		},
+		{
+			"predicate": {
+				"pulling": 1,
+				"pull": 0.9
+			},
+			"model": "novaimod:item/uber_gun_pulling_2"
+		}
+	]
+}

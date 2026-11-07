@@ -56,6 +56,8 @@ public final class ItemPricingRegistry {
 		put(ModItems.STRANGE_MEAT, 89);
 		put(ModItems.PARTY_DOLL, 350);
 		put(ModItems.PLAYER_TELEPORTER, 4500);
+		put(ModItems.UBER_GUN, 3500);
+		put(ModItems.UNKNOWN_ARTIFACT, 666);
 
 		// Древесина
 		put(Items.OAK_LOG, 6);

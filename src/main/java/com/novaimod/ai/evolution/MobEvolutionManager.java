@@ -11,6 +11,7 @@ import com.novaimod.ai.evolution.EvolvedMobAccess.MobTrait;
 import com.novaimod.ai.evolution.EvolvedMobAccess.RareMobVariant;
 import com.novaimod.data.ModPersistentState;
 import com.novaimod.network.ModPayloads;
+import com.novaimod.world.ApocalypseEventManager;
 
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.entity.Entity;
@@ -185,6 +186,10 @@ public final class MobEvolutionManager {
 	 */
 	public static float computeLocalEvolution(ServerWorld world, BlockPos pos, String mobCategory) {
 		MinecraftServer server = world.getServer();
+		// Во время 10-минутного Проклятия из первого данж-сундука эволюция и усложнение всех мобов максимальные (1.0F)!
+		if (ApocalypseEventManager.isActive(server)) {
+			return 1.0F;
+		}
 		ModPersistentState state = ModPersistentState.get(server);
 
 		double worldDays = server.getOverworld().getTime() / 24000.0D;

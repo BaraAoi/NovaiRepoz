@@ -1,0 +1,6 @@
+{
+	"parent": "novaimod:item/uber_gun",
+	"textures": {
+		"layer0": "novaimod:item/uber_gun_pulling_2"
+	}
+}

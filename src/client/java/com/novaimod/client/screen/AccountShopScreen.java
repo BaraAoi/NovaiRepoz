@@ -233,6 +233,12 @@ public class AccountShopScreen extends Screen {
 					stockLine = Text.literal("РАСПРОДАНО (0 шт.)").formatted(Formatting.RED, Formatting.BOLD);
 				} else if ("1 В МИРЕ".equals(offer.tierLabel())) {
 					stockLine = Text.literal("✦ ЕДИНСТВЕННЫЙ В МИРЕ: " + offer.stock() + " шт.!").formatted(Formatting.AQUA, Formatting.BOLD);
+				} else if ("СЕТ МЕЧНИКА".equals(offer.tierLabel())) {
+					stockLine = Text.literal("⚔ СЕТ МЕЧНИКА • Осталось: " + offer.stock() + " шт.").formatted(Formatting.GOLD, Formatting.BOLD);
+				} else if ("СЕТ ЛУЧНИКА".equals(offer.tierLabel())) {
+					stockLine = Text.literal("🏹 СЕТ ЛУЧНИКА • Осталось: " + offer.stock() + " шт.").formatted(Formatting.AQUA, Formatting.BOLD);
+				} else if ("+64 СТРЕЛЫ".equals(offer.tierLabel())) {
+					stockLine = Text.literal("✦ +64 СТРЕЛЫ • Осталось: " + offer.stock() + " шт.").formatted(Formatting.GREEN, Formatting.BOLD);
 				} else {
 					stockLine = Text.literal("ОСТАЛОСЬ ВСЕГО: " + offer.stock() + " шт.!").formatted(Formatting.YELLOW, Formatting.BOLD);
 				}

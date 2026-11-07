@@ -299,6 +299,13 @@ public class ModPersistentState extends PersistentState {
 	private BlockPos mfoPos = null;
 	private int skyArenaCounter = 0;
 
+	// Событие первого данж-сундука с Неизвестным предметом (10-минутный апокалипсис мобов)
+	private boolean firstDungeonChestOpened = false;
+	private int pendingArtifactAwakenTicks = 0;
+	private boolean apocalypseActive = false;
+	private int apocalypseTicksLeft = 0;
+	private final Set<UUID> diedDuringApocalypse = new HashSet<>();
+
 	public ModPersistentState() {
 		initDefaultEliteStocks();
 	}
@@ -310,9 +317,15 @@ public class ModPersistentState extends PersistentState {
 	private void initDefaultEliteStocks() {
 		eliteStocks.putIfAbsent("elite_sword", 2);
 		eliteStocks.putIfAbsent("elite_pickaxe", 2);
-		eliteStocks.putIfAbsent("elite_chestplate", 2);
-		eliteStocks.putIfAbsent("elite_leggings", 2);
-		eliteStocks.putIfAbsent("elite_bow", 1);
+		eliteStocks.putIfAbsent("mfo_sword_helm", 2);
+		eliteStocks.putIfAbsent("mfo_sword_chest", 2);
+		eliteStocks.putIfAbsent("mfo_sword_legs", 2);
+		eliteStocks.putIfAbsent("mfo_sword_boots", 2);
+		eliteStocks.putIfAbsent("mfo_archer_helm", 2);
+		eliteStocks.putIfAbsent("mfo_archer_chest", 2);
+		eliteStocks.putIfAbsent("mfo_archer_legs", 2);
+		eliteStocks.putIfAbsent("mfo_archer_boots", 2);
+		eliteStocks.putIfAbsent("elite_mfo_bow", 2);
 		eliteStocks.putIfAbsent("elite_teleporter", 1);
 		eliteStocks.putIfAbsent("elite_elytra", 1);
 		eliteStocks.putIfAbsent("elite_totem", 3);
@@ -406,6 +419,45 @@ public class ModPersistentState extends PersistentState {
 		return removed;
 	}
 
+	public boolean isFirstDungeonChestOpened() {
+		return firstDungeonChestOpened;
+	}
+
+	public void setFirstDungeonChestOpened(boolean opened) {
+		this.firstDungeonChestOpened = opened;
+		markDirty();
+	}
+
+	public int getPendingArtifactAwakenTicks() {
+		return pendingArtifactAwakenTicks;
+	}
+
+	public void setPendingArtifactAwakenTicks(int ticks) {
+		this.pendingArtifactAwakenTicks = ticks;
+		markDirty();
+	}
+
+	public boolean isApocalypseActive() {
+		return apocalypseActive;
+	}
+
+	public void setApocalypseActive(boolean active) {
+		this.apocalypseActive = active;
+		markDirty();
+	}
+
+	public int getApocalypseTicksLeft() {
+		return apocalypseTicksLeft;
+	}
+
+	public void setApocalypseTicksLeft(int ticks) {
+		this.apocalypseTicksLeft = ticks;
+	}
+
+	public Set<UUID> getDiedDuringApocalypse() {
+		return diedDuringApocalypse;
+	}
+
 	@Override
 	public NbtCompound writeNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registryLookup) {
 		NbtCompound accountsTag = new NbtCompound();
@@ -448,6 +500,15 @@ public class ModPersistentState extends PersistentState {
 			nbt.putLong("mfoPos", mfoPos.asLong());
 		}
 		nbt.putInt("skyArenaCounter", skyArenaCounter);
+		nbt.putBoolean("firstDungeonChestOpened", firstDungeonChestOpened);
+		nbt.putInt("pendingArtifactAwakenTicks", pendingArtifactAwakenTicks);
+		nbt.putBoolean("apocalypseActive", apocalypseActive);
+		nbt.putInt("apocalypseTicksLeft", apocalypseTicksLeft);
+		NbtList deadList = new NbtList();
+		for (UUID u : diedDuringApocalypse) {
+			deadList.add(NbtString.of(u.toString()));
+		}
+		nbt.put("diedDuringApocalypse", deadList);
 		return nbt;
 	}
 
@@ -501,6 +562,19 @@ public class ModPersistentState extends PersistentState {
 			state.mfoPos = BlockPos.fromLong(nbt.getLong("mfoPos"));
 		}
 		state.skyArenaCounter = nbt.getInt("skyArenaCounter");
+		state.firstDungeonChestOpened = nbt.getBoolean("firstDungeonChestOpened");
+		state.pendingArtifactAwakenTicks = nbt.getInt("pendingArtifactAwakenTicks");
+		state.apocalypseActive = nbt.getBoolean("apocalypseActive");
+		state.apocalypseTicksLeft = nbt.getInt("apocalypseTicksLeft");
+		if (nbt.contains("diedDuringApocalypse", NbtElement.LIST_TYPE)) {
+			NbtList dl = nbt.getList("diedDuringApocalypse", NbtElement.STRING_TYPE);
+			for (int i = 0; i < dl.size(); i++) {
+				try {
+					state.diedDuringApocalypse.add(UUID.fromString(dl.getString(i)));
+				} catch (IllegalArgumentException ignored) {
+				}
+			}
+		}
 		return state;
 	}
 

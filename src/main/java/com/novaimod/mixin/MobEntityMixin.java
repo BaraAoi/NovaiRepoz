@@ -9,6 +9,7 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import com.novaimod.ai.evolution.EvolvedMobAccess;
 import com.novaimod.ai.evolution.MobEvolutionManager;
@@ -18,6 +19,7 @@ import com.novaimod.ai.evolution.SkeletonTacticalCombatGoal;
 import com.novaimod.ai.evolution.TerrainAmbushGoal;
 import com.novaimod.ai.evolution.TrailPursuitAndSearchGoal;
 import com.novaimod.entity.PartyDollEntity;
+import com.novaimod.world.ApocalypseEventManager;
 
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
@@ -83,6 +85,13 @@ public abstract class MobEntityMixin extends LivingEntity implements EvolvedMobA
 
 	protected MobEntityMixin(EntityType<? extends LivingEntity> entityType, World world) {
 		super(entityType, world);
+	}
+
+	@Inject(method = "isAffectedByDaylight", at = @At("HEAD"), cancellable = true)
+	private void novai$noSunburnDuringApocalypse(CallbackInfoReturnable<Boolean> cir) {
+		if (ApocalypseEventManager.isActiveForWorld(this.getWorld())) {
+			cir.setReturnValue(false);
+		}
 	}
 
 	@Inject(method = "setTarget", at = @At("HEAD"), cancellable = true)

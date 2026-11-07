@@ -11,6 +11,8 @@ import com.novaimod.item.PartyDollItem;
 import com.novaimod.item.PlayerTeleporterItem;
 import com.novaimod.item.RevivalTokenItem;
 import com.novaimod.item.StrangeMeatItem;
+import com.novaimod.item.UberGunItem;
+import com.novaimod.item.UnknownArtifactItem;
 
 import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
 import net.minecraft.item.BlockItem;
@@ -91,6 +93,16 @@ public final class ModItems {
 			new PlayerTeleporterItem(new Item.Settings().maxCount(1).rarity(Rarity.EPIC).fireproof())
 	);
 
+	public static final Item UNKNOWN_ARTIFACT = register(
+			"unknown_artifact",
+			new UnknownArtifactItem(new Item.Settings().maxCount(1).rarity(Rarity.EPIC).fireproof())
+	);
+
+	public static final Item UBER_GUN = register(
+			"uber_gun",
+			new UberGunItem(new Item.Settings().maxDamage(750).rarity(Rarity.EPIC).fireproof())
+	);
+
 	public static final Map<DyeColor, Item> CUSHIONS = new EnumMap<>(DyeColor.class);
 
 	static {
@@ -124,6 +136,8 @@ public final class ModItems {
 						entries.add(STRANGE_MEAT);
 						entries.add(PARTY_DOLL);
 						entries.add(PLAYER_TELEPORTER);
+						entries.add(UBER_GUN);
+						entries.add(UNKNOWN_ARTIFACT);
 						entries.add(ODDS_CONFIGURATOR);
 						for (DyeColor color : DyeColor.values()) {
 							entries.add(CUSHIONS.get(color));
