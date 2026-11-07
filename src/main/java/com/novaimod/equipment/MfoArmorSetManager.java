@@ -9,6 +9,7 @@ import com.novaimod.registry.ModItems;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.AttributeModifierSlot;
 import net.minecraft.component.type.AttributeModifiersComponent;
+import net.minecraft.component.type.ItemEnchantmentsComponent;
 import net.minecraft.component.type.LoreComponent;
 import net.minecraft.component.type.NbtComponent;
 import net.minecraft.enchantment.Enchantment;
@@ -35,16 +36,19 @@ import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 
 /**
- * Управляет двумя эксклюзивными сетами брони МФО (Мечник и Лучник):
+ * Управляет двумя эксклюзивными сетами брони МФО (Мечник и Лучник) и правилами скрытых проклятий на броне:
  * 1) Сет Мечника (алмазный/незеритовый): при полном сете (4/4) даёт +2 ХП (+2 Макс. здоровья).
  * 2) Сет Лучника (алмазный чуть слабее по защите: 15 брони / 4 твёрдости вместо 20 / 8):
  *    при полном сете (4/4) купленный в МФО лук автоматически трансформируется в Уберган с 3 режимами!
- *    Если снять хотя бы 1 часть сета — Уберган возвращается обратно в Лук Взыскателя.
- * 3) При улучшении любой части брони до незеритовой на кузнечном столе ВСЕ бонусы и теги сета сохраняются!
+ * 3) На броне стоят Проклятие несъёмности и Проклятие утраты (исчезает после смерти), убрана Прочность (Unbreaking),
+ *    отдельно зачаровать броню нельзя, а ВСЕ зачарования и проклятия полностью скрыты из описания!
+ * 4) При улучшении любой части брони до незеритовой на кузнечном столе ВСЕ бонусы, скрытые чары и проклятия сохраняются!
  */
 public final class MfoArmorSetManager {
 	public static final String NBT_SET_KEY = "novai_mfo_set";
 	public static final String NBT_MFO_BOW_KEY = "novai_mfo_bow";
+	public static final String NBT_ENCHANT_LOCKED = "novai_enchant_locked";
+	public static final String NBT_V32_CURSED = "novai_v32_cursed";
 	public static final String SET_SWORDSMAN = "swordsman";
 	public static final String SET_ARCHER = "archer";
 
@@ -61,11 +65,12 @@ public final class MfoArmorSetManager {
 		ItemStack stack = new ItemStack(diamondArmorItem);
 		stack.set(DataComponentTypes.CUSTOM_NAME, Text.literal(customTitle).formatted(Formatting.LIGHT_PURPLE, Formatting.BOLD));
 		addEnchant(stack, enchRegistry, Enchantments.PROTECTION, 4);
-		addEnchant(stack, enchRegistry, Enchantments.UNBREAKING, 3);
 
 		NbtCompound nbt = stack.getOrDefault(DataComponentTypes.CUSTOM_DATA, NbtComponent.DEFAULT).copyNbt();
 		nbt.putString(NBT_SET_KEY, SET_SWORDSMAN);
 		stack.set(DataComponentTypes.CUSTOM_DATA, NbtComponent.of(nbt));
+
+		applyHiddenCursedArmorRules(stack, enchRegistry);
 
 		stack.set(DataComponentTypes.LORE, new LoreComponent(List.of(
 				Text.literal("Сет Мечника МФО").formatted(Formatting.GOLD),
@@ -84,7 +89,6 @@ public final class MfoArmorSetManager {
 		ItemStack stack = new ItemStack(diamondArmorItem);
 		stack.set(DataComponentTypes.CUSTOM_NAME, Text.literal(customTitle).formatted(Formatting.AQUA, Formatting.BOLD));
 		addEnchant(stack, enchRegistry, Enchantments.PROTECTION, 3);
-		addEnchant(stack, enchRegistry, Enchantments.UNBREAKING, 3);
 
 		// Делаем алмазную броню лучника чуть слабее обычной алмазной брони (суммарно 15 брони и 4.0 твёрдости вместо 20 и 8.0)
 		EquipmentSlot slot = diamondArmorItem.getSlotType();
@@ -94,12 +98,52 @@ public final class MfoArmorSetManager {
 		nbt.putString(NBT_SET_KEY, SET_ARCHER);
 		stack.set(DataComponentTypes.CUSTOM_DATA, NbtComponent.of(nbt));
 
+		applyHiddenCursedArmorRules(stack, enchRegistry);
+
 		stack.set(DataComponentTypes.LORE, new LoreComponent(List.of(
 				Text.literal("Сет Лучника МФО (облегчённый алмаз)").formatted(Formatting.AQUA),
 				Text.literal("Бонус полного сета (4/4): превращает лук МФО в УБЕРГАН!").formatted(Formatting.GOLD),
 				Text.literal("Бонус сохраняется при улучшении до незерита!").formatted(Formatting.GRAY)
 		)));
 		return stack;
+	}
+
+	/**
+	 * Добавляет на броню Проклятие несъёмности + Проклятие утраты, убирает Прочность (Unbreaking),
+	 * блокирует отдельное зачарование и полностью скрывает ВСЕ зачарования и проклятия в подсказке!
+	 */
+	public static void applyHiddenCursedArmorRules(ItemStack stack, RegistryWrapper.Impl<Enchantment> enchRegistry) {
+		ItemEnchantmentsComponent existing = stack.getOrDefault(DataComponentTypes.ENCHANTMENTS, ItemEnchantmentsComponent.DEFAULT);
+		ItemEnchantmentsComponent.Builder builder = new ItemEnchantmentsComponent.Builder(existing);
+
+		// Убираем зачарование «Прочность» (minecraft:unbreaking)
+		Identifier unbreakingId = Identifier.ofVanilla("unbreaking");
+		builder.remove(entry -> entry.getKey().map(k -> k.getValue().equals(unbreakingId)).orElse(false));
+
+		// Добавляем Проклятие несъёмности (binding_curse) и Проклятие утраты (vanishing_curse)
+		enchRegistry.getOptional(RegistryKey.of(RegistryKeys.ENCHANTMENT, Identifier.ofVanilla("binding_curse")))
+				.ifPresent(entry -> builder.set(entry, 1));
+		enchRegistry.getOptional(RegistryKey.of(RegistryKeys.ENCHANTMENT, Identifier.ofVanilla("vanishing_curse")))
+				.ifPresent(entry -> builder.set(entry, 1));
+
+		// Полностью скрываем ВСЕ зачарования (включая проклятия!) из описания предмета
+		stack.set(DataComponentTypes.ENCHANTMENTS, builder.build().withShowInTooltip(false));
+
+		NbtCompound nbt = stack.getOrDefault(DataComponentTypes.CUSTOM_DATA, NbtComponent.DEFAULT).copyNbt();
+		nbt.putBoolean(NBT_ENCHANT_LOCKED, true);
+		nbt.putBoolean(NBT_V32_CURSED, true);
+		stack.set(DataComponentTypes.CUSTOM_DATA, NbtComponent.of(nbt));
+	}
+
+	public static boolean isEnchantLocked(ItemStack stack) {
+		if (stack == null || stack.isEmpty()) {
+			return false;
+		}
+		if (!getArmorSetId(stack).isEmpty()) {
+			return true;
+		}
+		NbtComponent comp = stack.getOrDefault(DataComponentTypes.CUSTOM_DATA, NbtComponent.DEFAULT);
+		return comp.contains(NBT_ENCHANT_LOCKED) && comp.copyNbt().getBoolean(NBT_ENCHANT_LOCKED);
 	}
 
 	public static ItemStack createMfoBow(RegistryWrapper.Impl<Enchantment> enchRegistry) {
@@ -152,7 +196,7 @@ public final class MfoArmorSetManager {
 
 	/**
 	 * Вызывается из SmithingTransformRecipeMixin при улучшении брони на кузнечном столе до незеритовой:
-	 * гарантирует, что теги сета и характеристики незерита корректно сохраняются!
+	 * гарантирует, что теги сета, проклятия, скрытость зачарований и характеристики незерита корректно сохраняются!
 	 */
 	public static void onSmithingUpgrade(ItemStack resultStack) {
 		if (resultStack == null || resultStack.isEmpty() || !(resultStack.getItem() instanceof ArmorItem armorItem)) {
@@ -163,9 +207,15 @@ public final class MfoArmorSetManager {
 			return;
 		}
 
+		// Гарантируем сохранение скрытости всех зачарований и блокировки отдельного зачарования после кузнечного стола
+		ItemEnchantmentsComponent ench = resultStack.getOrDefault(DataComponentTypes.ENCHANTMENTS, ItemEnchantmentsComponent.DEFAULT);
+		resultStack.set(DataComponentTypes.ENCHANTMENTS, ench.withShowInTooltip(false));
+		NbtCompound nbt = resultStack.getOrDefault(DataComponentTypes.CUSTOM_DATA, NbtComponent.DEFAULT).copyNbt();
+		nbt.putBoolean(NBT_ENCHANT_LOCKED, true);
+		resultStack.set(DataComponentTypes.CUSTOM_DATA, NbtComponent.of(nbt));
+
 		EquipmentSlot slot = armorItem.getSlotType();
 		if (SET_ARCHER.equals(setId)) {
-			// Масштабируем облегчённую броню Лучника под незеритовый тир (прочнее алмазного лучника, чуть легче полного незерита мечника + сопротивление отбрасыванию!)
 			double nethArcherArmor = switch (slot) {
 				case HEAD -> 2.5D;
 				case CHEST -> 7.0D;
@@ -237,6 +287,9 @@ public final class MfoArmorSetManager {
 				continue;
 			}
 
+			// 0. Авто-обновление уже купленной брони МФО из старых версий мира под новые правила проклятий и скрытых чар
+			migrateLegacyMfoArmor(player, enchRegistry);
+
 			// 1. Проверка полного Сета Мечника (4/4): +2 ХП (+2.0 Max Health)
 			boolean fullSwordsman = isWearingFullSet(player, SET_SWORDSMAN);
 			EntityAttributeInstance maxHpAttr = player.getAttributeInstance(EntityAttributes.GENERIC_MAX_HEALTH);
@@ -262,6 +315,25 @@ public final class MfoArmorSetManager {
 				transformBowsToUberGun(player);
 			} else {
 				revertUberGunsToBow(player, enchRegistry);
+			}
+		}
+	}
+
+	private static void migrateLegacyMfoArmor(ServerPlayerEntity player, RegistryWrapper.Impl<Enchantment> enchRegistry) {
+		for (ItemStack armor : player.getInventory().armor) {
+			if (!getArmorSetId(armor).isEmpty()) {
+				NbtComponent comp = armor.getOrDefault(DataComponentTypes.CUSTOM_DATA, NbtComponent.DEFAULT);
+				if (!comp.contains(NBT_V32_CURSED)) {
+					applyHiddenCursedArmorRules(armor, enchRegistry);
+				}
+			}
+		}
+		for (ItemStack main : player.getInventory().main) {
+			if (!getArmorSetId(main).isEmpty()) {
+				NbtComponent comp = main.getOrDefault(DataComponentTypes.CUSTOM_DATA, NbtComponent.DEFAULT);
+				if (!comp.contains(NBT_V32_CURSED)) {
+					applyHiddenCursedArmorRules(main, enchRegistry);
+				}
 			}
 		}
 	}
@@ -344,7 +416,6 @@ public final class MfoArmorSetManager {
 	private static ItemStack convertUberGunToBow(ItemStack uber, RegistryWrapper.Impl<Enchantment> enchRegistry) {
 		ItemStack bow = createMfoBow(enchRegistry);
 		bow.setDamage(Math.min(uber.getDamage(), bow.getMaxDamage() - 1));
-		// Сохраняем выбранный режим, чтобы при повторном надевании сета он не сбрасывался
 		NbtCompound nbt = bow.getOrDefault(DataComponentTypes.CUSTOM_DATA, NbtComponent.DEFAULT).copyNbt();
 		nbt.putInt(UberGunItem.NBT_MODE_KEY, UberGunItem.getMode(uber));
 		bow.set(DataComponentTypes.CUSTOM_DATA, NbtComponent.of(nbt));

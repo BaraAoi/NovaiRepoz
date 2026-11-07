@@ -48,7 +48,24 @@ public class AccountShopScreen extends Screen {
 		this.shopKey = shopKey;
 		this.allowRepair = allowRepair;
 		this.limitedElite = limitedElite;
-		this.offers = offers;
+		this.offers = new ArrayList<>(offers);
+	}
+
+	public boolean isSameShop(String otherShopKey) {
+		return this.shopKey != null && this.shopKey.equals(otherShopKey);
+	}
+
+	/**
+	 * Обновляет ассортимент и остатки товаров на месте без переоткрытия окна и без сброса прокрутки (scrollOffset) наверх!
+	 */
+	public void updateOffers(List<ModPayloads.ShopOfferNet> updatedOffers) {
+		this.offers.clear();
+		this.offers.addAll(updatedOffers);
+		int maxScroll = Math.max(0, this.offers.size() - VISIBLE_ROWS);
+		if (this.scrollOffset > maxScroll) {
+			this.scrollOffset = maxScroll;
+		}
+		refreshRowButtons();
 	}
 
 	@Override

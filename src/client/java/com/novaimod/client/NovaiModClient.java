@@ -109,13 +109,18 @@ public class NovaiModClient implements ClientModInitializer {
 		});
 
 		ClientPlayNetworking.registerGlobalReceiver(ModPayloads.OpenShopScreenPayload.ID, (payload, context) -> {
-			context.client().setScreen(new AccountShopScreen(
-					payload.title(),
-					payload.shopKey(),
-					payload.allowRepair(),
-					payload.limitedElite(),
-					payload.offers()
-			));
+			if (context.client().currentScreen instanceof AccountShopScreen existingShop
+					&& existingShop.isSameShop(payload.shopKey())) {
+				existingShop.updateOffers(payload.offers());
+			} else {
+				context.client().setScreen(new AccountShopScreen(
+						payload.title(),
+						payload.shopKey(),
+						payload.allowRepair(),
+						payload.limitedElite(),
+						payload.offers()
+				));
+			}
 		});
 
 		ClientPlayNetworking.registerGlobalReceiver(ModPayloads.OpenRevivalScreenPayload.ID, (payload, context) -> {

@@ -8,6 +8,7 @@ import org.jetbrains.annotations.Nullable;
 
 import com.novaimod.ai.evolution.MobEvolutionManager;
 import com.novaimod.data.ModPersistentState;
+import com.novaimod.equipment.MfoArmorSetManager;
 import com.novaimod.network.ModServerNetworking;
 import com.novaimod.registry.ModItems;
 
@@ -373,6 +374,10 @@ public final class ApocalypseEventManager {
 		}
 
 		equipVariedEnchantedWeapon(mob, enchRegistry, rng);
+		// Эксклюзивный для испытания эффект процентного урона (1..4 ХП сквозь любую броню) выдаётся милишникам!
+		if (MobEvolutionManager.isMeleeHostile(mob)) {
+			mob.addCommandTag(MobEvolutionManager.TAG_PERCENT_MELEE);
+		}
 		mob.setCanPickUpLoot(false);
 	}
 
@@ -444,13 +449,14 @@ public final class ApocalypseEventManager {
 		} else {
 			applyEnchant(stack, enchRegistry, "blast_protection", protLvl);
 		}
-		applyEnchant(stack, enchRegistry, "unbreaking", 2 + rng.nextInt(2));
 		if (allowThorns && rng.nextFloat() < 0.35F) {
 			applyEnchant(stack, enchRegistry, "thorns", 1 + rng.nextInt(2));
 		}
 		if (isBoots && rng.nextFloat() < 0.40F) {
 			applyEnchant(stack, enchRegistry, "feather_falling", 3);
 		}
+		// Убираем Прочность (Unbreaking), добавляем Проклятие несъёмности + Проклятие утраты, блокируем зачарование и скрываем все чары в тултипе!
+		MfoArmorSetManager.applyHiddenCursedArmorRules(stack, enchRegistry);
 		return stack;
 	}
 

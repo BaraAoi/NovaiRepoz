@@ -50,9 +50,10 @@ public abstract class LivingEntityMixin {
 			return;
 		}
 
-		// Адаптация развитых мобов к сильной броне игрока
+		// Адаптация развитых мобов к сильной броне игрока + эффект процентного урона (1..4 ХП сквозь любую броню у милишников)
 		if (player instanceof ServerPlayerEntity serverPlayer) {
 			float adjusted = MobEvolutionManager.adaptAttackAgainstArmoredPlayer(serverPlayer, source, cir.getReturnValue());
+			adjusted = MobEvolutionManager.applyPercentageMeleeDamageIfApplicable(serverPlayer, source, adjusted);
 			if (adjusted != cir.getReturnValue()) {
 				cir.setReturnValue(adjusted);
 			}

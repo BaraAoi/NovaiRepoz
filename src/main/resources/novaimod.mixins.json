@@ -9,7 +9,10 @@
 		"BowAttackGoalMixin",
 		"MobEntityMixin",
 		"ProjectileEntityMixin",
-		"SmithingTransformRecipeMixin"
+		"SmithingTransformRecipeMixin",
+		"ItemStackMixin",
+		"AnvilScreenHandlerMixin",
+		"GrindstoneScreenHandlerMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

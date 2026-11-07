@@ -11,6 +11,7 @@ import com.novaimod.ai.evolution.EvolvedMobAccess.MobTrait;
 import com.novaimod.ai.evolution.EvolvedMobAccess.RareMobVariant;
 import com.novaimod.data.ModPersistentState;
 import com.novaimod.network.ModPayloads;
+import com.novaimod.registry.ModEffects;
 import com.novaimod.world.ApocalypseEventManager;
 
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
@@ -24,20 +25,25 @@ import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
+import net.minecraft.entity.mob.AbstractPiglinEntity;
 import net.minecraft.entity.mob.AbstractSkeletonEntity;
 import net.minecraft.entity.mob.CreeperEntity;
 import net.minecraft.entity.mob.HostileEntity;
 import net.minecraft.entity.mob.MobEntity;
+import net.minecraft.entity.mob.PillagerEntity;
 import net.minecraft.entity.mob.SpiderEntity;
+import net.minecraft.entity.mob.VindicatorEntity;
 import net.minecraft.entity.mob.ZombieEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.item.RangedWeaponItem;
 import net.minecraft.network.packet.s2c.play.PlaySoundS2CPacket;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.registry.tag.BlockTags;
+import net.minecraft.registry.tag.DamageTypeTags;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -302,12 +308,89 @@ public final class MobEvolutionManager {
 			assignRareVariant(mob, access, evol);
 		}
 
-		// 5. Лидер группы (в стае один моб чуть сильнее и координирует остальных)
+	// 5. Лидер группы (в стае один моб чуть сильнее и координирует остальных)
 		if (evol >= 0.42F && access.novai$getRareVariant() == RareMobVariant.NONE && rng.nextFloat() < 0.12F) {
 			tryPromotePackLeader(mob, access, world, evol);
 		}
 
+		// 6. В обычной игре — очень редко на высоких уровнях и с шансом ровно 10% на максимальном уровне развития (ТОЛЬКО милишники!):
+		// выдаём эффект процентного урона сквозь любую броню (1..4 ХП)
+		if (!ApocalypseEventManager.isActive(world.getServer()) && isMeleeHostile(mob)) {
+			float pctChance = 0.0F;
+			if (evol >= 0.95F) {
+				pctChance = 0.10F; // 10% при максимальном уровне в обычной игре!
+			} else if (evol >= 0.60F) {
+				pctChance = 0.01F + ((evol - 0.60F) / 0.35F) * 0.09F; // Очень редко (1% .. 9.9%) на высоких этапах
+			}
+			if (pctChance > 0.0F && rng.nextFloat() < pctChance) {
+				mob.addCommandTag(TAG_PERCENT_MELEE);
+			}
+		}
+
 		mob.setHealth(mob.getMaxHealth());
+	}
+
+	public static final String TAG_PERCENT_MELEE = "novai_percent_melee";
+
+	/**
+	 * Проверяет, что враждебный моб является строго бойцом ближнего боя («милишником»):
+	 * исключает криперов, разбойников с арбалетами и любых стрелков с луком/арбалетом.
+	 */
+	public static boolean isMeleeHostile(MobEntity mob) {
+		if (mob instanceof CreeperEntity || mob instanceof PillagerEntity) {
+			return false;
+		}
+		if (mob.getMainHandStack().getItem() instanceof RangedWeaponItem
+				|| mob.getOffHandStack().getItem() instanceof RangedWeaponItem) {
+			return false;
+		}
+		if (mob instanceof AbstractSkeletonEntity) {
+			// Скелет считается милишником только если вооружён не луком (например, скелет-мечник или визер-скелет)
+			return !mob.getMainHandStack().isEmpty() && !(mob.getMainHandStack().getItem() instanceof RangedWeaponItem);
+		}
+		return mob instanceof ZombieEntity
+				|| mob instanceof VindicatorEntity
+				|| mob instanceof SpiderEntity
+				|| mob instanceof AbstractPiglinEntity;
+	}
+
+	/**
+	 * Применяет эффект «Процентный урон» (от 1 до 4 ХП = 5%..20%, не важно какая броня и зачарования!)
+	 * при прямом ударе ближнего боя от моба с тегом TAG_PERCENT_MELEE.
+	 */
+	public static float applyPercentageMeleeDamageIfApplicable(
+			ServerPlayerEntity player,
+			DamageSource source,
+			float appliedDamage
+	) {
+		if (!(source.getAttacker() instanceof MobEntity attackerMob)) {
+			return appliedDamage;
+		}
+		// Строго прямой удар в ближнем бою (без стрел, снарядов и взрывов!)
+		if (source.getSource() != attackerMob || source.isIn(DamageTypeTags.IS_PROJECTILE)) {
+			return appliedDamage;
+		}
+		if (!attackerMob.getCommandTags().contains(TAG_PERCENT_MELEE) || !isMeleeHostile(attackerMob)) {
+			return appliedDamage;
+		}
+
+		int step = 1 + player.getRandom().nextInt(4); // 1..4 (соответствует 5%..20% здоровья = 1..4 ХП!)
+		float pct = step * 0.05F;
+		float bonusPercentHp = MathHelper.clamp((float) Math.round(player.getMaxHealth() * pct), 1.0F, 4.0F);
+
+		player.addStatusEffect(new StatusEffectInstance(ModEffects.PERCENT_EROSION, 50, step - 1, false, true, true), attackerMob);
+		player.getServerWorld().spawnParticles(
+				ParticleTypes.DAMAGE_INDICATOR,
+				player.getX(),
+				player.getBodyY(0.6D),
+				player.getZ(),
+				step + 1,
+				0.25D,
+				0.25D,
+				0.25D,
+				0.08D
+		);
+		return appliedDamage + bonusPercentHp;
 	}
 
 	private static void applyBiomeSpecialization(MobEntity mob, EvolvedMobAccess access, ServerWorld world, float evol) {

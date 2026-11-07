@@ -15,6 +15,7 @@ import com.novaimod.item.CushionItem;
 import com.novaimod.network.ModPayloads;
 import com.novaimod.network.ModServerNetworking;
 import com.novaimod.registry.ModBlocks;
+import com.novaimod.registry.ModEffects;
 import com.novaimod.registry.ModEntities;
 import com.novaimod.registry.ModItems;
 import com.novaimod.registry.ModScreenHandlers;
@@ -54,6 +55,7 @@ public class NovaiMod implements ModInitializer {
 	@Override
 	public void onInitialize() {
 		ModSounds.init();
+		ModEffects.register();
 		ModBlocks.init();
 		ModItems.init();
 		ModScreenHandlers.init();
