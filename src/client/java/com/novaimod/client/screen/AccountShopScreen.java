@@ -228,9 +228,14 @@ public class AccountShopScreen extends Screen {
 
 			// Метка категории (Обычный / Элитный) или жирный остаток у элитных продавцов МФО
 			if (offer.stock() >= 0) {
-				Text stockLine = offer.stock() > 0
-						? Text.literal("ОСТАЛОСЬ ВСЕГО: " + offer.stock() + " шт.!").formatted(Formatting.YELLOW, Formatting.BOLD)
-						: Text.literal("РАСПРОДАНО (0 шт.)").formatted(Formatting.RED, Formatting.BOLD);
+				Text stockLine;
+				if (offer.stock() <= 0) {
+					stockLine = Text.literal("РАСПРОДАНО (0 шт.)").formatted(Formatting.RED, Formatting.BOLD);
+				} else if ("1 В МИРЕ".equals(offer.tierLabel())) {
+					stockLine = Text.literal("✦ ЕДИНСТВЕННЫЙ В МИРЕ: " + offer.stock() + " шт.!").formatted(Formatting.AQUA, Formatting.BOLD);
+				} else {
+					stockLine = Text.literal("ОСТАЛОСЬ ВСЕГО: " + offer.stock() + " шт.!").formatted(Formatting.YELLOW, Formatting.BOLD);
+				}
 				context.drawText(this.textRenderer, stockLine, left + 36, ry + 14, 0xFFFFFF, true);
 			} else {
 				Formatting badgeColor = "Элитный".equals(offer.tierLabel()) ? Formatting.GOLD : Formatting.GRAY;

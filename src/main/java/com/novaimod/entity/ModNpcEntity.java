@@ -148,12 +148,20 @@ public class ModNpcEntity extends PathAwareEntity {
 	}
 
 	public void configureRole(NpcRole role, String variant) {
+		String cleanVar = variant == null ? "" : variant;
 		this.dataTracker.set(ROLE_ID, role.getId());
-		this.dataTracker.set(VARIANT, variant == null ? "" : variant);
-		this.setCustomName(Text.literal(role.getDisplayName()));
+		this.dataTracker.set(VARIANT, cleanVar);
+		this.setCustomName(Text.literal(resolveDisplayName(role, cleanVar)));
 		this.setCustomNameVisible(true);
 		this.anchorPos = this.getBlockPos();
 		applyRoleStats(role);
+	}
+
+	private static String resolveDisplayName(NpcRole role, String variant) {
+		if (role == NpcRole.MFO_ELITE_SELLER) {
+			return "2".equals(variant) ? "Элитный антиквар МФО" : "Элитный оружейник МФО";
+		}
+		return role.getDisplayName();
 	}
 
 	private void applyRoleStats(NpcRole role) {
@@ -276,7 +284,11 @@ public class ModNpcEntity extends PathAwareEntity {
 				return ActionResult.CONSUME;
 			}
 			case MFO_ELITE_SELLER -> {
-				ModServerNetworking.openShopScreen(serverPlayer, "Элитный отдел МФО", "elite_mfo");
+				if ("2".equals(getVariant())) {
+					ModServerNetworking.openShopScreen(serverPlayer, "Элитный отдел МФО — Артефакты", "elite_mfo_2");
+				} else {
+					ModServerNetworking.openShopScreen(serverPlayer, "Элитный отдел МФО — Снаряжение", "elite_mfo_1");
+				}
 				return ActionResult.CONSUME;
 			}
 			case MFO_BARKER -> {
@@ -772,6 +784,9 @@ public class ModNpcEntity extends PathAwareEntity {
 		}
 		if (nbt.contains("Variant")) {
 			this.dataTracker.set(VARIANT, nbt.getString("Variant"));
+		}
+		if (getNpcRole() == NpcRole.MFO_ELITE_SELLER) {
+			this.setCustomName(Text.literal(resolveDisplayName(NpcRole.MFO_ELITE_SELLER, getVariant())));
 		}
 		if (nbt.containsUuid("TargetPlayer")) {
 			this.targetPlayerUuid = nbt.getUuid("TargetPlayer");

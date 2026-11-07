@@ -103,29 +103,54 @@ public final class ShopCatalogs {
 			return list;
 		}
 
-		if ("elite_mfo".equals(shopKey)) {
-			// Элитные продавцы в МФО: инструменты/оружие +50%, красивые ценники в стиле 6790 / 7790 / 3590 / 4790
+		if ("elite_mfo".equals(shopKey) || "elite_mfo_1".equals(shopKey)) {
+			// Торговец №1 в МФО (Элитный оружейник): эксклюзивное оружие, инструменты и броня с повышенным ценником
 			ModPersistentState state = ModPersistentState.get(server);
 
 			ItemStack vipSword = named(new ItemStack(Items.DIAMOND_SWORD), "Клинок Магната", Formatting.LIGHT_PURPLE);
 			enchant(vipSword, enchRegistry, Enchantments.SHARPNESS, 4);
 			enchant(vipSword, enchRegistry, Enchantments.UNBREAKING, 3);
-			list.add(new OfferEntry("elite_sword", vipSword, 6790, "VIP ЛИМИТ", state.getEliteStock("elite_sword", 2)));
+			list.add(new OfferEntry("elite_sword", vipSword, 8290, "VIP ЛИМИТ", state.getEliteStock("elite_sword", 2)));
 
 			ItemStack vipPick = named(new ItemStack(Items.DIAMOND_PICKAXE), "Кирка Олигарха", Formatting.LIGHT_PURPLE);
 			enchant(vipPick, enchRegistry, Enchantments.EFFICIENCY, 4);
 			enchant(vipPick, enchRegistry, Enchantments.FORTUNE, 3);
-			list.add(new OfferEntry("elite_pickaxe", vipPick, 7790, "VIP ЛИМИТ", state.getEliteStock("elite_pickaxe", 2)));
+			list.add(new OfferEntry("elite_pickaxe", vipPick, 9490, "VIP ЛИМИТ", state.getEliteStock("elite_pickaxe", 2)));
 
 			ItemStack vipChest = named(new ItemStack(Items.DIAMOND_CHESTPLATE), "Бриллиантовый китель", Formatting.LIGHT_PURPLE);
 			enchant(vipChest, enchRegistry, Enchantments.PROTECTION, 4);
 			enchant(vipChest, enchRegistry, Enchantments.UNBREAKING, 3);
-			list.add(new OfferEntry("elite_chestplate", vipChest, 5890, "VIP ЛИМИТ", state.getEliteStock("elite_chestplate", 2)));
+			list.add(new OfferEntry("elite_chestplate", vipChest, 7190, "VIP ЛИМИТ", state.getEliteStock("elite_chestplate", 2)));
 
-			list.add(new OfferEntry("elite_elytra", named(new ItemStack(Items.ELYTRA), "Люксовые Элитры", Formatting.GOLD), 9990, "VIP ЛИМИТ", state.getEliteStock("elite_elytra", 1)));
-			list.add(new OfferEntry("elite_totem", new ItemStack(Items.TOTEM_OF_UNDYING), 3590, "VIP ЛИМИТ", state.getEliteStock("elite_totem", 3)));
-			list.add(new OfferEntry("elite_egapple", new ItemStack(Items.ENCHANTED_GOLDEN_APPLE), 4790, "VIP ЛИМИТ", state.getEliteStock("elite_egapple", 3)));
-			list.add(new OfferEntry("elite_netherite", new ItemStack(Items.NETHERITE_INGOT), 4190, "VIP ЛИМИТ", state.getEliteStock("elite_netherite", 2)));
+			ItemStack vipLegs = named(new ItemStack(Items.DIAMOND_LEGGINGS), "Брюки Банкира", Formatting.LIGHT_PURPLE);
+			enchant(vipLegs, enchRegistry, Enchantments.PROTECTION, 4);
+			enchant(vipLegs, enchRegistry, Enchantments.UNBREAKING, 3);
+			list.add(new OfferEntry("elite_leggings", vipLegs, 6490, "VIP ЛИМИТ", state.getEliteStock("elite_leggings", 2)));
+
+			ItemStack vipBow = named(new ItemStack(Items.BOW), "Лук Взыскателя", Formatting.GOLD);
+			enchant(vipBow, enchRegistry, Enchantments.POWER, 4);
+			enchant(vipBow, enchRegistry, Enchantments.INFINITY, 1);
+			enchant(vipBow, enchRegistry, Enchantments.FLAME, 1);
+			enchant(vipBow, enchRegistry, Enchantments.UNBREAKING, 3);
+			list.add(new OfferEntry("elite_bow", vipBow, 8990, "VIP ЛИМИТ", state.getEliteStock("elite_bow", 1)));
+			return list;
+		}
+
+		if ("elite_mfo_2".equals(shopKey)) {
+			// Торговец №2 в МФО (Элитный антиквар): единственный в мире Карманный телепорт и редчайшие артефакты с повышенным ценником
+			ModPersistentState state = ModPersistentState.get(server);
+
+			list.add(new OfferEntry(
+					"elite_teleporter",
+					new ItemStack(ModItems.PLAYER_TELEPORTER),
+					14990,
+					"1 В МИРЕ",
+					state.getEliteStock("elite_teleporter", 1)
+			));
+			list.add(new OfferEntry("elite_elytra", named(new ItemStack(Items.ELYTRA), "Люксовые Элитры", Formatting.GOLD), 11990, "VIP ЛИМИТ", state.getEliteStock("elite_elytra", 1)));
+			list.add(new OfferEntry("elite_egapple", new ItemStack(Items.ENCHANTED_GOLDEN_APPLE), 5790, "VIP ЛИМИТ", state.getEliteStock("elite_egapple", 3)));
+			list.add(new OfferEntry("elite_netherite", new ItemStack(Items.NETHERITE_INGOT), 4990, "VIP ЛИМИТ", state.getEliteStock("elite_netherite", 2)));
+			list.add(new OfferEntry("elite_totem", new ItemStack(Items.TOTEM_OF_UNDYING), 4390, "VIP ЛИМИТ", state.getEliteStock("elite_totem", 3)));
 			return list;
 		}
 

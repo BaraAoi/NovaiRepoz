@@ -10,6 +10,7 @@ import com.novaimod.entity.ModNpcEntity;
 import com.novaimod.entity.NpcRole;
 import com.novaimod.network.ModServerNetworking;
 import com.novaimod.registry.ModEntities;
+import com.novaimod.registry.ModItems;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
@@ -88,6 +89,7 @@ public final class DetentionManager {
 					for (long d = 0; d < daysPassed; d++) {
 						long interest = Math.max(1L, Math.round(acc.debt * acc.hiddenDailyRate));
 						acc.debt = Math.min(Long.MAX_VALUE / 4L, acc.debt + interest);
+						acc.mfoLockedHalf = Math.max(acc.mfoLockedHalf, Math.max(1L, (acc.debt + 1L) / 2L));
 						acc.daysOverdue++;
 						int patienceDrop = 15 + (acc.debt >= 5000L ? 15 : (acc.debt >= 1000L ? 8 : 0));
 						acc.bankPatience = Math.max(0, acc.bankPatience - patienceDrop);
@@ -432,7 +434,29 @@ public final class DetentionManager {
 	}
 
 	/**
+	 * Списание долга вне здания микрозайма (коллекторами, мастерами спорта и др.).
+	 * Полностью погасить займ, не приходя в микрозайм, НЕВОЗМОЖНО:
+	 * как минимум половина долга (mfoLockedHalf >= 50%) ВСЕГДА остаётся за игроком!
+	 */
+	public static long applyEnforcerDebtReduction(ModPersistentState.PlayerFinanceData acc, long seizedAmount) {
+		if (acc.debt <= 0L || seizedAmount <= 0L) {
+			return 0L;
+		}
+		long minRemainingDebt = Math.max(1L, Math.max(acc.mfoLockedHalf, (acc.debt + 1L) / 2L));
+		acc.mfoLockedHalf = minRemainingDebt;
+		if (acc.debt <= minRemainingDebt) {
+			return 0L;
+		}
+		long maxAllowedReduction = acc.debt - minRemainingDebt;
+		long credited = Math.min(seizedAmount, maxAllowedReduction);
+		acc.debt -= credited;
+		return credited;
+	}
+
+	/**
 	 * Мастера спорта отбирают половину вещей из инвентаря в счёт долга, когда у игрока остаётся <= 2 сердечка (4.0 HP).
+	 * Но даже при любой стоимости вещей они НЕ могут погасить весь займ — минимум половина долга всегда остаётся за игроком,
+	 * пока он лично не придёт к Кредитору в здание МФО!
 	 */
 	public static void seizeHalfInventoryTowardDebt(ServerPlayerEntity player) {
 		ModPersistentState state = ModPersistentState.get(player.getServer());
@@ -440,7 +464,8 @@ public final class DetentionManager {
 
 		List<Integer> occupiedSlots = new ArrayList<>();
 		for (int i = 0; i < player.getInventory().main.size(); i++) {
-			if (!player.getInventory().main.get(i).isEmpty()) {
+			ItemStack st = player.getInventory().main.get(i);
+			if (!st.isEmpty() && !st.isOf(ModItems.PLAYER_TELEPORTER) && !st.isOf(ModItems.REVIVAL_TOKEN)) {
 				occupiedSlots.add(i);
 			}
 		}
@@ -466,21 +491,24 @@ public final class DetentionManager {
 			}
 		}
 
-		acc.debt = Math.max(0L, acc.debt - totalSeizedValue);
-		if (acc.debt == 0L) {
-			acc.bankPatience = 100;
-			acc.enforcementStage = 0;
-			acc.nextVisitTick = -1L;
-		}
+		long credited = applyEnforcerDebtReduction(acc, totalSeizedValue);
 		state.markDirty();
 		ModServerNetworking.syncAccount(player);
 
 		player.getServerWorld().playSound(null, player.getBlockPos(), SoundEvents.ITEM_ARMOR_EQUIP_IRON.value(), SoundCategory.HOSTILE, 1.0F, 0.9F);
-		player.sendMessage(
-				Text.literal("[Мастера спорта]: Изъята половина инвентаря (" + takenItemsCount + " предм.) на сумму " + totalSeizedValue + " ₽ в счёт долга! Остаток долга: " + acc.debt + " ₽.")
-						.formatted(Formatting.RED, Formatting.BOLD),
-				false
-		);
+		if (credited < totalSeizedValue || acc.debt <= acc.mfoLockedHalf) {
+			player.sendMessage(
+					Text.literal("[Мастера спорта]: Изъята половина инвентаря (" + takenItemsCount + " предм., зачтено " + credited + " ₽), но полностью закрыть займ через нас нельзя! Половина долга (" + acc.debt + " ₽) остаётся за тобой — топай лично в микрозайм к Кредитору!")
+							.formatted(Formatting.RED, Formatting.BOLD),
+					false
+			);
+		} else {
+			player.sendMessage(
+					Text.literal("[Мастера спорта]: Изъята половина инвентаря (" + takenItemsCount + " предм.) на сумму " + credited + " ₽ в счёт долга! Остаток долга: " + acc.debt + " ₽ (полное погашение только в МФО).")
+							.formatted(Formatting.RED, Formatting.BOLD),
+					false
+			);
+		}
 	}
 
 	/**

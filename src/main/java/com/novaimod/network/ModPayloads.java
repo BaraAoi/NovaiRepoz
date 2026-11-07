@@ -290,6 +290,36 @@ public final class ModPayloads {
 		}
 	}
 
+	public record OpenTeleporterScreenPayload(long balance, List<ReviveCandidateNet> targets) implements CustomPayload {
+		public static final CustomPayload.Id<OpenTeleporterScreenPayload> ID =
+				new CustomPayload.Id<>(Identifier.of(NovaiMod.MOD_ID, "open_teleporter_screen"));
+		public static final PacketCodec<RegistryByteBuf, OpenTeleporterScreenPayload> CODEC =
+				PacketCodec.of(OpenTeleporterScreenPayload::write, OpenTeleporterScreenPayload::read);
+
+		private void write(RegistryByteBuf buf) {
+			buf.writeLong(balance);
+			buf.writeVarInt(targets.size());
+			for (ReviveCandidateNet t : targets) {
+				t.write(buf);
+			}
+		}
+
+		private static OpenTeleporterScreenPayload read(RegistryByteBuf buf) {
+			long bal = buf.readLong();
+			int n = buf.readVarInt();
+			List<ReviveCandidateNet> list = new ArrayList<>(n);
+			for (int i = 0; i < n; i++) {
+				list.add(ReviveCandidateNet.read(buf));
+			}
+			return new OpenTeleporterScreenPayload(bal, list);
+		}
+
+		@Override
+		public Id<? extends CustomPayload> getId() {
+			return ID;
+		}
+	}
+
 	public record ShadowCuePayload(boolean leftSide, float intensity) implements CustomPayload {
 		public static final CustomPayload.Id<ShadowCuePayload> ID =
 				new CustomPayload.Id<>(Identifier.of(NovaiMod.MOD_ID, "shadow_cue"));
@@ -484,6 +514,27 @@ public final class ModPayloads {
 		}
 	}
 
+	public record UseTeleporterPayload(UUID targetUuid, boolean bringTargetToMe) implements CustomPayload {
+		public static final CustomPayload.Id<UseTeleporterPayload> ID =
+				new CustomPayload.Id<>(Identifier.of(NovaiMod.MOD_ID, "use_teleporter"));
+		public static final PacketCodec<RegistryByteBuf, UseTeleporterPayload> CODEC =
+				PacketCodec.of(UseTeleporterPayload::write, UseTeleporterPayload::read);
+
+		private void write(RegistryByteBuf buf) {
+			buf.writeUuid(targetUuid);
+			buf.writeBoolean(bringTargetToMe);
+		}
+
+		private static UseTeleporterPayload read(RegistryByteBuf buf) {
+			return new UseTeleporterPayload(buf.readUuid(), buf.readBoolean());
+		}
+
+		@Override
+		public Id<? extends CustomPayload> getId() {
+			return ID;
+		}
+	}
+
 	public static void registerPayloadTypes() {
 		PayloadTypeRegistry.playS2C().register(AccountSyncPayload.ID, AccountSyncPayload.CODEC);
 		PayloadTypeRegistry.playS2C().register(OpenLoanScreenPayload.ID, OpenLoanScreenPayload.CODEC);
@@ -494,6 +545,7 @@ public final class ModPayloads {
 		PayloadTypeRegistry.playS2C().register(OpenRouletteScreenPayload.ID, OpenRouletteScreenPayload.CODEC);
 		PayloadTypeRegistry.playS2C().register(RouletteResultPayload.ID, RouletteResultPayload.CODEC);
 		PayloadTypeRegistry.playS2C().register(OpenOddsConfigScreenPayload.ID, OpenOddsConfigScreenPayload.CODEC);
+		PayloadTypeRegistry.playS2C().register(OpenTeleporterScreenPayload.ID, OpenTeleporterScreenPayload.CODEC);
 		PayloadTypeRegistry.playS2C().register(ShadowCuePayload.ID, ShadowCuePayload.CODEC);
 
 		PayloadTypeRegistry.playC2S().register(LoanActionPayload.ID, LoanActionPayload.CODEC);
@@ -504,5 +556,6 @@ public final class ModPayloads {
 		PayloadTypeRegistry.playC2S().register(PlayCoinflipPayload.ID, PlayCoinflipPayload.CODEC);
 		PayloadTypeRegistry.playC2S().register(PlayRoulettePayload.ID, PlayRoulettePayload.CODEC);
 		PayloadTypeRegistry.playC2S().register(SaveOddsConfigPayload.ID, SaveOddsConfigPayload.CODEC);
+		PayloadTypeRegistry.playC2S().register(UseTeleporterPayload.ID, UseTeleporterPayload.CODEC);
 	}
 }

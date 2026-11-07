@@ -10,6 +10,7 @@ import com.novaimod.client.screen.LoanScreen;
 import com.novaimod.client.screen.OddsConfigScreen;
 import com.novaimod.client.screen.RevivalSelectScreen;
 import com.novaimod.client.screen.RouletteScreen;
+import com.novaimod.client.screen.TeleporterScreen;
 import com.novaimod.client.screen.VendingScreen;
 import com.novaimod.network.ModPayloads;
 import com.novaimod.registry.ModEntities;
@@ -71,6 +72,10 @@ public class NovaiModClient implements ClientModInitializer {
 
 		ClientPlayNetworking.registerGlobalReceiver(ModPayloads.OpenRevivalScreenPayload.ID, (payload, context) -> {
 			context.client().setScreen(new RevivalSelectScreen(payload.candidates()));
+		});
+
+		ClientPlayNetworking.registerGlobalReceiver(ModPayloads.OpenTeleporterScreenPayload.ID, (payload, context) -> {
+			context.client().setScreen(new TeleporterScreen(payload.balance(), payload.targets()));
 		});
 
 		ClientPlayNetworking.registerGlobalReceiver(ModPayloads.OpenCoinflipScreenPayload.ID, (payload, context) -> {

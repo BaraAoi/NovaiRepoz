@@ -140,7 +140,7 @@ public class LoanScreen extends Screen {
 		);
 		context.drawCenteredTextWithShadow(
 				this.textRenderer,
-				Text.literal("Мгновенное одобрение любой суммы!").formatted(Formatting.GREEN),
+				Text.literal("Полное закрытие долга — только здесь у Кредитора!").formatted(Formatting.YELLOW),
 				this.width / 2,
 				top + 22,
 				0xFFFFFF

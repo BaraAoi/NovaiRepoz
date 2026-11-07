@@ -33,6 +33,9 @@ public class ModPersistentState extends PersistentState {
 	public static class PlayerFinanceData {
 		public long balance = 0L;
 		public long debt = 0L;
+		// Несгораемая половина долга: коллекторы/мастера спорта и др. никогда не могут опустить долг ниже этой планки!
+		// Полностью погасить займ можно только лично придя в микрозайм к Кредитору.
+		public long mfoLockedHalf = 0L;
 
 		// Скрытые от глаз игрока внутренние параметры банка
 		public double hiddenDailyRate = 0.20D;
@@ -74,6 +77,7 @@ public class ModPersistentState extends PersistentState {
 			NbtCompound tag = new NbtCompound();
 			tag.putLong("balance", balance);
 			tag.putLong("debt", debt);
+			tag.putLong("mfoLockedHalf", mfoLockedHalf);
 			tag.putDouble("hiddenDailyRate", hiddenDailyRate);
 			tag.putLong("lastInterestDay", lastInterestDay);
 			tag.putInt("daysOverdue", daysOverdue);
@@ -120,6 +124,12 @@ public class ModPersistentState extends PersistentState {
 			PlayerFinanceData d = new PlayerFinanceData();
 			d.balance = tag.getLong("balance");
 			d.debt = tag.getLong("debt");
+			d.mfoLockedHalf = tag.contains("mfoLockedHalf")
+					? tag.getLong("mfoLockedHalf")
+					: (d.debt > 0L ? Math.max(1L, (d.debt + 1L) / 2L) : 0L);
+			if (d.debt > 0L && d.mfoLockedHalf <= 0L) {
+				d.mfoLockedHalf = Math.max(1L, (d.debt + 1L) / 2L);
+			}
 			d.hiddenDailyRate = tag.contains("hiddenDailyRate") ? tag.getDouble("hiddenDailyRate") : 0.20D;
 			d.lastInterestDay = tag.contains("lastInterestDay") ? tag.getLong("lastInterestDay") : -1L;
 			d.daysOverdue = tag.getInt("daysOverdue");
@@ -301,6 +311,9 @@ public class ModPersistentState extends PersistentState {
 		eliteStocks.putIfAbsent("elite_sword", 2);
 		eliteStocks.putIfAbsent("elite_pickaxe", 2);
 		eliteStocks.putIfAbsent("elite_chestplate", 2);
+		eliteStocks.putIfAbsent("elite_leggings", 2);
+		eliteStocks.putIfAbsent("elite_bow", 1);
+		eliteStocks.putIfAbsent("elite_teleporter", 1);
 		eliteStocks.putIfAbsent("elite_elytra", 1);
 		eliteStocks.putIfAbsent("elite_totem", 3);
 		eliteStocks.putIfAbsent("elite_egapple", 3);
