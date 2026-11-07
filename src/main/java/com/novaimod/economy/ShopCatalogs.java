@@ -25,6 +25,7 @@ import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
+import net.minecraft.util.Identifier;
 
 /**
  * Каталоги товаров всех заведений:
@@ -113,6 +114,29 @@ public final class ShopCatalogs {
 			enchant(vipSword, enchRegistry, Enchantments.SHARPNESS, 4);
 			enchant(vipSword, enchRegistry, Enchantments.UNBREAKING, 3);
 			list.add(new OfferEntry("elite_sword", vipSword, 8290, "VIP ЛИМИТ", state.getEliteStock("elite_sword", 2)));
+
+			ItemStack vipAxe = named(new ItemStack(Items.DIAMOND_AXE), "Секира Коллектора", Formatting.LIGHT_PURPLE);
+			enchant(vipAxe, enchRegistry, Enchantments.SHARPNESS, 5);
+			enchant(vipAxe, enchRegistry, Enchantments.UNBREAKING, 3);
+			list.add(new OfferEntry("elite_axe", vipAxe, 8690, "VIP ЛИМИТ", state.getEliteStock("elite_axe", 2)));
+
+			ItemStack vipMace = named(new ItemStack(Items.MACE), "Булава Ликвидатора", Formatting.GOLD);
+			enchantById(vipMace, enchRegistry, "density", 4);
+			enchantById(vipMace, enchRegistry, "breach", 3);
+			enchant(vipMace, enchRegistry, Enchantments.UNBREAKING, 3);
+			list.add(new OfferEntry("elite_mace", vipMace, 11990, "VIP ЛИМИТ", state.getEliteStock("elite_mace", 2)));
+
+			ItemStack vipTrident = named(new ItemStack(Items.TRIDENT), "Трезубец Взыскателя", Formatting.AQUA);
+			enchantById(vipTrident, enchRegistry, "loyalty", 3);
+			enchantById(vipTrident, enchRegistry, "impaling", 4);
+			enchant(vipTrident, enchRegistry, Enchantments.UNBREAKING, 3);
+			list.add(new OfferEntry("elite_trident", vipTrident, 9990, "VIP ЛИМИТ", state.getEliteStock("elite_trident", 2)));
+
+			ItemStack vipCrossbow = named(new ItemStack(Items.CROSSBOW), "Арбалет Инкассатора", Formatting.LIGHT_PURPLE);
+			enchantById(vipCrossbow, enchRegistry, "quick_charge", 3);
+			enchantById(vipCrossbow, enchRegistry, "multishot", 1);
+			enchant(vipCrossbow, enchRegistry, Enchantments.UNBREAKING, 3);
+			list.add(new OfferEntry("elite_crossbow", vipCrossbow, 7990, "VIP ЛИМИТ", state.getEliteStock("elite_crossbow", 2)));
 
 			ItemStack vipPick = named(new ItemStack(Items.DIAMOND_PICKAXE), "Кирка Олигарха", Formatting.LIGHT_PURPLE);
 			enchant(vipPick, enchRegistry, Enchantments.EFFICIENCY, 4);
@@ -271,6 +295,11 @@ public final class ShopCatalogs {
 	}
 
 	private static void enchant(ItemStack stack, RegistryWrapper.Impl<Enchantment> registry, RegistryKey<Enchantment> key, int level) {
+		registry.getOptional(key).ifPresent(entry -> stack.addEnchantment(entry, level));
+	}
+
+	private static void enchantById(ItemStack stack, RegistryWrapper.Impl<Enchantment> registry, String vanillaId, int level) {
+		RegistryKey<Enchantment> key = RegistryKey.of(RegistryKeys.ENCHANTMENT, Identifier.ofVanilla(vanillaId));
 		registry.getOptional(key).ifPresent(entry -> stack.addEnchantment(entry, level));
 	}
 }

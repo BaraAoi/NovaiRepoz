@@ -4,7 +4,6 @@ import java.util.List;
 
 import com.novaimod.world.ApocalypseEventManager;
 
-import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -18,7 +17,8 @@ import net.minecraft.world.World;
 
 /**
  * Неизвестный проклятый предмет с постоянно меняющимися символами (§k / Formatting.OBFUSCATED),
- * появляющийся в самом первом открытом данж-сундуке мира и запускающий 10-минутное максимальное усложнение мобов!
+ * появляющийся в самом первом открытом данж-сундуке мира.
+ * Испытание на 10 минут начинается ТОЛЬКО после того, как игрок сам воспользуется предметом (ПКМ)!
  */
 public class UnknownArtifactItem extends Item {
 	public UnknownArtifactItem(Settings settings) {
@@ -36,20 +36,16 @@ public class UnknownArtifactItem extends Item {
 	}
 
 	@Override
-	public void inventoryTick(ItemStack stack, World world, Entity entity, int slot, boolean selected) {
-		if (world.isClient()) {
-			return;
-		}
-		if (entity instanceof ServerPlayerEntity serverPlayer && !serverPlayer.isCreative() && !serverPlayer.isSpectator()) {
-			stack.decrement(stack.getCount());
-			ApocalypseEventManager.startApocalypse(serverPlayer.getServer(), serverPlayer);
-		}
-	}
-
-	@Override
 	public TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {
 		ItemStack stack = user.getStackInHand(hand);
 		if (!world.isClient() && user instanceof ServerPlayerEntity serverPlayer) {
+			if (ApocalypseEventManager.isActive(serverPlayer.getServer())) {
+				serverPlayer.sendMessage(
+						Text.literal("Проклятое испытание уже активно!").formatted(Formatting.RED, Formatting.BOLD),
+						true
+				);
+				return TypedActionResult.fail(stack);
+			}
 			if (!serverPlayer.isCreative()) {
 				stack.decrement(1);
 			}
@@ -62,6 +58,6 @@ public class UnknownArtifactItem extends Item {
 	public void appendTooltip(ItemStack stack, TooltipContext context, List<Text> tooltip, TooltipType type) {
 		tooltip.add(Text.literal("ПРОКЛЯТИЕДРЕВНИХРУИН").formatted(Formatting.DARK_PURPLE, Formatting.OBFUSCATED));
 		tooltip.add(Text.literal("ТЬМАПРОБУЖДАЕТСЯНАДЕСЯТЬМИНУТ").formatted(Formatting.RED, Formatting.OBFUSCATED));
-		tooltip.add(Text.literal("ВЫЖИВИИЛИПОГИБНИ").formatted(Formatting.AQUA, Formatting.OBFUSCATED));
+		tooltip.add(Text.literal("ИСПОЛЬЗУЙПКМЧТОБЫНАЧАТЬ").formatted(Formatting.AQUA, Formatting.OBFUSCATED));
 	}
 }

@@ -316,6 +316,10 @@ public class ModPersistentState extends PersistentState {
 
 	private void initDefaultEliteStocks() {
 		eliteStocks.putIfAbsent("elite_sword", 2);
+		eliteStocks.putIfAbsent("elite_axe", 2);
+		eliteStocks.putIfAbsent("elite_mace", 2);
+		eliteStocks.putIfAbsent("elite_trident", 2);
+		eliteStocks.putIfAbsent("elite_crossbow", 2);
 		eliteStocks.putIfAbsent("elite_pickaxe", 2);
 		eliteStocks.putIfAbsent("mfo_sword_helm", 2);
 		eliteStocks.putIfAbsent("mfo_sword_chest", 2);

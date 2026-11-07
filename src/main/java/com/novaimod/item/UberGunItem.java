@@ -67,8 +67,8 @@ public class UberGunItem extends BowItem {
 	public static Text getModeBanner(int mode) {
 		return switch (mode) {
 			case MODE_SNIPER -> Text.literal("🎯 Режим Убергана: СНАЙПЕРСКИЙ (долгий натяг, урон x4)").formatted(Formatting.GOLD, Formatting.BOLD);
-			case MODE_ANNIHILATION -> Text.literal("💥 Режим Убергана: АННИГИЛЯЦИЯ (взрыв местности при попадании)").formatted(Formatting.RED, Formatting.BOLD);
-			default -> Text.literal("⚡ Режим Убергана: ПУЛЕМЁТ (очередь раз в 0.2 сек)").formatted(Formatting.AQUA, Formatting.BOLD);
+			case MODE_ANNIHILATION -> Text.literal("💥 Режим Убергана: АННИГИЛЯЦИЯ (взрывает мобов и местность)").formatted(Formatting.RED, Formatting.BOLD);
+			default -> Text.literal("⚡ Режим Убергана: ПУЛЕМЁТ (очередь раз в 0.2 сек, усиленный урон)").formatted(Formatting.AQUA, Formatting.BOLD);
 		};
 	}
 
@@ -116,11 +116,11 @@ public class UberGunItem extends BowItem {
 		int mode = getMode(stack);
 
 		if (mode == MODE_MACHINE_GUN) {
-			// Пулемёт: выстрел строго каждые 4 тика (0.2 секунды)!
+			// Пулемёт: выстрел строго каждые 4 тика (0.2 секунды) с увеличенным уроном!
 			if (usedTicks >= 2 && usedTicks % 4 == 0 && !world.isClient()) {
 				ArrowEntity arrow = new ArrowEntity(world, user, new ItemStack(Items.ARROW), stack);
-				arrow.setVelocity(user, user.getPitch(), user.getYaw(), 0.0F, 2.85F, 1.15F);
-				arrow.setDamage(1.25D); // Чуть слабее обычной стрелы (ванильная база 2.0)
+				arrow.setVelocity(user, user.getPitch(), user.getYaw(), 0.0F, 3.05F, 0.95F);
+				arrow.setDamage(1.90D); // Усиленный урон пулемётной очереди (~6 ед. чистого урона за каждую стрелу каждые 0.2 сек!)
 				arrow.pickupType = PersistentProjectileEntity.PickupPermission.CREATIVE_ONLY;
 				arrow.addCommandTag("novai_uber_mg");
 				world.spawnEntity(arrow);
@@ -237,7 +237,7 @@ public class UberGunItem extends BowItem {
 		int mode = getMode(stack);
 		String modeName = switch (mode) {
 			case MODE_SNIPER -> "Снайперский (долгий натяг, урон x4)";
-			case MODE_ANNIHILATION -> "Аннигиляция (взрыв местности)";
+			case MODE_ANNIHILATION -> "Аннигиляция (взрывает мобов и местность)";
 			default -> "Пулемёт (выстрел раз в 0.2 сек)";
 		};
 		tooltip.add(Text.literal("Активный режим: " + modeName).formatted(Formatting.GOLD));

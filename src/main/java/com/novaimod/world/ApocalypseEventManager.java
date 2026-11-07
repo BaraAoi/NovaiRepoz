@@ -15,22 +15,29 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.LootableContainerBlockEntity;
+import net.minecraft.enchantment.Enchantment;
 import net.minecraft.entity.EntityType;
+import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.boss.BossBar;
 import net.minecraft.entity.boss.ServerBossBar;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
+import net.minecraft.entity.mob.AbstractPiglinEntity;
 import net.minecraft.entity.mob.AbstractSkeletonEntity;
 import net.minecraft.entity.mob.CreeperEntity;
 import net.minecraft.entity.mob.HostileEntity;
 import net.minecraft.entity.mob.MobEntity;
-import net.minecraft.entity.mob.SkeletonEntity;
-import net.minecraft.entity.mob.SpiderEntity;
+import net.minecraft.entity.mob.PillagerEntity;
+import net.minecraft.entity.mob.VindicatorEntity;
 import net.minecraft.entity.mob.ZombieEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.particle.ParticleTypes;
+import net.minecraft.registry.RegistryKey;
+import net.minecraft.registry.RegistryKeys;
+import net.minecraft.registry.RegistryWrapper;
+import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -38,7 +45,7 @@ import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
-import net.minecraft.util.Hand;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.MathHelper;
@@ -51,16 +58,20 @@ import net.minecraft.world.WorldEvents;
 /**
  * Управляет проклятым событием из ПЕРВОГО открытого сгенерированного сундука в данже:
  * 1) Кладёт в первый открытый не-скрафченный сундук с лут-таблицей Неизвестный предмет (§k).
- * 2) Запускает на 10 минут (12000 тиков) максимальное усложнение всех мобов:
- *    - Эволюция мобов 100% (1.0F) + баффы скорости, силы и живучести.
- *    - Резко увеличенный спавнрейт мобов вокруг игроков днём и ночью.
+ * 2) Испытание начинается ТОЛЬКО после того, как игрок сам воспользуется этим предметом (ПКМ)!
+ * 3) На 10 минут (12000 тиков) включает максимальное усложнение всех мобов:
+ *    - Эволюция мобов 100% (1.0F) + баффы скорости и силы.
+ *    - Вместо зелья сопротивления урону мобы получают настоящую БРОНЮ С ЗАЧАРОВАНИЯМИ
+ *      и богатый арсенал зачарованного ОРУЖИЯ (мечи, секиры, булавы, трезубцы, луки, арбалеты, щиты)!
+ *    - Резко увеличенный спавнрейт орд вокруг игроков днём и ночью.
  *    - Мобы перестают гореть на солнце.
  *    - Криперы копают тоннель прямо к застроившимся игрокам и взрывают обсидиан!
- * 3) Если игроки выжили 10 минут — выдаёт каждому по +30 000 ₽ и по 1 Жетону возрождения,
+ * 4) Если игроки выжили 10 минут — выдаёт каждому по +30 000 ₽ и по 1 Жетону возрождения,
  *    а также делит между выжившими 64 железа, 32 алмаза и 6 незерита!
  */
 public final class ApocalypseEventManager {
 	public static final int APOCALYPSE_DURATION_TICKS = 20 * 60 * 10; // 10 минут = 12000 тиков
+	private static final String TAG_APOC_GEARED = "novai_apoc_geared";
 
 	private static ServerBossBar bossBar = null;
 
@@ -84,6 +95,7 @@ public final class ApocalypseEventManager {
 	/**
 	 * Проверяет ПКМ по блоку: если это самый первый сгенерированный миром данж-сундук (имеет LootTable, т.е. не скрафчен игроком),
 	 * генерирует его ванильный лут и помещает внутрь Неизвестный предмет с меняющимися символами!
+	 * Испытание НЕ начинается автоматически — только когда игрок сам активирует предмет (ПКМ)!
 	 */
 	public static void checkFirstDungeonChestOpen(ServerWorld world, BlockPos pos, ServerPlayerEntity player) {
 		MinecraftServer server = world.getServer();
@@ -111,7 +123,6 @@ public final class ApocalypseEventManager {
 		if (lootContainer.getStack(centerSlot).isEmpty()) {
 			lootContainer.setStack(centerSlot, artifact);
 		} else {
-			// Освобождаем центральный слот для наглядности, перекладывая старый предмет в свободный слот
 			ItemStack displaced = lootContainer.getStack(centerSlot);
 			boolean moved = false;
 			for (int i = 0; i < size; i++) {
@@ -130,10 +141,10 @@ public final class ApocalypseEventManager {
 		lootContainer.markDirty();
 
 		state.setFirstDungeonChestOpened(true);
-		// Если игрок не заберёт предмет из сундука сам — через 5 секунд (100 тиков) артефакт пробудится сам!
-		state.setPendingArtifactAwakenTicks(100);
+		state.setPendingArtifactAwakenTicks(0);
+		state.markDirty();
 
-		world.playSound(null, pos, SoundEvents.BLOCK_SCULK_SHRIEKER_SHRIEK, SoundCategory.HOSTILE, 1.2F, 0.75F);
+		world.playSound(null, pos, SoundEvents.BLOCK_SCULK_SHRIEKER_SHRIEK, SoundCategory.HOSTILE, 1.1F, 0.8F);
 		world.spawnParticles(ParticleTypes.SCULK_SOUL, pos.getX() + 0.5D, pos.getY() + 1.0D, pos.getZ() + 0.5D, 25, 0.4D, 0.4D, 0.4D, 0.05D);
 	}
 
@@ -151,12 +162,13 @@ public final class ApocalypseEventManager {
 
 		ensureBossBar(server, APOCALYPSE_DURATION_TICKS);
 
+		String who = triggerPlayer != null ? " (" + triggerPlayer.getName().getString() + ")" : "";
 		Text alert = Text.literal("✦ ")
 				.formatted(Formatting.DARK_PURPLE)
 				.append(Text.literal("ПРОКЛЯТИЕ").formatted(Formatting.LIGHT_PURPLE, Formatting.OBFUSCATED))
-				.append(Text.literal(" НЕИЗВЕСТНЫЙ АРТЕФАКТ ПРОБУДИЛСЯ! ").formatted(Formatting.RED, Formatting.BOLD))
+				.append(Text.literal(" НЕИЗВЕСТНЫЙ АРТЕФАКТ АКТИВИРОВАН" + who + "! ").formatted(Formatting.RED, Formatting.BOLD))
 				.append(Text.literal("ПРОКЛЯТИЕ").formatted(Formatting.LIGHT_PURPLE, Formatting.OBFUSCATED));
-		Text subAlert = Text.literal("Все мобы усилены на МАКСИМУМ, не горят на солнце, а криперы роют путь и взрывают обсидиан! Продержитесь 10 минут ради огромной награды!")
+		Text subAlert = Text.literal("Мобы облачены в зачарованную броню и вооружены до зубов, не горят на солнце, а криперы роют путь и взрывают обсидиан! Продержитесь 10 минут!")
 				.formatted(Formatting.GOLD, Formatting.BOLD);
 
 		for (ServerPlayerEntity p : server.getPlayerManager().getPlayerList()) {
@@ -188,14 +200,9 @@ public final class ApocalypseEventManager {
 	public static void tickServer(MinecraftServer server) {
 		ModPersistentState state = ModPersistentState.get(server);
 
-		// Авто-пробуждение артефакта через 5 секунд после открытия первого данж-сундука, если его оставили лежать внутри
-		int pending = state.getPendingArtifactAwakenTicks();
-		if (pending > 0 && !state.isApocalypseActive()) {
-			pending--;
-			state.setPendingArtifactAwakenTicks(pending);
-			if (pending == 0) {
-				startApocalypse(server, null);
-			}
+		// На всякий случай сбрасываем устаревшее авто-пробуждение со старых сейвов — старт строго по ПКМ предметом!
+		if (state.getPendingArtifactAwakenTicks() > 0) {
+			state.setPendingArtifactAwakenTicks(0);
 		}
 
 		if (!state.isApocalypseActive()) {
@@ -215,12 +222,12 @@ public final class ApocalypseEventManager {
 
 		ensureBossBar(server, Math.max(0, left));
 
-		// Каждые 20 тиков (1 сек) баффаем всех враждебных мобов рядом с игроками
+		// Каждые 20 тиков (1 сек) усиливаем враждебных мобов рядом с игроками и выдаём им зачарованную броню и оружие
 		if (left % 20 == 0) {
 			buffNearbyHostileMobs(server);
 		}
 
-		// Каждые 35 тиков (~1.75 сек) спавним дополнительные волны мобов вокруг выживающих игроков
+		// Каждые 35 тиков (~1.75 сек) спавним дополнительные волны вооружённых мобов вокруг выживающих игроков
 		if (left % 35 == 10) {
 			spawnApocalypseMobWaves(server);
 		}
@@ -262,14 +269,17 @@ public final class ApocalypseEventManager {
 					continue;
 				}
 				Box box = player.getBoundingBox().expand(48.0D, 28.0D, 48.0D);
-				List<HostileEntity> hostiles = world.getEntitiesByClass(HostileEntity.class, box, Entity -> Entity.isAlive());
+				List<HostileEntity> hostiles = world.getEntitiesByClass(HostileEntity.class, box, HostileEntity::isAlive);
 				for (HostileEntity mob : hostiles) {
 					if (PartyDollEntitySafeCheck.isFriendly(mob)) {
 						continue;
 					}
+					// Сопротивление урону (RESISTANCE) убрано! Вместо него мобы одеваются в настоящую зачарованную броню и вооружаются!
+					mob.removeStatusEffect(StatusEffects.RESISTANCE);
 					mob.addStatusEffect(new StatusEffectInstance(StatusEffects.SPEED, 60, 0, true, false));
 					mob.addStatusEffect(new StatusEffectInstance(StatusEffects.STRENGTH, 60, 0, true, false));
-					mob.addStatusEffect(new StatusEffectInstance(StatusEffects.RESISTANCE, 60, 0, true, false));
+					equipApocalypseMobIfNeeded(mob, world);
+
 					if (mob.getTarget() == null && mob.squaredDistanceTo(player) <= 48.0D * 48.0D) {
 						mob.setTarget(player);
 					}
@@ -287,11 +297,11 @@ public final class ApocalypseEventManager {
 				}
 				Box countBox = player.getBoundingBox().expand(42.0D, 24.0D, 42.0D);
 				int nearbyHostiles = world.getEntitiesByClass(HostileEntity.class, countBox, HostileEntity::isAlive).size();
-				if (nearbyHostiles >= 24) {
+				if (nearbyHostiles >= 26) {
 					continue;
 				}
 
-				int toSpawn = 2 + rng.nextInt(2); // 2..3 моба каждые 1.75 сек на игрока
+				int toSpawn = 2 + rng.nextInt(2); // 2..3 вооружённых моба каждые 1.75 сек на игрока
 				for (int i = 0; i < toSpawn; i++) {
 					BlockPos spawnPos = findWaveSpawnPos(world, player, rng);
 					if (spawnPos == null) {
@@ -305,6 +315,7 @@ public final class ApocalypseEventManager {
 					if (MobEvolutionManager.isEvolvableMob(mob)) {
 						MobEvolutionManager.initializeMobIfNeeded(mob, world);
 					}
+					equipApocalypseMobIfNeeded(mob, world);
 					mob.setTarget(player);
 					world.spawnEntity(mob);
 					world.spawnParticles(ParticleTypes.SMOKE, mob.getX(), mob.getY() + 0.8D, mob.getZ(), 8, 0.25D, 0.4D, 0.25D, 0.02D);
@@ -314,22 +325,251 @@ public final class ApocalypseEventManager {
 	}
 
 	private static HostileEntity createWaveMob(ServerWorld world, Random rng) {
-		int roll = rng.nextInt(10);
-		if (roll < 4) {
+		int roll = rng.nextInt(20);
+		if (roll < 5) {
 			return EntityType.ZOMBIE.create(world);
 		}
 		if (roll < 7) {
-			SkeletonEntity skel = EntityType.SKELETON.create(world);
-			if (skel != null) {
-				skel.setStackInHand(Hand.MAIN_HAND, new ItemStack(Items.BOW));
-				skel.updateAttackType();
-			}
-			return skel;
+			return EntityType.HUSK.create(world);
 		}
-		if (roll < 9) {
+		if (roll < 11) {
+			return EntityType.SKELETON.create(world);
+		}
+		if (roll < 13) {
+			return EntityType.STRAY.create(world);
+		}
+		if (roll < 15) {
+			return EntityType.PILLAGER.create(world);
+		}
+		if (roll < 16) {
+			return EntityType.VINDICATOR.create(world);
+		}
+		if (roll < 19) {
 			return EntityType.CREEPER.create(world);
 		}
 		return EntityType.SPIDER.create(world);
+	}
+
+	/**
+	 * Однократно экипирует враждебного моба зачарованной бронёй и разнообразным зачарованным оружием
+	 * на время 10-минутного испытания (с шансом выпадения 0.0F, чтобы орда не засыпала мир бесплатным алмазным/незеритовым лутом).
+	 */
+	public static void equipApocalypseMobIfNeeded(HostileEntity mob, ServerWorld world) {
+		if (!mob.addCommandTag(TAG_APOC_GEARED)) {
+			return;
+		}
+		if (mob instanceof CreeperEntity) {
+			return;
+		}
+
+		RegistryWrapper.Impl<Enchantment> enchRegistry = world.getRegistryManager().getWrapperOrThrow(RegistryKeys.ENCHANTMENT);
+		Random rng = mob.getRandom();
+
+		boolean canWearArmor = mob instanceof ZombieEntity
+				|| mob instanceof AbstractSkeletonEntity
+				|| mob instanceof AbstractPiglinEntity;
+		if (canWearArmor) {
+			equipEnchantedArmorSet(mob, enchRegistry, rng);
+		}
+
+		equipVariedEnchantedWeapon(mob, enchRegistry, rng);
+		mob.setCanPickUpLoot(false);
+	}
+
+	private static void equipEnchantedArmorSet(HostileEntity mob, RegistryWrapper.Impl<Enchantment> enchRegistry, Random rng) {
+		int tierRoll = rng.nextInt(100);
+		Item helm;
+		Item chest;
+		Item legs;
+		Item boots;
+
+		if (tierRoll < 7) {
+			helm = Items.NETHERITE_HELMET;
+			chest = Items.NETHERITE_CHESTPLATE;
+			legs = Items.NETHERITE_LEGGINGS;
+			boots = Items.NETHERITE_BOOTS;
+		} else if (tierRoll < 37) {
+			helm = Items.DIAMOND_HELMET;
+			chest = Items.DIAMOND_CHESTPLATE;
+			legs = Items.DIAMOND_LEGGINGS;
+			boots = Items.DIAMOND_BOOTS;
+		} else if (tierRoll < 74) {
+			helm = Items.IRON_HELMET;
+			chest = Items.IRON_CHESTPLATE;
+			legs = Items.IRON_LEGGINGS;
+			boots = Items.IRON_BOOTS;
+		} else if (tierRoll < 88) {
+			helm = Items.CHAINMAIL_HELMET;
+			chest = Items.CHAINMAIL_CHESTPLATE;
+			legs = Items.CHAINMAIL_LEGGINGS;
+			boots = Items.CHAINMAIL_BOOTS;
+		} else {
+			helm = Items.GOLDEN_HELMET;
+			chest = Items.GOLDEN_CHESTPLATE;
+			legs = Items.GOLDEN_LEGGINGS;
+			boots = Items.GOLDEN_BOOTS;
+		}
+
+		ItemStack helmStack = createEnchantedArmorPiece(helm, enchRegistry, rng, false, false);
+		equipNoDrop(mob, EquipmentSlot.HEAD, helmStack);
+
+		ItemStack chestStack = createEnchantedArmorPiece(chest, enchRegistry, rng, true, false);
+		equipNoDrop(mob, EquipmentSlot.CHEST, chestStack);
+
+		if (rng.nextFloat() < 0.90F) {
+			ItemStack legsStack = createEnchantedArmorPiece(legs, enchRegistry, rng, rng.nextBoolean(), false);
+			equipNoDrop(mob, EquipmentSlot.LEGS, legsStack);
+		}
+
+		if (rng.nextFloat() < 0.90F) {
+			ItemStack bootsStack = createEnchantedArmorPiece(boots, enchRegistry, rng, false, true);
+			equipNoDrop(mob, EquipmentSlot.FEET, bootsStack);
+		}
+	}
+
+	private static ItemStack createEnchantedArmorPiece(
+			Item item,
+			RegistryWrapper.Impl<Enchantment> enchRegistry,
+			Random rng,
+			boolean allowThorns,
+			boolean isBoots
+	) {
+		ItemStack stack = new ItemStack(item);
+		int protType = rng.nextInt(5);
+		int protLvl = 2 + rng.nextInt(3); // II .. IV
+		if (protType < 3) {
+			applyEnchant(stack, enchRegistry, "protection", protLvl);
+		} else if (protType == 3) {
+			applyEnchant(stack, enchRegistry, "projectile_protection", protLvl);
+		} else {
+			applyEnchant(stack, enchRegistry, "blast_protection", protLvl);
+		}
+		applyEnchant(stack, enchRegistry, "unbreaking", 2 + rng.nextInt(2));
+		if (allowThorns && rng.nextFloat() < 0.35F) {
+			applyEnchant(stack, enchRegistry, "thorns", 1 + rng.nextInt(2));
+		}
+		if (isBoots && rng.nextFloat() < 0.40F) {
+			applyEnchant(stack, enchRegistry, "feather_falling", 3);
+		}
+		return stack;
+	}
+
+	private static void equipVariedEnchantedWeapon(HostileEntity mob, RegistryWrapper.Impl<Enchantment> enchRegistry, Random rng) {
+		if (mob instanceof PillagerEntity) {
+			ItemStack crossbow = new ItemStack(Items.CROSSBOW);
+			applyEnchant(crossbow, enchRegistry, "quick_charge", 1 + rng.nextInt(2));
+			if (rng.nextBoolean()) {
+				applyEnchant(crossbow, enchRegistry, "multishot", 1);
+			} else {
+				applyEnchant(crossbow, enchRegistry, "piercing", 2 + rng.nextInt(2));
+			}
+			applyEnchant(crossbow, enchRegistry, "unbreaking", 3);
+			equipNoDrop(mob, EquipmentSlot.MAINHAND, crossbow);
+			return;
+		}
+
+		if (mob instanceof VindicatorEntity) {
+			Item axeItem = rng.nextFloat() < 0.45F ? Items.DIAMOND_AXE : Items.IRON_AXE;
+			ItemStack axe = new ItemStack(axeItem);
+			applyEnchant(axe, enchRegistry, "sharpness", 3 + rng.nextInt(2));
+			applyEnchant(axe, enchRegistry, "unbreaking", 3);
+			equipNoDrop(mob, EquipmentSlot.MAINHAND, axe);
+			return;
+		}
+
+		if (mob instanceof AbstractSkeletonEntity skeleton) {
+			// 65% — стрелки с мощными зачарованными луками, 35% — штурмовики ближнего боя с мечами, секирами и булавами!
+			if (rng.nextFloat() < 0.65F) {
+				ItemStack bow = new ItemStack(Items.BOW);
+				applyEnchant(bow, enchRegistry, "power", 2 + rng.nextInt(3)); // Сила II..IV
+				if (rng.nextFloat() < 0.45F) {
+					applyEnchant(bow, enchRegistry, "punch", 1 + rng.nextInt(2));
+				}
+				if (rng.nextFloat() < 0.40F) {
+					applyEnchant(bow, enchRegistry, "flame", 1);
+				}
+				applyEnchant(bow, enchRegistry, "unbreaking", 3);
+				equipNoDrop(skeleton, EquipmentSlot.MAINHAND, bow);
+			} else {
+				ItemStack melee = createRandomMeleeWeapon(enchRegistry, rng);
+				equipNoDrop(skeleton, EquipmentSlot.MAINHAND, melee);
+				if (rng.nextFloat() < 0.30F) {
+					equipNoDrop(skeleton, EquipmentSlot.OFFHAND, new ItemStack(Items.SHIELD));
+				}
+			}
+			skeleton.updateAttackType();
+			return;
+		}
+
+		if (mob instanceof ZombieEntity || mob instanceof AbstractPiglinEntity) {
+			ItemStack weapon = createRandomMeleeWeapon(enchRegistry, rng);
+			equipNoDrop(mob, EquipmentSlot.MAINHAND, weapon);
+			if (rng.nextFloat() < 0.28F) {
+				equipNoDrop(mob, EquipmentSlot.OFFHAND, new ItemStack(Items.SHIELD));
+			}
+		}
+	}
+
+	private static ItemStack createRandomMeleeWeapon(RegistryWrapper.Impl<Enchantment> enchRegistry, Random rng) {
+		int pick = rng.nextInt(100);
+		ItemStack weapon;
+
+		if (pick < 6) {
+			// Незеритовый меч / секира
+			weapon = new ItemStack(rng.nextBoolean() ? Items.NETHERITE_SWORD : Items.NETHERITE_AXE);
+			applyEnchant(weapon, enchRegistry, "sharpness", 4);
+			if (weapon.isOf(Items.NETHERITE_SWORD) && rng.nextBoolean()) {
+				applyEnchant(weapon, enchRegistry, "fire_aspect", 2);
+			}
+		} else if (pick < 28) {
+			// Алмазный меч
+			weapon = new ItemStack(Items.DIAMOND_SWORD);
+			applyEnchant(weapon, enchRegistry, "sharpness", 2 + rng.nextInt(3));
+			if (rng.nextFloat() < 0.35F) {
+				applyEnchant(weapon, enchRegistry, "fire_aspect", 1 + rng.nextInt(2));
+			}
+			if (rng.nextFloat() < 0.30F) {
+				applyEnchant(weapon, enchRegistry, "knockback", 1 + rng.nextInt(2));
+			}
+		} else if (pick < 48) {
+			// Боевая секира (пробивает щиты игроков!)
+			weapon = new ItemStack(rng.nextFloat() < 0.45F ? Items.DIAMOND_AXE : Items.IRON_AXE);
+			applyEnchant(weapon, enchRegistry, "sharpness", 2 + rng.nextInt(3));
+		} else if (pick < 64) {
+			// Булава 1.21 (Mace) с Плотностью и Проломом брони!
+			weapon = new ItemStack(Items.MACE);
+			applyEnchant(weapon, enchRegistry, "density", 2 + rng.nextInt(3));
+			applyEnchant(weapon, enchRegistry, "breach", 1 + rng.nextInt(3));
+		} else if (pick < 76) {
+			// Трезубец с Пронзателем!
+			weapon = new ItemStack(Items.TRIDENT);
+			applyEnchant(weapon, enchRegistry, "impaling", 3 + rng.nextInt(2));
+		} else if (pick < 92) {
+			// Железный меч с зачарованиями
+			weapon = new ItemStack(Items.IRON_SWORD);
+			applyEnchant(weapon, enchRegistry, "sharpness", 2 + rng.nextInt(2));
+			if (rng.nextFloat() < 0.30F) {
+				applyEnchant(weapon, enchRegistry, "knockback", 1);
+			}
+		} else {
+			// Золотой клинок с Заговором огня
+			weapon = new ItemStack(Items.GOLDEN_SWORD);
+			applyEnchant(weapon, enchRegistry, "sharpness", 4);
+			applyEnchant(weapon, enchRegistry, "fire_aspect", 2);
+		}
+
+		applyEnchant(weapon, enchRegistry, "unbreaking", 3);
+		return weapon;
+	}
+
+	private static void equipNoDrop(MobEntity mob, EquipmentSlot slot, ItemStack stack) {
+		mob.equipStack(slot, stack);
+		mob.setEquipmentDropChance(slot, 0.0F);
+	}
+
+	private static void applyEnchant(ItemStack stack, RegistryWrapper.Impl<Enchantment> enchRegistry, String vanillaId, int level) {
+		RegistryKey<Enchantment> key = RegistryKey.of(RegistryKeys.ENCHANTMENT, Identifier.ofVanilla(vanillaId));
+		enchRegistry.getOptional(key).ifPresent((RegistryEntry.Reference<Enchantment> entry) -> stack.addEnchantment(entry, level));
 	}
 
 	@Nullable
@@ -343,7 +583,6 @@ public final class ApocalypseEventManager {
 			if (!world.isChunkLoaded(x >> 4, z >> 4)) {
 				continue;
 			}
-			// Ищем валидный пол рядом по высоте с игроком (работает и под землёй в пещере/данже, и на поверхности!)
 			for (int dy = 6; dy >= -8; dy--) {
 				BlockPos p = new BlockPos(x, base.getY() + dy, z);
 				if (!world.getBlockState(p.down()).isAir()
@@ -396,16 +635,13 @@ public final class ApocalypseEventManager {
 
 		List<BlockPos> digTargets = new ArrayList<>(4);
 		if (delta.y < -1.5D && distSq < 9.0D) {
-			// Игрок закопался прямо под крипером — роем пол вниз!
 			digTargets.add(creeperFeet.down());
 			digTargets.add(creeperFeet.add(stepX, -1, stepZ));
 		} else if (delta.y > 1.8D && distSq < 16.0D) {
-			// Игрок построился/закрылся сверху — пробиваем потолок и диагональ вверх!
 			digTargets.add(creeperFeet.up(2));
 			digTargets.add(creeperFeet.add(stepX, 1, stepZ));
 			digTargets.add(creeperFeet.add(stepX, 2, stepZ));
 		} else if (stepX != 0 || stepZ != 0) {
-			// Пробиваем тоннель 1x2 прямо сквозь стену к игроку!
 			digTargets.add(creeperFeet.add(stepX, 1, stepZ));
 			digTargets.add(creeperFeet.add(stepX, 0, stepZ));
 		}
@@ -415,7 +651,7 @@ public final class ApocalypseEventManager {
 				BlockState old = world.getBlockState(digPos);
 				world.syncWorldEvent(WorldEvents.BLOCK_BROKEN, digPos, net.minecraft.block.Block.getRawIdFromState(old));
 				world.breakBlock(digPos, true, creeper);
-				break; // По 1 блоку раз в 0.4 сек — видно и слышно, как крипер прорывает путь!
+				break;
 			}
 		}
 	}
@@ -458,7 +694,6 @@ public final class ApocalypseEventManager {
 				|| state.isOf(Blocks.COMMAND_BLOCK)) {
 			return false;
 		}
-		// Во время Апокалипсиса крипер ломает и обсидиан, и обычные строительные блоки (кроме бедрока/рамок портала/блок-энтити сундуков)
 		if (world.getBlockEntity(pos) != null) {
 			return false;
 		}

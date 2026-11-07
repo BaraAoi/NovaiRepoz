@@ -23,7 +23,10 @@ import net.minecraft.world.World;
 
 /**
  * 1) Корректирует точность стрел скелетов в зависимости от биома, черты характера и освещения.
- * 2) Обрабатывает спецрежимы стрел УБЕРГАНА (Пулемёт без кд неуязвимости, Снайперский со следом, Аннигиляция со взрывом местности).
+ * 2) Обрабатывает спецрежимы стрел УБЕРГАНА:
+ *    - Пулемёт: снимает кд неуязвимости цели, чтобы попадала каждая стрела очереди раз в 0.2 сек.
+ *    - Снайперский: оставляет яркий след частиц.
+ *    - Аннигиляция: взрывает местность при попадании в блок, а при попадании в моба — ВЗРЫВАЕТСЯ САМ МОБ изнутри вместе с окружением!
  */
 @Mixin(ProjectileEntity.class)
 public abstract class ProjectileEntityMixin extends Entity {
@@ -70,17 +73,47 @@ public abstract class ProjectileEntityMixin extends Entity {
 		if (this.getWorld().isClient() || hitResult.getType() == HitResult.Type.MISS) {
 			return;
 		}
-		// В режиме Аннигиляции стрела при попадании куда угодно (в блок или существо) взрывает местность!
-		if (this.getCommandTags().contains("novai_uber_annihilate") && !this.isRemoved()) {
+		// Убираем тег при срабатывании (не проверяя isRemoved(), т.к. при попадании в моба ванилла сама удаляет стрелу в onEntityHit!)
+		if (!this.getCommandTags().remove("novai_uber_annihilate")) {
+			return;
+		}
+
+		if (hitResult instanceof EntityHitResult entityHit) {
+			// При попадании взрывным режимом в моба ВЗРЫВАЕТСЯ САМ МОБ изнутри!
+			Entity victim = entityHit.getEntity();
+			victim.timeUntilRegen = 0;
+			double ex = victim.getX();
+			double ey = victim.getBodyY(0.5D);
+			double ez = victim.getZ();
+
+			if (this.getWorld() instanceof ServerWorld sw) {
+				sw.spawnParticles(ParticleTypes.EXPLOSION_EMITTER, ex, ey, ez, 1, 0.0D, 0.0D, 0.0D, 0.0D);
+				sw.spawnParticles(ParticleTypes.FLAME, ex, ey, ez, 32, 0.35D, 0.45D, 0.35D, 0.14D);
+				sw.spawnParticles(ParticleTypes.LAVA, ex, ey, ez, 14, 0.25D, 0.35D, 0.25D, 0.05D);
+			}
+
+			// Передаём саму стрелу (this) как источник взрыва: тогда victim получает полный урон взрыва в упор, а убийство засчитывается стрелку!
+			this.getWorld().createExplosion(
+					this,
+					ex,
+					ey,
+					ez,
+					4.0F,
+					World.ExplosionSourceType.TNT
+			);
+		} else {
 			Vec3d hitPos = hitResult.getPos();
 			this.getWorld().createExplosion(
-					this.getOwner(),
+					this,
 					hitPos.x,
 					hitPos.y,
 					hitPos.z,
 					3.6F,
 					World.ExplosionSourceType.TNT
 			);
+		}
+
+		if (!this.isRemoved()) {
 			this.discard();
 		}
 	}

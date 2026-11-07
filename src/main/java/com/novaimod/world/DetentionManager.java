@@ -409,7 +409,10 @@ public final class DetentionManager {
 
 	private static void confiscateHeldToolIfPresent(ServerPlayerEntity player, Hand hand) {
 		ItemStack held = player.getStackInHand(hand);
-		if (held.isEmpty() || held.isOf(ModItems.UBER_GUN) || MfoArmorSetManager.isMfoBow(held)) {
+		if (held.isEmpty()
+				|| held.isOf(ModItems.UBER_GUN)
+				|| held.isOf(ModItems.UNKNOWN_ARTIFACT)
+				|| MfoArmorSetManager.isMfoBow(held)) {
 			return;
 		}
 		if (isToolOrWeapon(held.getItem())) {
@@ -470,6 +473,7 @@ public final class DetentionManager {
 					&& !st.isOf(ModItems.PLAYER_TELEPORTER)
 					&& !st.isOf(ModItems.REVIVAL_TOKEN)
 					&& !st.isOf(ModItems.UBER_GUN)
+					&& !st.isOf(ModItems.UNKNOWN_ARTIFACT)
 					&& !MfoArmorSetManager.isMfoBow(st)) {
 				occupiedSlots.add(i);
 			}
