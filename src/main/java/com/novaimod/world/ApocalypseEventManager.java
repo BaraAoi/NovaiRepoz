@@ -19,6 +19,8 @@ import net.minecraft.block.entity.LootableContainerBlockEntity;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.EquipmentSlot;
+import net.minecraft.entity.ItemEntity;
+import net.minecraft.entity.LightningEntity;
 import net.minecraft.entity.boss.BossBar;
 import net.minecraft.entity.boss.ServerBossBar;
 import net.minecraft.entity.effect.StatusEffectInstance;
@@ -781,6 +783,80 @@ public final class ApocalypseEventManager {
 					false
 			);
 		}
+
+		// Главный трофей за прохождение Испытания: прямо перед выжившим материализуется СЛУЧАЙНОЕ КРЕАТИВНОЕ ОРУЖИЕ!
+		spawnRandomCreativeWeaponReward(server, survivors);
+	}
+
+	private static void spawnRandomCreativeWeaponReward(MinecraftServer server, List<ServerPlayerEntity> survivors) {
+		if (survivors.isEmpty()) {
+			return;
+		}
+		Item[] creativeWeapons = new Item[] {
+				ModItems.REALITY_RIFT_BLADE,
+				ModItems.ORBITAL_LASER,
+				ModItems.TERRA_HEAVER,
+				ModItems.ASTRAL_GATE,
+				ModItems.CELESTIAL_WRATH,
+				ModItems.SINGULARITY_ORB,
+				ModItems.CHRONO_SCEPTER,
+				ModItems.INFINITY_EYE
+		};
+
+		ServerWorld hostWorld = survivors.get(0).getServerWorld();
+		Random rng = hostWorld.getRandom();
+		ServerPlayerEntity host = survivors.get(rng.nextInt(survivors.size()));
+		ServerWorld sw = host.getServerWorld();
+
+		Item chosenWeapon = creativeWeapons[rng.nextInt(creativeWeapons.length)];
+		ItemStack prizeStack = new ItemStack(chosenWeapon, 1);
+
+		Vec3d rawLook = host.getRotationVec(1.0F);
+		Vec3d horiz = new Vec3d(rawLook.x, 0.0D, rawLook.z);
+		if (horiz.lengthSquared() > 1.0E-4D) {
+			horiz = horiz.normalize();
+		} else {
+			horiz = new Vec3d(0.0D, 0.0D, 1.0D);
+		}
+
+		Vec3d candidatePos = new Vec3d(host.getX() + horiz.x * 1.6D, host.getY() + 1.15D, host.getZ() + horiz.z * 1.6D);
+		if (!sw.getBlockState(BlockPos.ofFloored(candidatePos)).isAir()) {
+			candidatePos = new Vec3d(host.getX(), host.getY() + 1.15D, host.getZ());
+		}
+
+		ItemEntity drop = new ItemEntity(sw, candidatePos.x, candidatePos.y, candidatePos.z, prizeStack, 0.0D, 0.0D, 0.0D);
+		drop.setNoGravity(true);
+		drop.setInvulnerable(true);
+		drop.setGlowing(true);
+		drop.setNeverDespawn();
+		drop.setPickupDelay(20);
+		drop.setCustomName(
+				Text.literal("✦ Трофей Испытания: ").formatted(Formatting.GOLD, Formatting.BOLD)
+						.append(prizeStack.getName().copy().formatted(Formatting.LIGHT_PURPLE, Formatting.BOLD))
+						.append(Text.literal(" ✦").formatted(Formatting.GOLD, Formatting.BOLD))
+		);
+		drop.setCustomNameVisible(true);
+		sw.spawnEntity(drop);
+
+		LightningEntity bolt = EntityType.LIGHTNING_BOLT.create(sw);
+		if (bolt != null) {
+			bolt.refreshPositionAfterTeleport(candidatePos.x, candidatePos.y, candidatePos.z);
+			bolt.setCosmetic(true);
+			sw.spawnEntity(bolt);
+		}
+
+		sw.playSound(null, BlockPos.ofFloored(candidatePos), SoundEvents.BLOCK_END_PORTAL_SPAWN, SoundCategory.MASTER, 1.4F, 1.25F);
+		sw.playSound(null, BlockPos.ofFloored(candidatePos), SoundEvents.BLOCK_BEACON_ACTIVATE, SoundCategory.MASTER, 1.8F, 1.35F);
+		sw.spawnParticles(ParticleTypes.END_ROD, candidatePos.x, candidatePos.y + 0.25D, candidatePos.z, 55, 0.45D, 0.55D, 0.45D, 0.08D);
+		sw.spawnParticles(ParticleTypes.REVERSE_PORTAL, candidatePos.x, candidatePos.y + 0.25D, candidatePos.z, 45, 0.4D, 0.5D, 0.4D, 0.14D);
+
+		server.getPlayerManager().broadcast(
+				Text.literal("⚡ РАЗЛОМ НАГРАДЫ: перед выжившим заспавнилось случайное креативное оружие — ")
+						.formatted(Formatting.GOLD, Formatting.BOLD)
+						.append(prizeStack.getName().copy().formatted(Formatting.LIGHT_PURPLE, Formatting.BOLD))
+						.append(Text.literal("!").formatted(Formatting.GOLD, Formatting.BOLD)),
+				false
+		);
 	}
 
 	/**
