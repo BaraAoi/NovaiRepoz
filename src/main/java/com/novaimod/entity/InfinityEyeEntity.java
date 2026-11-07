@@ -93,14 +93,14 @@ public class InfinityEyeEntity extends ThrownItemEntity {
 				sw.spawnParticles(ParticleTypes.END_ROD, this.getX(), this.getY() + 0.15D, this.getZ(), 2, 0.18D, 0.18D, 0.18D, 0.03D);
 			}
 
-			// Каждые 5 тиков выпускаем по 2 жемчуга Бескрайности по расходящейся спирали (40 жемчугов в полёте!)
-			if (this.age >= 6 && this.age <= 101 && this.age % 5 == 1) {
-				emitPearlVolley(sw, 2);
+			// Каждые 4 тика выпускаем по 3 жемчуга Бескрайности по расходящейся спирали (72 жемчуга в полёте!)
+			if (this.age >= 4 && this.age <= 100 && this.age % 4 == 0) {
+				emitPearlVolley(sw, 3);
 			}
 
-			// Финальный звёздный веер из ещё 8 жемчугов (всего 48 жемчугов с одного запуска Ока!)
+			// Финальный звёздный веер из ещё 12 жемчугов (всего 84 жемчуга с одного запуска Ока!)
 			if (this.age >= MAX_FLIGHT_TICKS) {
-				emitPearlVolley(sw, 8);
+				emitPearlVolley(sw, 12);
 				sw.spawnParticles(ParticleTypes.EXPLOSION, this.getX(), this.getY(), this.getZ(), 2, 0.2D, 0.2D, 0.2D, 0.0D);
 				sw.spawnParticles(ParticleTypes.REVERSE_PORTAL, this.getX(), this.getY(), this.getZ(), 55, 0.5D, 0.5D, 0.5D, 0.28D);
 				sw.playSound(null, this.getBlockPos(), SoundEvents.ENTITY_ENDER_EYE_DEATH, SoundCategory.PLAYERS, 1.2F, 0.85F);

@@ -305,6 +305,7 @@ public class ModPersistentState extends PersistentState {
 	private boolean apocalypseActive = false;
 	private int apocalypseTicksLeft = 0;
 	private boolean apocalypseDollUsed = false;
+	private boolean globalTimeFrozen = false;
 	private final Set<UUID> diedDuringApocalypse = new HashSet<>();
 
 	public ModPersistentState() {
@@ -468,6 +469,15 @@ public class ModPersistentState extends PersistentState {
 		markDirty();
 	}
 
+	public boolean isGlobalTimeFrozen() {
+		return globalTimeFrozen;
+	}
+
+	public void setGlobalTimeFrozen(boolean frozen) {
+		this.globalTimeFrozen = frozen;
+		markDirty();
+	}
+
 	public Set<UUID> getDiedDuringApocalypse() {
 		return diedDuringApocalypse;
 	}
@@ -519,6 +529,7 @@ public class ModPersistentState extends PersistentState {
 		nbt.putBoolean("apocalypseActive", apocalypseActive);
 		nbt.putInt("apocalypseTicksLeft", apocalypseTicksLeft);
 		nbt.putBoolean("apocalypseDollUsed", apocalypseDollUsed);
+		nbt.putBoolean("globalTimeFrozen", globalTimeFrozen);
 		NbtList deadList = new NbtList();
 		for (UUID u : diedDuringApocalypse) {
 			deadList.add(NbtString.of(u.toString()));
@@ -582,6 +593,7 @@ public class ModPersistentState extends PersistentState {
 		state.apocalypseActive = nbt.getBoolean("apocalypseActive");
 		state.apocalypseTicksLeft = nbt.getInt("apocalypseTicksLeft");
 		state.apocalypseDollUsed = nbt.getBoolean("apocalypseDollUsed");
+		state.globalTimeFrozen = nbt.getBoolean("globalTimeFrozen");
 		if (nbt.contains("diedDuringApocalypse", NbtElement.LIST_TYPE)) {
 			NbtList dl = nbt.getList("diedDuringApocalypse", NbtElement.STRING_TYPE);
 			for (int i = 0; i < dl.size(); i++) {

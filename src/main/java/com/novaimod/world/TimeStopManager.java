@@ -1,235 +1,103 @@
 package com.novaimod.world;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import com.novaimod.entity.InfinityEyeEntity;
-import com.novaimod.entity.InfinityPearlEntity;
-import com.novaimod.entity.SingularityOrbEntity;
+import com.novaimod.data.ModPersistentState;
 
 import net.minecraft.entity.Entity;
-import net.minecraft.entity.mob.MobEntity;
-import net.minecraft.entity.projectile.ProjectileEntity;
 import net.minecraft.particle.ParticleTypes;
-import net.minecraft.registry.RegistryKey;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.ServerTickManager;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
-import net.minecraft.util.math.Box;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.World;
 
 /**
- * Управляет куполами остановки времени от креативного «Хроно-Скипетра»:
- * замораживает в воздухе стрелы, снаряды и всех мобов в радиусе 28 блоков на 8 секунд,
- * сохраняя их точный вектор скорости и возвращая движение после снятия купола!
+ * Глобальная вечная остановка ВСЕГО времени в игре («Хроно-Скипетр» v3.5.0):
+ * - Останавливает всё время во всех измерениях НАВСЕГДА (день/ночь, погоду, жидкости, редстоун, мобов, боссов, снаряды),
+ *   пока игрок сам повторно не запустит ход времени!
+ * - Использует серверный и клиентский движок ServerTickManager + полную блокировку анимаций рендера (0 дёрганий даже у Дракона Края).
+ * - Сохраняется в сейве мира (даже после перезахода время остаётся остановленным).
  */
 public final class TimeStopManager {
-	public static final double DOME_RADIUS = 28.0D;
-	public static final int DOME_DURATION_TICKS = 160; // 8 секунд
-
-	private static final List<TimeDome> ACTIVE_DOMES = new ArrayList<>();
-	private static final Map<UUID, FrozenProjectileData> FROZEN_PROJECTILES = new HashMap<>();
-
-	private record FrozenProjectileData(
-			RegistryKey<World> worldKey,
-			Vec3d frozenPos,
-			Vec3d savedVelocity,
-			float yaw,
-			float pitch,
-			boolean wasNoGravity
-	) {
-	}
-
-	private static final class TimeDome {
-		final UUID ownerUuid;
-		final RegistryKey<World> worldKey;
-		final Vec3d center;
-		int ticksLeft;
-
-		TimeDome(UUID ownerUuid, RegistryKey<World> worldKey, Vec3d center, int ticksLeft) {
-			this.ownerUuid = ownerUuid;
-			this.worldKey = worldKey;
-			this.center = center;
-			this.ticksLeft = ticksLeft;
-		}
-	}
-
 	private TimeStopManager() {
 	}
 
-	public static boolean hasActiveDomeOwnedBy(UUID ownerUuid) {
-		for (TimeDome dome : ACTIVE_DOMES) {
-			if (dome.ownerUuid.equals(ownerUuid) && dome.ticksLeft > 0) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	public static void activateDome(ServerPlayerEntity player) {
-		ServerWorld world = player.getServerWorld();
-		Vec3d center = player.getPos();
-
-		ACTIVE_DOMES.removeIf(d -> d.ownerUuid.equals(player.getUuid()));
-		ACTIVE_DOMES.add(new TimeDome(player.getUuid(), world.getRegistryKey(), center, DOME_DURATION_TICKS));
-
-		world.playSound(null, player.getBlockPos(), SoundEvents.BLOCK_BEACON_DEACTIVATE, SoundCategory.PLAYERS, 1.3F, 0.55F);
-		world.playSound(null, player.getBlockPos(), SoundEvents.BLOCK_AMETHYST_BLOCK_RESONATE, SoundCategory.PLAYERS, 1.4F, 0.7F);
-		spawnChronoRing(world, center, DOME_RADIUS, 72);
-
-		player.sendMessage(
-				Text.literal("⏳ ВРЕМЯ ОСТАНОВЛЕНО НА 8 СЕКУНД! (Shift + ПКМ — запустить ход времени)")
-						.formatted(Formatting.AQUA, Formatting.BOLD),
-				true
-		);
-	}
-
-	public static void releaseOwnedDomesEarly(ServerPlayerEntity player) {
-		Iterator<TimeDome> it = ACTIVE_DOMES.iterator();
-		boolean released = false;
-		while (it.hasNext()) {
-			TimeDome d = it.next();
-			if (d.ownerUuid.equals(player.getUuid())) {
-				ServerWorld w = player.getServer().getWorld(d.worldKey);
-				if (w != null) {
-					unfreezeEntitiesInDome(w, d);
-					w.playSound(null, player.getBlockPos(), SoundEvents.BLOCK_BEACON_ACTIVATE, SoundCategory.PLAYERS, 1.2F, 1.55F);
-				}
-				it.remove();
-				released = true;
-			}
-		}
-		if (released) {
-			player.sendMessage(Text.literal("⏳ Ход времени восстановлен!").formatted(Formatting.GOLD, Formatting.BOLD), true);
-		}
-	}
-
-	public static boolean isEntityFrozen(Entity entity) {
-		if (ACTIVE_DOMES.isEmpty() || entity.getWorld().isClient()) {
+	public static boolean isGlobalTimeFrozen(MinecraftServer server) {
+		if (server == null) {
 			return false;
 		}
-		if (entity instanceof InfinityEyeEntity
-				|| entity instanceof InfinityPearlEntity
-				|| entity instanceof SingularityOrbEntity) {
-			return false;
-		}
-		RegistryKey<World> wk = entity.getWorld().getRegistryKey();
-		for (TimeDome dome : ACTIVE_DOMES) {
-			if (dome.ticksLeft > 0 && dome.worldKey == wk) {
-				if (entity.getPos().squaredDistanceTo(dome.center) <= DOME_RADIUS * DOME_RADIUS) {
-					return true;
-				}
-			}
-		}
-		return false;
+		return ModPersistentState.get(server).isGlobalTimeFrozen();
 	}
 
-	public static void tickServer(MinecraftServer server) {
-		if (ACTIVE_DOMES.isEmpty()) {
+	public static void toggleGlobalTimeStop(ServerPlayerEntity player) {
+		MinecraftServer server = player.getServer();
+		if (server == null) {
 			return;
 		}
+		ModPersistentState state = ModPersistentState.get(server);
+		boolean freezeNow = !state.isGlobalTimeFrozen();
+		state.setGlobalTimeFrozen(freezeNow);
 
-		Iterator<TimeDome> it = ACTIVE_DOMES.iterator();
-		while (it.hasNext()) {
-			TimeDome dome = it.next();
-			ServerWorld world = server.getWorld(dome.worldKey);
-			if (world == null) {
-				it.remove();
-				continue;
-			}
+		ServerTickManager tickManager = server.getTickManager();
+		if (tickManager.isSprinting()) {
+			tickManager.stopSprinting();
+		}
+		if (tickManager.isStepping()) {
+			tickManager.stopStepping();
+		}
+		tickManager.setFrozen(freezeNow);
 
-			dome.ticksLeft--;
-			if (dome.ticksLeft <= 0) {
-				unfreezeEntitiesInDome(world, dome);
-				world.playSound(null, net.minecraft.util.math.BlockPos.ofFloored(dome.center), SoundEvents.BLOCK_BEACON_ACTIVATE, SoundCategory.PLAYERS, 1.25F, 1.45F);
-				spawnChronoRing(world, dome.center, DOME_RADIUS * 0.6D, 48);
-				it.remove();
-				continue;
-			}
-
-			// Атмосферное тиканье часов и мерцание границы хроно-купола
-			if (dome.ticksLeft % 20 == 0) {
-				float pitch = (dome.ticksLeft / 20) % 2 == 0 ? 1.65F : 1.35F;
-				world.playSound(null, net.minecraft.util.math.BlockPos.ofFloored(dome.center), SoundEvents.BLOCK_LEVER_CLICK, SoundCategory.PLAYERS, 0.55F, pitch);
-				spawnChronoRing(world, dome.center, DOME_RADIUS, 36);
-			}
-
-			Box domeBox = Box.of(dome.center, DOME_RADIUS * 2.0D, DOME_RADIUS * 2.0D, DOME_RADIUS * 2.0D);
-
-			// 1. Удерживаем мобов в неподвижном стазисе
-			for (MobEntity mob : world.getEntitiesByClass(MobEntity.class, domeBox, Entity::isAlive)) {
-				if (mob.getPos().squaredDistanceTo(dome.center) > DOME_RADIUS * DOME_RADIUS) {
-					continue;
-				}
-				mob.getNavigation().stop();
-				mob.setVelocity(Vec3d.ZERO);
-				mob.velocityModified = true;
-				if (dome.ticksLeft % 15 == 0) {
-					world.spawnParticles(ParticleTypes.ELECTRIC_SPARK, mob.getX(), mob.getBodyY(0.6D), mob.getZ(), 2, 0.2D, 0.3D, 0.2D, 0.0D);
-				}
-			}
-
-			// 2. Удерживаем летящие снаряды застывшими прямо в воздухе с сохранением их исходного импульса!
-			for (ProjectileEntity proj : world.getEntitiesByClass(ProjectileEntity.class, domeBox, Entity::isAlive)) {
-				if (proj instanceof InfinityEyeEntity || proj instanceof InfinityPearlEntity || proj instanceof SingularityOrbEntity) {
-					continue;
-				}
-				if (proj.getPos().squaredDistanceTo(dome.center) > DOME_RADIUS * DOME_RADIUS) {
-					continue;
-				}
-				FrozenProjectileData saved = FROZEN_PROJECTILES.get(proj.getUuid());
-				if (saved == null) {
-					Vec3d curVel = proj.getVelocity();
-					if (curVel.lengthSquared() < 1.0E-4D) {
-						continue;
-					}
-					saved = new FrozenProjectileData(
-							dome.worldKey,
-							proj.getPos(),
-							curVel,
-							proj.getYaw(),
-							proj.getPitch(),
-							proj.hasNoGravity()
-					);
-					FROZEN_PROJECTILES.put(proj.getUuid(), saved);
-				}
-				proj.setNoGravity(true);
-				proj.setVelocity(Vec3d.ZERO);
-				proj.setPosition(saved.frozenPos);
-				proj.setYaw(saved.yaw);
-				proj.setPitch(saved.pitch);
-				proj.velocityModified = true;
-			}
+		ServerWorld world = player.getServerWorld();
+		if (freezeNow) {
+			world.playSound(null, player.getBlockPos(), SoundEvents.BLOCK_BEACON_DEACTIVATE, SoundCategory.MASTER, 1.5F, 0.5F);
+			world.playSound(null, player.getBlockPos(), SoundEvents.BLOCK_END_PORTAL_SPAWN, SoundCategory.MASTER, 0.75F, 0.55F);
+			world.spawnParticles(ParticleTypes.END_ROD, player.getX(), player.getY() + 1.0D, player.getZ(), 60, 1.4D, 1.0D, 1.4D, 0.18D);
+			server.getPlayerManager().broadcast(
+					Text.literal("⏳ ВСЕЛЕНСКОЕ ВРЕМЯ ОСТАНОВЛЕНО НАВСЕГДА! ")
+							.formatted(Formatting.AQUA, Formatting.BOLD)
+							.append(Text.literal("(ПКМ Хроно-Скипетром — запустить время снова)").formatted(Formatting.GRAY)),
+					false
+			);
+		} else {
+			world.playSound(null, player.getBlockPos(), SoundEvents.BLOCK_BEACON_ACTIVATE, SoundCategory.MASTER, 1.5F, 1.45F);
+			world.playSound(null, player.getBlockPos(), SoundEvents.BLOCK_BELL_RESONATE, SoundCategory.MASTER, 1.4F, 1.25F);
+			world.spawnParticles(ParticleTypes.FLASH, player.getX(), player.getY() + 1.2D, player.getZ(), 1, 0.0D, 0.0D, 0.0D, 0.0D);
+			server.getPlayerManager().broadcast(
+					Text.literal("⏳ ХОД ВРЕМЕНИ ВОССТАНОВЛЕН ВО ВСЕХ МИРАХ!")
+							.formatted(Formatting.GOLD, Formatting.BOLD),
+					false
+			);
 		}
 	}
 
-	private static void unfreezeEntitiesInDome(ServerWorld world, TimeDome dome) {
-		Box domeBox = Box.of(dome.center, DOME_RADIUS * 2.2D, DOME_RADIUS * 2.2D, DOME_RADIUS * 2.2D);
-		for (ProjectileEntity proj : world.getEntitiesByClass(ProjectileEntity.class, domeBox, Entity::isAlive)) {
-			FrozenProjectileData saved = FROZEN_PROJECTILES.remove(proj.getUuid());
-			if (saved != null) {
-				proj.setNoGravity(saved.wasNoGravity);
-				proj.setVelocity(saved.savedVelocity);
-				proj.velocityModified = true;
-			}
+	/**
+	 * Синхронизирует состояние заморозки времени при загрузке мира и подключении игроков.
+	 */
+	public static void tickServer(MinecraftServer server) {
+		boolean shouldBeFrozen = ModPersistentState.get(server).isGlobalTimeFrozen();
+		ServerTickManager tm = server.getTickManager();
+		if (shouldBeFrozen && !tm.isFrozen() && !tm.isStepping()) {
+			tm.setFrozen(true);
 		}
 	}
 
-	private static void spawnChronoRing(ServerWorld world, Vec3d center, double radius, int points) {
-		for (int i = 0; i < points; i++) {
-			double ang = (Math.PI * 2.0D * i) / points;
-			double px = center.x + Math.cos(ang) * radius;
-			double pz = center.z + Math.sin(ang) * radius;
-			world.spawnParticles(ParticleTypes.END_ROD, px, center.y + 1.1D, pz, 1, 0.05D, 0.25D, 0.05D, 0.01D);
+	public static void onPlayerJoin(ServerPlayerEntity player) {
+		MinecraftServer server = player.getServer();
+		if (server != null) {
+			boolean shouldBeFrozen = ModPersistentState.get(server).isGlobalTimeFrozen();
+			if (shouldBeFrozen && !server.getTickManager().isFrozen()) {
+				server.getTickManager().setFrozen(true);
+			}
+			server.getTickManager().sendPackets(player);
 		}
+	}
+
+	/**
+	 * Оставлено для обратной совместимости (вся заморозка теперь выполняется на уровне движка TickManager без дёрганий!).
+	 */
+	public static boolean isEntityFrozen(Entity entity) {
+		return false;
 	}
 }

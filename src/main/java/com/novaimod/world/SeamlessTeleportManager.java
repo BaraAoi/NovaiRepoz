@@ -36,7 +36,7 @@ import net.minecraft.world.border.WorldBorder;
  * без экрана «Загрузка территории», с предзагрузкой чанков и гарантией безопасной точки приземления.
  */
 public final class SeamlessTeleportManager {
-	private static final int MIN_TICKS_BETWEEN_WARPS = 7; // ~0.35 сек между каскадными скачками жемчугов
+	private static final int MIN_TICKS_BETWEEN_WARPS = 4; // стремительный бесшовный каскад скачков жемчугов!
 	private static final Map<UUID, Long> LAST_WARP_TICK = new HashMap<>();
 	private static final Map<UUID, Integer> WARP_CHAIN_COUNTER = new HashMap<>();
 

@@ -12,7 +12,8 @@
 		"SmithingTransformRecipeMixin",
 		"ItemStackMixin",
 		"AnvilScreenHandlerMixin",
-		"GrindstoneScreenHandlerMixin"
+		"GrindstoneScreenHandlerMixin",
+		"TickManagerMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

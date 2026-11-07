@@ -3,9 +3,11 @@ package com.novaimod.client;
 import org.lwjgl.glfw.GLFW;
 
 import com.novaimod.client.hud.AccountHudOverlay;
+import com.novaimod.client.render.CelestialOrbEntityRenderer;
 import com.novaimod.client.render.CushionEntityRenderer;
 import com.novaimod.client.render.ModNpcRenderer;
 import com.novaimod.client.render.PartyDollEntityRenderer;
+import com.novaimod.client.render.SingularityOrbEntityRenderer;
 import com.novaimod.client.screen.AccountShopScreen;
 import com.novaimod.client.screen.CoinflipScreen;
 import com.novaimod.client.screen.LoanScreen;
@@ -58,8 +60,9 @@ public class NovaiModClient implements ClientModInitializer {
 		EntityRendererRegistry.register(ModEntities.PARTY_DOLL_ENTITY, PartyDollEntityRenderer::new);
 		EntityRendererRegistry.register(ModEntities.INFINITY_EYE_ENTITY, ctx -> new FlyingItemEntityRenderer<>(ctx, 1.75F, true));
 		EntityRendererRegistry.register(ModEntities.INFINITY_PEARL_ENTITY, ctx -> new FlyingItemEntityRenderer<>(ctx, 1.15F, true));
-		EntityRendererRegistry.register(ModEntities.SINGULARITY_ORB_ENTITY, ctx -> new FlyingItemEntityRenderer<>(ctx, 2.35F, true));
+		EntityRendererRegistry.register(ModEntities.SINGULARITY_ORB_ENTITY, SingularityOrbEntityRenderer::new);
 		EntityRendererRegistry.register(ModEntities.CELESTIAL_METEOR_ENTITY, ctx -> new FlyingItemEntityRenderer<>(ctx, 2.40F, true));
+		EntityRendererRegistry.register(ModEntities.CELESTIAL_ORB_ENTITY, CelestialOrbEntityRenderer::new);
 
 		// Экран Торгового аппарата
 		HandledScreens.register(ModScreenHandlers.VENDING_SCREEN_HANDLER, VendingScreen::new);
@@ -176,6 +179,15 @@ public class NovaiModClient implements ClientModInitializer {
 		ClientPlayNetworking.registerGlobalReceiver(ModPayloads.SeamlessTeleportPayload.ID, (payload, context) -> {
 			SeamlessTeleportClientState.onSeamlessTeleportPacket(payload.dimensionPath(), payload.crossDimension());
 			SeamlessTeleportClientState.ensureCursorLocked(context.client());
+		});
+
+		ClientPlayNetworking.registerGlobalReceiver(ModPayloads.CelestialLightningBeamPayload.ID, (payload, context) -> {
+			CelestialOrbEntityRenderer.recordLightningBeam(
+					payload.orbEntityId(),
+					payload.targetX(),
+					payload.targetY(),
+					payload.targetZ()
+			);
 		});
 	}
 }

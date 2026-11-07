@@ -2,6 +2,7 @@ package com.novaimod.registry;
 
 import com.novaimod.NovaiMod;
 import com.novaimod.entity.CelestialMeteorEntity;
+import com.novaimod.entity.CelestialOrbEntity;
 import com.novaimod.entity.CushionEntity;
 import com.novaimod.entity.InfinityEyeEntity;
 import com.novaimod.entity.InfinityPearlEntity;
@@ -84,9 +85,9 @@ public final class ModEntities {
 			Registries.ENTITY_TYPE,
 			Identifier.of(NovaiMod.MOD_ID, "singularity_orb_entity"),
 			EntityType.Builder.<SingularityOrbEntity>create(SingularityOrbEntity::new, SpawnGroup.MISC)
-					.dimensions(0.65F, 0.65F)
+					.dimensions(0.85F, 0.85F)
 					.makeFireImmune()
-					.maxTrackingRange(10)
+					.maxTrackingRange(16)
 					.trackingTickInterval(2)
 					.build("singularity_orb_entity")
 	);
@@ -100,6 +101,17 @@ public final class ModEntities {
 					.maxTrackingRange(10)
 					.trackingTickInterval(2)
 					.build("celestial_meteor_entity")
+	);
+
+	public static final EntityType<CelestialOrbEntity> CELESTIAL_ORB_ENTITY = Registry.register(
+			Registries.ENTITY_TYPE,
+			Identifier.of(NovaiMod.MOD_ID, "celestial_orb_entity"),
+			EntityType.Builder.<CelestialOrbEntity>create(CelestialOrbEntity::new, SpawnGroup.MISC)
+					.dimensions(1.2F, 1.2F)
+					.makeFireImmune()
+					.maxTrackingRange(16)
+					.trackingTickInterval(2)
+					.build("celestial_orb_entity")
 	);
 
 	private ModEntities() {

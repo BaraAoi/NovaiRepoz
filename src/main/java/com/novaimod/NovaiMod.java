@@ -105,6 +105,7 @@ public class NovaiMod implements ModInitializer {
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
 			ServerPlayerEntity player = handler.getPlayer();
 			ModServerNetworking.syncAccount(player);
+			TimeStopManager.onPlayerJoin(player);
 		});
 
 		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {

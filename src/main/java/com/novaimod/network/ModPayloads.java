@@ -580,6 +580,39 @@ public final class ModPayloads {
 		}
 	}
 
+	public record CelestialLightningBeamPayload(
+			int orbEntityId,
+			double targetX,
+			double targetY,
+			double targetZ
+	) implements CustomPayload {
+		public static final CustomPayload.Id<CelestialLightningBeamPayload> ID =
+				new CustomPayload.Id<>(Identifier.of(NovaiMod.MOD_ID, "celestial_lightning_beam"));
+		public static final PacketCodec<RegistryByteBuf, CelestialLightningBeamPayload> CODEC =
+				PacketCodec.of(CelestialLightningBeamPayload::write, CelestialLightningBeamPayload::read);
+
+		private void write(RegistryByteBuf buf) {
+			buf.writeVarInt(orbEntityId);
+			buf.writeDouble(targetX);
+			buf.writeDouble(targetY);
+			buf.writeDouble(targetZ);
+		}
+
+		private static CelestialLightningBeamPayload read(RegistryByteBuf buf) {
+			return new CelestialLightningBeamPayload(
+					buf.readVarInt(),
+					buf.readDouble(),
+					buf.readDouble(),
+					buf.readDouble()
+			);
+		}
+
+		@Override
+		public Id<? extends CustomPayload> getId() {
+			return ID;
+		}
+	}
+
 	public static void registerPayloadTypes() {
 		PayloadTypeRegistry.playS2C().register(AccountSyncPayload.ID, AccountSyncPayload.CODEC);
 		PayloadTypeRegistry.playS2C().register(OpenLoanScreenPayload.ID, OpenLoanScreenPayload.CODEC);
@@ -593,6 +626,7 @@ public final class ModPayloads {
 		PayloadTypeRegistry.playS2C().register(OpenTeleporterScreenPayload.ID, OpenTeleporterScreenPayload.CODEC);
 		PayloadTypeRegistry.playS2C().register(ShadowCuePayload.ID, ShadowCuePayload.CODEC);
 		PayloadTypeRegistry.playS2C().register(SeamlessTeleportPayload.ID, SeamlessTeleportPayload.CODEC);
+		PayloadTypeRegistry.playS2C().register(CelestialLightningBeamPayload.ID, CelestialLightningBeamPayload.CODEC);
 
 		PayloadTypeRegistry.playC2S().register(LoanActionPayload.ID, LoanActionPayload.CODEC);
 		PayloadTypeRegistry.playC2S().register(ShopBuyPayload.ID, ShopBuyPayload.CODEC);

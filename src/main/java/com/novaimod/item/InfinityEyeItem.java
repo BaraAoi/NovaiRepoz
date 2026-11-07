@@ -87,7 +87,6 @@ public class InfinityEyeItem extends Item {
 
 			world.playSound(null, serverPlayer.getBlockPos(), SoundEvents.ENTITY_ENDER_EYE_LAUNCH, SoundCategory.PLAYERS, 1.15F, 0.78F);
 			world.playSound(null, serverPlayer.getBlockPos(), SoundEvents.BLOCK_END_PORTAL_FRAME_FILL, SoundCategory.PLAYERS, 0.95F, 1.25F);
-			user.getItemCooldownManager().set(this, 25);
 		}
 
 		return TypedActionResult.success(stack, world.isClient());

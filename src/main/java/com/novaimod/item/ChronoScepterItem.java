@@ -16,9 +16,9 @@ import net.minecraft.util.TypedActionResult;
 import net.minecraft.world.World;
 
 /**
- * Креативный артефакт «Хроно-Скипетр»:
- * - ПКМ: создаёт купол остановки времени радиусом 28 блоков на 8 секунд (мобы и стрелы застывают в воздухе!).
- * - Shift + ПКМ: досрочно восстанавливает ход времени.
+ * Креативный артефакт «Хроно-Скипетр» (без ограничений и кулдауна):
+ * - ПКМ: останавливает ВСЁ время в игре НАВСЕГДА во всех измерениях (включая анимации боссов, Дракона Края, частиц, жидкостей и неба)!
+ * - Повторный ПКМ: запускает ход времени обратно.
  */
 public class ChronoScepterItem extends Item {
 	public ChronoScepterItem(Settings settings) {
@@ -34,21 +34,17 @@ public class ChronoScepterItem extends Item {
 	public TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {
 		ItemStack stack = user.getStackInHand(hand);
 		if (!world.isClient() && user instanceof ServerPlayerEntity sp) {
-			if (user.isSneaking() && TimeStopManager.hasActiveDomeOwnedBy(sp.getUuid())) {
-				TimeStopManager.releaseOwnedDomesEarly(sp);
-			} else {
-				TimeStopManager.activateDome(sp);
-				user.getItemCooldownManager().set(this, 20);
-			}
+			TimeStopManager.toggleGlobalTimeStop(sp);
 		}
 		return TypedActionResult.success(stack, world.isClient());
 	}
 
 	@Override
 	public void appendTooltip(ItemStack stack, TooltipContext context, List<Text> tooltip, TooltipType type) {
-		tooltip.add(Text.literal("Креативный артефакт").formatted(Formatting.LIGHT_PURPLE, Formatting.BOLD));
-		tooltip.add(Text.literal("ПКМ — останавливает время на 8 сек в радиусе 28 блоков:").formatted(Formatting.GRAY));
-		tooltip.add(Text.literal("все мобы и летящие снаряды замирают прямо в воздухе!").formatted(Formatting.AQUA));
-		tooltip.add(Text.literal("Shift + ПКМ — досрочно снять заморозку времени.").formatted(Formatting.DARK_GRAY));
+		tooltip.add(Text.literal("Креативный артефакт (Без ограничений)").formatted(Formatting.LIGHT_PURPLE, Formatting.BOLD));
+		tooltip.add(Text.literal("ПКМ — останавливает ВСЁ время в игре НАВСЕГДА:").formatted(Formatting.AQUA));
+		tooltip.add(Text.literal("замирают все измерения, солнце, жидкости, частицы,").formatted(Formatting.GRAY));
+		tooltip.add(Text.literal("снаряды и анимации всех мобов и Дракона Края!").formatted(Formatting.GRAY));
+		tooltip.add(Text.literal("Повторный ПКМ — возобновляет ход времени.").formatted(Formatting.GOLD));
 	}
 }

@@ -4,7 +4,9 @@
 	"compatibilityLevel": "JAVA_21",
 	"client": [
 		"LivingEntityRendererMixin",
-		"MinecraftClientMixin"
+		"MinecraftClientMixin",
+		"WorldRendererMixin",
+		"ParticleManagerMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
