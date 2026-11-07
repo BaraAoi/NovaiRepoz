@@ -14,6 +14,7 @@ import com.novaimod.item.InfinityEyeItem;
 import com.novaimod.item.OddsConfiguratorItem;
 import com.novaimod.item.OrbitalLaserItem;
 import com.novaimod.item.PartyDollItem;
+import com.novaimod.item.PlagueCaneItem;
 import com.novaimod.item.PlayerTeleporterItem;
 import com.novaimod.item.RealityRiftBladeItem;
 import com.novaimod.item.RevivalTokenItem;
@@ -24,6 +25,10 @@ import com.novaimod.item.TerraHeaverItem;
 import com.novaimod.item.UberGunItem;
 import com.novaimod.item.UltimateSeatPadItem;
 import com.novaimod.item.UnknownArtifactItem;
+import com.novaimod.item.WhiteCapCompassItem;
+import com.novaimod.item.WhiteCapFlaskItem;
+import com.novaimod.item.WhiteCapHoodItem;
+import com.novaimod.item.WhiteCapSpawnEggItem;
 
 import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
 import net.minecraft.item.ArmorItem;
@@ -194,6 +199,37 @@ public final class ModItems {
 			new ScaleRayItem(new Item.Settings().maxCount(1).rarity(Rarity.EPIC).fireproof())
 	);
 
+	// === v3.8.0: ФРАКЦИЯ «КЛАН БЕЛЫХ КОЛПАКОВ» (ЧУМНЫЕ АЛХИМИКИ В ОГРОМНЫХ ГНОМЬИХ КОЛПАКАХ) ===
+	public static final Item WHITE_CAP_HOOD = register(
+			"white_cap_hood",
+			new WhiteCapHoodItem(new Item.Settings().maxCount(1).rarity(Rarity.EPIC).fireproof())
+	);
+
+	public static final Item PLAGUE_CANE = register(
+			"plague_cane",
+			new PlagueCaneItem(new Item.Settings().maxCount(1).rarity(Rarity.EPIC).fireproof())
+	);
+
+	public static final Item WHITE_CAP_FLASK = register(
+			"white_cap_flask",
+			new WhiteCapFlaskItem(new Item.Settings().maxCount(16).rarity(Rarity.RARE))
+	);
+
+	public static final Item WHITE_CAP_COMPASS = register(
+			"white_cap_compass",
+			new WhiteCapCompassItem(new Item.Settings().maxCount(1).rarity(Rarity.RARE))
+	);
+
+	public static final Item WHITE_CAP_SPAWN_EGG = register(
+			"white_cap_spawn_egg",
+			new WhiteCapSpawnEggItem(false, new Item.Settings().maxCount(64).rarity(Rarity.RARE))
+	);
+
+	public static final Item WHITE_CAP_BOSS_SPAWN_EGG = register(
+			"white_cap_boss_spawn_egg",
+			new WhiteCapSpawnEggItem(true, new Item.Settings().maxCount(64).rarity(Rarity.EPIC))
+	);
+
 	public static final Map<DyeColor, Item> CUSHIONS = new EnumMap<>(DyeColor.class);
 
 	static {
@@ -239,6 +275,12 @@ public final class ModItems {
 						entries.add(ASTRAL_GATE);
 						entries.add(SCALE_RAY);
 						entries.add(ULTIMATE_SEAT_PAD);
+						entries.add(WHITE_CAP_HOOD);
+						entries.add(PLAGUE_CANE);
+						entries.add(WHITE_CAP_FLASK);
+						entries.add(WHITE_CAP_COMPASS);
+						entries.add(WHITE_CAP_SPAWN_EGG);
+						entries.add(WHITE_CAP_BOSS_SPAWN_EGG);
 						entries.add(ODDS_CONFIGURATOR);
 						for (DyeColor color : DyeColor.values()) {
 							entries.add(CUSHIONS.get(color));
@@ -256,6 +298,11 @@ public final class ModItems {
 					.entries((displayContext, entries) -> {
 						entries.add(ULTIMATE_SEAT_PAD);
 						entries.add(SCALE_RAY);
+						entries.add(WHITE_CAP_HOOD);
+						entries.add(PLAGUE_CANE);
+						entries.add(WHITE_CAP_COMPASS);
+						entries.add(WHITE_CAP_SPAWN_EGG);
+						entries.add(WHITE_CAP_BOSS_SPAWN_EGG);
 						entries.add(REALITY_RIFT_BLADE);
 						entries.add(ORBITAL_LASER);
 						entries.add(TERRA_HEAVER);

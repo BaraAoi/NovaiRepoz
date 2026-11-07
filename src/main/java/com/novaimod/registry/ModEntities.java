@@ -9,10 +9,12 @@ import com.novaimod.entity.InfinityPearlEntity;
 import com.novaimod.entity.ModNpcEntity;
 import com.novaimod.entity.OrbitalLaserEntity;
 import com.novaimod.entity.PartyDollEntity;
+import com.novaimod.entity.PlagueFlaskEntity;
 import com.novaimod.entity.RealitySlashEntity;
 import com.novaimod.entity.SeatEntity;
 import com.novaimod.entity.SingularityOrbEntity;
 import com.novaimod.entity.TerraCataclysmEntity;
+import com.novaimod.entity.WhiteCapEntity;
 
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
 import net.minecraft.entity.EntityType;
@@ -150,10 +152,31 @@ public final class ModEntities {
 					.build("terra_cataclysm_entity")
 	);
 
+	public static final EntityType<WhiteCapEntity> WHITE_CAP_ENTITY = Registry.register(
+			Registries.ENTITY_TYPE,
+			Identifier.of(NovaiMod.MOD_ID, "white_cap"),
+			EntityType.Builder.<WhiteCapEntity>create(WhiteCapEntity::new, SpawnGroup.CREATURE)
+					.dimensions(0.6F, 1.95F)
+					.makeFireImmune()
+					.maxTrackingRange(12)
+					.build("white_cap")
+	);
+
+	public static final EntityType<PlagueFlaskEntity> PLAGUE_FLASK_ENTITY = Registry.register(
+			Registries.ENTITY_TYPE,
+			Identifier.of(NovaiMod.MOD_ID, "plague_flask"),
+			EntityType.Builder.<PlagueFlaskEntity>create(PlagueFlaskEntity::new, SpawnGroup.MISC)
+					.dimensions(0.28F, 0.28F)
+					.maxTrackingRange(8)
+					.trackingTickInterval(3)
+					.build("plague_flask")
+	);
+
 	private ModEntities() {
 	}
 
 	public static void init() {
 		FabricDefaultAttributeRegistry.register(MOD_NPC, ModNpcEntity.createNpcAttributes());
+		FabricDefaultAttributeRegistry.register(WHITE_CAP_ENTITY, WhiteCapEntity.createWhiteCapAttributes());
 	}
 }

@@ -10,6 +10,7 @@ import com.novaimod.data.ModPersistentState;
 import com.novaimod.economy.CasinoGamesManager;
 import com.novaimod.entity.CushionEntity;
 import com.novaimod.entity.PartyDollEntity;
+import com.novaimod.entity.WhiteCapEntity;
 import com.novaimod.equipment.MfoArmorSetManager;
 import com.novaimod.equipment.UltimateArmorManager;
 import com.novaimod.item.CushionItem;
@@ -28,6 +29,7 @@ import com.novaimod.world.EgoPartyManager;
 import com.novaimod.world.ModStructureGenerator;
 import com.novaimod.world.MysterySkyManager;
 import com.novaimod.world.TimeStopManager;
+import com.novaimod.world.WhiteCapWorldManager;
 
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
@@ -161,6 +163,17 @@ public class NovaiMod implements ModInitializer {
 				}
 				return false;
 			}
+			if (world instanceof ServerWorld sw && !player.isCreative() && !player.isSpectator()
+					&& !WhiteCapEntity.isWearingClanHood(player)) {
+				var guards = sw.getEntitiesByClass(WhiteCapEntity.class, new net.minecraft.util.math.Box(pos).expand(14.0D), LivingEntity::isAlive);
+				if (!guards.isEmpty()) {
+					guards.get(0).markPlayerEnemy(player, 600);
+					guards.get(0).alertNearbyClanAgainst(player);
+					if (player instanceof ServerPlayerEntity sp) {
+						sp.sendMessage(Text.literal("[Белый Колпак] Эй, мародёр! Не смей ломать лагерь Белых Колпаков!!").formatted(Formatting.RED, Formatting.BOLD), true);
+					}
+				}
+			}
 			return true;
 		});
 
@@ -183,6 +196,7 @@ public class NovaiMod implements ModInitializer {
 			if (structureCheckTicker >= 40) {
 				structureCheckTicker = 0;
 				ModStructureGenerator.tickWorldGeneration(server);
+				WhiteCapWorldManager.tickClanWorld(server);
 			}
 		});
 	}
@@ -226,6 +240,18 @@ public class NovaiMod implements ModInitializer {
 											case "casino_desert" -> ModStructureGenerator.buildBiomeCasino(world, pos, "desert");
 											case "casino_snowy" -> ModStructureGenerator.buildBiomeCasino(world, pos, "snowy");
 											case "casino_jungle" -> ModStructureGenerator.buildBiomeCasino(world, pos, "jungle");
+											case "citadel", "white_cap_citadel" -> {
+												WhiteCapWorldManager.buildWhiteCapCitadel(world, pos);
+												ModPersistentState.get(world.getServer()).recordStructure("white_cap_citadel", world.getRegistryKey().getValue().toString(), pos);
+											}
+											case "outpost", "white_cap_outpost" -> {
+												WhiteCapWorldManager.buildFortifiedOutpost(world, pos);
+												ModPersistentState.get(world.getServer()).recordStructure("white_cap_outpost", world.getRegistryKey().getValue().toString(), pos);
+											}
+											case "camp", "white_cap_camp" -> {
+												WhiteCapWorldManager.buildFieldCamp(world, pos);
+												ModPersistentState.get(world.getServer()).recordStructure("white_cap_camp", world.getRegistryKey().getValue().toString(), pos);
+											}
 											default -> ModStructureGenerator.buildBiomeCasino(world, pos, "plains");
 										}
 										ctx.getSource().sendFeedback(() -> Text.literal("Построено заведение: " + type + " на " + pos.toShortString()).formatted(Formatting.GREEN), true);

@@ -10,6 +10,9 @@ import com.novaimod.client.render.OrbitalLaserEntityRenderer;
 import com.novaimod.client.render.PartyDollEntityRenderer;
 import com.novaimod.client.render.RealitySlashEntityRenderer;
 import com.novaimod.client.render.SingularityOrbEntityRenderer;
+import com.novaimod.client.render.WhiteCapEntityModel;
+import com.novaimod.client.render.WhiteCapEntityRenderer;
+import com.novaimod.client.render.WhiteCapHoodArmorRenderer;
 import com.novaimod.client.screen.AccountShopScreen;
 import com.novaimod.client.screen.CoinflipScreen;
 import com.novaimod.client.screen.LoanScreen;
@@ -28,6 +31,7 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.fabricmc.fabric.api.client.rendering.v1.ArmorRenderer;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityModelLayerRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
@@ -56,10 +60,17 @@ public class NovaiModClient implements ClientModInitializer {
 				PartyDollEntityRenderer.DOLL_MODEL_LAYER,
 				PartyDollEntityRenderer::getTexturedModelData
 		);
+		EntityModelLayerRegistry.registerModelLayer(
+				WhiteCapEntityRenderer.WHITE_CAP_MODEL_LAYER,
+				WhiteCapEntityModel::getTexturedModelData
+		);
 		EntityRendererRegistry.register(ModEntities.MOD_NPC, ModNpcRenderer::new);
 		EntityRendererRegistry.register(ModEntities.SEAT_ENTITY, EmptyEntityRenderer::new);
 		EntityRendererRegistry.register(ModEntities.CUSHION_ENTITY, CushionEntityRenderer::new);
 		EntityRendererRegistry.register(ModEntities.PARTY_DOLL_ENTITY, PartyDollEntityRenderer::new);
+		EntityRendererRegistry.register(ModEntities.WHITE_CAP_ENTITY, WhiteCapEntityRenderer::new);
+		EntityRendererRegistry.register(ModEntities.PLAGUE_FLASK_ENTITY, ctx -> new FlyingItemEntityRenderer<>(ctx, 1.15F, false));
+		ArmorRenderer.register(new WhiteCapHoodArmorRenderer(), ModItems.WHITE_CAP_HOOD);
 		EntityRendererRegistry.register(ModEntities.INFINITY_EYE_ENTITY, ctx -> new FlyingItemEntityRenderer<>(ctx, 1.75F, true));
 		EntityRendererRegistry.register(ModEntities.INFINITY_PEARL_ENTITY, ctx -> new FlyingItemEntityRenderer<>(ctx, 1.15F, true));
 		EntityRendererRegistry.register(ModEntities.SINGULARITY_ORB_ENTITY, SingularityOrbEntityRenderer::new);

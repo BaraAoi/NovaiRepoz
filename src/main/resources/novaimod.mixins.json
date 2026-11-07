@@ -13,7 +13,8 @@
 		"ItemStackMixin",
 		"AnvilScreenHandlerMixin",
 		"GrindstoneScreenHandlerMixin",
-		"TickManagerMixin"
+		"TickManagerMixin",
+		"EndermanEntityMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
