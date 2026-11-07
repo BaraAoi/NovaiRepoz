@@ -294,7 +294,7 @@ public class CelestialOrbEntity extends Entity {
 			}
 			victim.timeUntilRegen = 0;
 			if (victim instanceof EnderDragonEntity dragon) {
-				dragon.damagePart(dragon.body, sw.getDamageSources().explosion(this, caster), 36.0F);
+				dragon.damagePart(dragon.head, sw.getDamageSources().explosion(this, caster), 36.0F);
 			} else {
 				victim.damage(sw.getDamageSources().explosion(this, caster), 45.0F);
 			}

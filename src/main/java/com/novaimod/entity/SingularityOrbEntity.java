@@ -135,7 +135,7 @@ public class SingularityOrbEntity extends ThrownItemEntity {
 			if (dist < 3.6D && this.age % 8 == 0 && e instanceof LivingEntity living && !(living instanceof ModNpcEntity)) {
 				living.timeUntilRegen = 0;
 				if (living instanceof EnderDragonEntity dragon) {
-					dragon.damagePart(dragon.body, sw.getDamageSources().outOfWorld(), 20.0F);
+					dragon.damagePart(dragon.head, sw.getDamageSources().outOfWorld(), 20.0F);
 				} else {
 					living.damage(sw.getDamageSources().outOfWorld(), 20.0F);
 				}
