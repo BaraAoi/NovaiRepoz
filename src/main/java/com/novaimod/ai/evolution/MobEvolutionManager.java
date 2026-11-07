@@ -106,6 +106,9 @@ public final class MobEvolutionManager {
 		if (entity instanceof CreeperEntity) {
 			return "creeper";
 		}
+		if (entity instanceof PillagerEntity || entity instanceof VindicatorEntity) {
+			return "raider";
+		}
 		return "other";
 	}
 
@@ -146,6 +149,9 @@ public final class MobEvolutionManager {
 			int curGear = evaluatePlayerGearScore(player);
 			if (curGear > acc.highestGearScore) {
 				acc.highestGearScore = curGear;
+			} else if (curGear < acc.highestGearScore && (globalTickCounter % 1200 == 0)) {
+				// Если игрок потерял броню (например, сгорело Проклятие утраты при смерти) — пиковый рейтинг плавно снижается к текущему
+				acc.highestGearScore = Math.max(curGear, acc.highestGearScore - 3);
 			}
 
 			// Раз в игровой день (24000 тиков) без новых смертей постепенно снижаем счётчик смертей (временное послабление)
@@ -210,11 +216,16 @@ public final class MobEvolutionManager {
 			ModPersistentState.PlayerFinanceData acc = state.getAccount(nearest.getUuid());
 			double playerDays = acc.ticksLivedInWorld / 24000.0D;
 			dayFactor = Math.max(dayFactor * 0.65F, (float) (1.0D - Math.exp(-playerDays / 30.0D)));
-			playerGearFactor = MathHelper.clamp(acc.highestGearScore / 52.0F, 0.0F, 1.0F);
+			int liveGear = evaluatePlayerGearScore(nearest);
+			float effectiveGear = liveGear * 0.70F + acc.highestGearScore * 0.30F;
+			playerGearFactor = MathHelper.clamp(effectiveGear / 54.0F, 0.0F, 1.0F);
 			mercy = getMercyMultiplier(acc, mobCategory);
 		}
 
-		float raw = MathHelper.clamp(dayFactor * 0.62F + playerGearFactor * 0.48F, 0.0F, 1.0F);
+		// На ранних днях мира (например, сразу после завершения 5-минутного испытания) одна только награда/броня
+		// не задирает уровень развития обычных мобов до эндгейма — вес снаряжения раскрывается плавно с прожитыми днями!
+		float gearWeight = 0.20F + 0.28F * dayFactor;
+		float raw = MathHelper.clamp(dayFactor * 0.62F + playerGearFactor * gearWeight, 0.0F, 1.0F);
 		return raw * mercy;
 	}
 
@@ -331,6 +342,48 @@ public final class MobEvolutionManager {
 	}
 
 	public static final String TAG_PERCENT_MELEE = "novai_percent_melee";
+
+	/**
+	 * Полный сброс усилений моба после окончания 5-минутного Испытания и чистый пересчёт под обычный уровень развития мира.
+	 */
+	public static void resetAndReinitializeAfterTrial(MobEntity mob, ServerWorld world) {
+		if (!isEvolvableMob(mob)) {
+			return;
+		}
+		removeModIfPresent(mob, EntityAttributes.GENERIC_MAX_HEALTH, MOD_DAY_HP);
+		removeModIfPresent(mob, EntityAttributes.GENERIC_ATTACK_DAMAGE, MOD_DAY_DMG);
+		removeModIfPresent(mob, EntityAttributes.GENERIC_MOVEMENT_SPEED, MOD_BIOME_SPD);
+		removeModIfPresent(mob, EntityAttributes.GENERIC_MAX_HEALTH, MOD_BIOME_HP);
+		removeModIfPresent(mob, EntityAttributes.GENERIC_ARMOR, MOD_BIOME_ARMOR);
+		removeModIfPresent(mob, EntityAttributes.GENERIC_MOVEMENT_SPEED, MOD_TRAIT_SPD);
+		removeModIfPresent(mob, EntityAttributes.GENERIC_MAX_HEALTH, MOD_TRAIT_HP);
+		removeModIfPresent(mob, EntityAttributes.GENERIC_KNOCKBACK_RESISTANCE, MOD_TRAIT_KB);
+		removeModIfPresent(mob, EntityAttributes.GENERIC_MAX_HEALTH, MOD_LEADER_HP);
+		removeModIfPresent(mob, EntityAttributes.GENERIC_ATTACK_DAMAGE, MOD_LEADER_DMG);
+		removeModIfPresent(mob, EntityAttributes.GENERIC_ATTACK_DAMAGE, MOD_ENV_LIGHT_DMG);
+		removeModIfPresent(mob, EntityAttributes.GENERIC_MOVEMENT_SPEED, MOD_ENV_LIGHT_SPD);
+
+		EvolvedMobAccess access = (EvolvedMobAccess) mob;
+		access.novai$setTrait(MobTrait.NONE);
+		access.novai$setRareVariant(RareMobVariant.NONE);
+		access.novai$setBiomeTag("");
+		access.novai$setPackLeader(false);
+		access.novai$setLeaderUuid(null);
+		access.novai$setEvolutionLevel(0.0F);
+		access.novai$setInitialized(false);
+
+		initializeMobIfNeeded(mob, world);
+		if (mob.getHealth() > mob.getMaxHealth()) {
+			mob.setHealth(mob.getMaxHealth());
+		}
+	}
+
+	private static void removeModIfPresent(MobEntity mob, RegistryEntry<EntityAttribute> attribute, Identifier id) {
+		EntityAttributeInstance inst = mob.getAttributeInstance(attribute);
+		if (inst != null) {
+			inst.removeModifier(id);
+		}
+	}
 
 	/**
 	 * Проверяет, что враждебный моб является строго бойцом ближнего боя («милишником»):

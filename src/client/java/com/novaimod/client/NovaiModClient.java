@@ -31,6 +31,7 @@ import net.minecraft.client.gui.screen.ingame.HandledScreens;
 import net.minecraft.client.item.ModelPredicateProviderRegistry;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.render.entity.EmptyEntityRenderer;
+import net.minecraft.client.render.entity.FlyingItemEntityRenderer;
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.MathHelper;
@@ -55,12 +56,17 @@ public class NovaiModClient implements ClientModInitializer {
 		EntityRendererRegistry.register(ModEntities.SEAT_ENTITY, EmptyEntityRenderer::new);
 		EntityRendererRegistry.register(ModEntities.CUSHION_ENTITY, CushionEntityRenderer::new);
 		EntityRendererRegistry.register(ModEntities.PARTY_DOLL_ENTITY, PartyDollEntityRenderer::new);
+		EntityRendererRegistry.register(ModEntities.INFINITY_EYE_ENTITY, ctx -> new FlyingItemEntityRenderer<>(ctx, 1.75F, true));
+		EntityRendererRegistry.register(ModEntities.INFINITY_PEARL_ENTITY, ctx -> new FlyingItemEntityRenderer<>(ctx, 1.15F, true));
+		EntityRendererRegistry.register(ModEntities.SINGULARITY_ORB_ENTITY, ctx -> new FlyingItemEntityRenderer<>(ctx, 2.35F, true));
+		EntityRendererRegistry.register(ModEntities.CELESTIAL_METEOR_ENTITY, ctx -> new FlyingItemEntityRenderer<>(ctx, 2.40F, true));
 
 		// Экран Торгового аппарата
 		HandledScreens.register(ModScreenHandlers.VENDING_SCREEN_HANDLER, VendingScreen::new);
 
-		// Отрисовка виртуального Счёта в верхнем углу экрана
+		// Отрисовка виртуального Счёта в верхнем углу экрана + бесшовная вспышка при переходе между измерениями
 		HudRenderCallback.EVENT.register(new AccountHudOverlay());
+		HudRenderCallback.EVENT.register(SeamlessTeleportClientState.HUD_OVERLAY);
 
 		// Анимация натяга УБЕРГАНА (с учётом всех 3 режимов: Пулемёт, Снайперский 45 тиков, Аннигиляция 20 тиков)
 		ModelPredicateProviderRegistry.register(ModItems.UBER_GUN, Identifier.ofVanilla("pull"), (stack, world, entity, seed) -> {
@@ -165,6 +171,11 @@ public class NovaiModClient implements ClientModInitializer {
 
 		ClientPlayNetworking.registerGlobalReceiver(ModPayloads.ShadowCuePayload.ID, (payload, context) -> {
 			ClientAccountData.triggerShadowCue(payload.leftSide(), payload.intensity());
+		});
+
+		ClientPlayNetworking.registerGlobalReceiver(ModPayloads.SeamlessTeleportPayload.ID, (payload, context) -> {
+			SeamlessTeleportClientState.onSeamlessTeleportPacket(payload.dimensionPath(), payload.crossDimension());
+			SeamlessTeleportClientState.ensureCursorLocked(context.client());
 		});
 	}
 }

@@ -4,12 +4,16 @@ import java.util.EnumMap;
 import java.util.Map;
 
 import com.novaimod.NovaiMod;
+import com.novaimod.item.CelestialWrathItem;
+import com.novaimod.item.ChronoScepterItem;
 import com.novaimod.item.CushionItem;
 import com.novaimod.item.DrunkenOblivionItem;
+import com.novaimod.item.InfinityEyeItem;
 import com.novaimod.item.OddsConfiguratorItem;
 import com.novaimod.item.PartyDollItem;
 import com.novaimod.item.PlayerTeleporterItem;
 import com.novaimod.item.RevivalTokenItem;
+import com.novaimod.item.SingularityOrbItem;
 import com.novaimod.item.StrangeMeatItem;
 import com.novaimod.item.UberGunItem;
 import com.novaimod.item.UnknownArtifactItem;
@@ -103,6 +107,33 @@ public final class ModItems {
 			new UberGunItem(new Item.Settings().maxDamage(750).rarity(Rarity.EPIC).fireproof())
 	);
 
+	// === КРЕАТИВНЫЕ АРТЕФАКТЫ (v3.4.0) ===
+	public static final Item INFINITY_EYE = register(
+			"infinity_eye",
+			new InfinityEyeItem(new Item.Settings().maxCount(16).rarity(Rarity.EPIC).fireproof())
+	);
+
+	// Внутренний предмет-иконка для рендера летящих жемчугов Ока Бескрайности
+	public static final Item INFINITY_PEARL = register(
+			"infinity_pearl",
+			new Item(new Item.Settings().maxCount(16).rarity(Rarity.RARE))
+	);
+
+	public static final Item SINGULARITY_ORB = register(
+			"singularity_orb",
+			new SingularityOrbItem(new Item.Settings().maxCount(16).rarity(Rarity.EPIC).fireproof())
+	);
+
+	public static final Item CELESTIAL_WRATH = register(
+			"celestial_wrath",
+			new CelestialWrathItem(new Item.Settings().maxCount(1).rarity(Rarity.EPIC).fireproof())
+	);
+
+	public static final Item CHRONO_SCEPTER = register(
+			"chrono_scepter",
+			new ChronoScepterItem(new Item.Settings().maxCount(1).rarity(Rarity.EPIC).fireproof())
+	);
+
 	public static final Map<DyeColor, Item> CUSHIONS = new EnumMap<>(DyeColor.class);
 
 	static {
@@ -138,10 +169,32 @@ public final class ModItems {
 						entries.add(PLAYER_TELEPORTER);
 						entries.add(UBER_GUN);
 						entries.add(UNKNOWN_ARTIFACT);
+						entries.add(INFINITY_EYE);
+						entries.add(SINGULARITY_ORB);
+						entries.add(CELESTIAL_WRATH);
+						entries.add(CHRONO_SCEPTER);
 						entries.add(ODDS_CONFIGURATOR);
 						for (DyeColor color : DyeColor.values()) {
 							entries.add(CUSHIONS.get(color));
 						}
+					})
+					.build()
+	);
+
+	public static final ItemGroup NOVAI_CREATIVE_GROUP = Registry.register(
+			Registries.ITEM_GROUP,
+			Identifier.of(NovaiMod.MOD_ID, "novai_creative_group"),
+			FabricItemGroup.builder()
+					.icon(() -> new ItemStack(INFINITY_EYE))
+					.displayName(Text.translatable("itemGroup.novaimod.novai_creative_group"))
+					.entries((displayContext, entries) -> {
+						entries.add(INFINITY_EYE);
+						entries.add(SINGULARITY_ORB);
+						entries.add(CELESTIAL_WRATH);
+						entries.add(CHRONO_SCEPTER);
+						entries.add(UBER_GUN);
+						entries.add(UNKNOWN_ARTIFACT);
+						entries.add(ODDS_CONFIGURATOR);
 					})
 					.build()
 	);

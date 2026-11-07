@@ -3,7 +3,8 @@
 	"package": "com.novaimod.client.mixin",
 	"compatibilityLevel": "JAVA_21",
 	"client": [
-		"LivingEntityRendererMixin"
+		"LivingEntityRendererMixin",
+		"MinecraftClientMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

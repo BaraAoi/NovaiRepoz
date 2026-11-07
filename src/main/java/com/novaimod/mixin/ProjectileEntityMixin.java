@@ -11,6 +11,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.novaimod.ai.evolution.EvolvedMobAccess;
 import com.novaimod.world.ApocalypseEventManager;
+import com.novaimod.world.TimeStopManager;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
@@ -175,6 +176,16 @@ public abstract class ProjectileEntityMixin extends Entity {
 
 		if (!this.isRemoved()) {
 			this.discard();
+		}
+	}
+
+	@Inject(method = "tick", at = @At("HEAD"), cancellable = true)
+	private void novai$freezeProjectileDuringTimeStop(CallbackInfo ci) {
+		if (!this.getWorld().isClient() && TimeStopManager.isEntityFrozen(this)) {
+			this.prevX = this.getX();
+			this.prevY = this.getY();
+			this.prevZ = this.getZ();
+			ci.cancel();
 		}
 	}
 

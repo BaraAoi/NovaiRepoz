@@ -25,6 +25,7 @@ import com.novaimod.world.DetentionManager;
 import com.novaimod.world.EgoPartyManager;
 import com.novaimod.world.ModStructureGenerator;
 import com.novaimod.world.MysterySkyManager;
+import com.novaimod.world.TimeStopManager;
 
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
@@ -160,6 +161,7 @@ public class NovaiMod implements ModInitializer {
 			CasinoGamesManager.tickPendingResolutions(server);
 			MobEvolutionManager.tickServer(server);
 			ApocalypseEventManager.tickServer(server);
+			TimeStopManager.tickServer(server);
 			EgoPartyManager.tickRaves(server);
 
 			if (structureCheckTicker % 5 == 0) {

@@ -20,6 +20,7 @@ import com.novaimod.ai.evolution.TerrainAmbushGoal;
 import com.novaimod.ai.evolution.TrailPursuitAndSearchGoal;
 import com.novaimod.entity.PartyDollEntity;
 import com.novaimod.world.ApocalypseEventManager;
+import com.novaimod.world.TimeStopManager;
 
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
@@ -27,6 +28,7 @@ import net.minecraft.entity.ai.goal.GoalSelector;
 import net.minecraft.entity.mob.AbstractSkeletonEntity;
 import net.minecraft.entity.mob.Angerable;
 import net.minecraft.entity.mob.CreeperEntity;
+import net.minecraft.entity.mob.HostileEntity;
 import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.entity.mob.PathAwareEntity;
 import net.minecraft.entity.mob.SpiderEntity;
@@ -105,6 +107,17 @@ public abstract class MobEntityMixin extends LivingEntity implements EvolvedMobA
 	@Inject(method = "tickNewAi", at = @At("HEAD"), cancellable = true)
 	private void novai$gatherAndStandStillForPartyDoll(CallbackInfo ci) {
 		MobEntity self = (MobEntity) (Object) this;
+		if (TimeStopManager.isEntityFrozen(self)) {
+			self.getNavigation().stop();
+			self.setForwardSpeed(0.0F);
+			self.setSidewaysSpeed(0.0F);
+			self.setUpwardSpeed(0.0F);
+			if (self instanceof CreeperEntity creeper) {
+				creeper.setFuseSpeed(-1);
+			}
+			ci.cancel();
+			return;
+		}
 		PartyDollEntity activeDoll = PartyDollEntity.findNearestActiveDoll(self);
 		if (activeDoll == null) {
 			this.novai$activeDollId = -1;
@@ -210,6 +223,16 @@ public abstract class MobEntityMixin extends LivingEntity implements EvolvedMobA
 	private void novai$tickEvolution(CallbackInfo ci) {
 		Object self = this;
 		if (!this.getWorld().isClient() && this.getWorld() instanceof ServerWorld sw) {
+			// Авто-очистка остаточных проклятых мобов из выгруженных чанков после окончания 5-минутного Испытания
+			if (this.age % 20 == 5 && self instanceof HostileEntity hostile && !ApocalypseEventManager.isActive(sw.getServer())) {
+				if (hostile.getCommandTags().contains(ApocalypseEventManager.TAG_APOC_WAVE)) {
+					hostile.discard();
+					return;
+				}
+				if (hostile.getCommandTags().contains(ApocalypseEventManager.TAG_APOC_GEARED)) {
+					ApocalypseEventManager.cleanupPostApocalypseMob(hostile, sw);
+				}
+			}
 			if (!this.novai$initialized && MobEvolutionManager.isEvolvableMob(this)) {
 				MobEvolutionManager.initializeMobIfNeeded((MobEntity) self, sw);
 			}

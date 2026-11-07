@@ -559,6 +559,27 @@ public final class ModPayloads {
 		}
 	}
 
+	public record SeamlessTeleportPayload(String dimensionPath, boolean crossDimension) implements CustomPayload {
+		public static final CustomPayload.Id<SeamlessTeleportPayload> ID =
+				new CustomPayload.Id<>(Identifier.of(NovaiMod.MOD_ID, "seamless_teleport"));
+		public static final PacketCodec<RegistryByteBuf, SeamlessTeleportPayload> CODEC =
+				PacketCodec.of(SeamlessTeleportPayload::write, SeamlessTeleportPayload::read);
+
+		private void write(RegistryByteBuf buf) {
+			buf.writeString(dimensionPath);
+			buf.writeBoolean(crossDimension);
+		}
+
+		private static SeamlessTeleportPayload read(RegistryByteBuf buf) {
+			return new SeamlessTeleportPayload(buf.readString(), buf.readBoolean());
+		}
+
+		@Override
+		public Id<? extends CustomPayload> getId() {
+			return ID;
+		}
+	}
+
 	public static void registerPayloadTypes() {
 		PayloadTypeRegistry.playS2C().register(AccountSyncPayload.ID, AccountSyncPayload.CODEC);
 		PayloadTypeRegistry.playS2C().register(OpenLoanScreenPayload.ID, OpenLoanScreenPayload.CODEC);
@@ -571,6 +592,7 @@ public final class ModPayloads {
 		PayloadTypeRegistry.playS2C().register(OpenOddsConfigScreenPayload.ID, OpenOddsConfigScreenPayload.CODEC);
 		PayloadTypeRegistry.playS2C().register(OpenTeleporterScreenPayload.ID, OpenTeleporterScreenPayload.CODEC);
 		PayloadTypeRegistry.playS2C().register(ShadowCuePayload.ID, ShadowCuePayload.CODEC);
+		PayloadTypeRegistry.playS2C().register(SeamlessTeleportPayload.ID, SeamlessTeleportPayload.CODEC);
 
 		PayloadTypeRegistry.playC2S().register(LoanActionPayload.ID, LoanActionPayload.CODEC);
 		PayloadTypeRegistry.playC2S().register(ShopBuyPayload.ID, ShopBuyPayload.CODEC);

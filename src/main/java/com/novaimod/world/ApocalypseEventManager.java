@@ -72,8 +72,9 @@ import net.minecraft.world.WorldEvents;
  */
 public final class ApocalypseEventManager {
 	public static final int APOCALYPSE_DURATION_TICKS = 20 * 60 * 5; // 5 минут = 6000 тиков
-	private static final String TAG_APOC_GEARED = "novai_apoc_geared";
+	public static final String TAG_APOC_GEARED = "novai_apoc_geared";
 	public static final String TAG_APOC_SPEEDSTER = "novai_apoc_speedster";
+	public static final String TAG_APOC_WAVE = "novai_apoc_wave";
 
 	private static ServerBossBar bossBar = null;
 	private static int apocalypseMobCounter = 0;
@@ -226,18 +227,19 @@ public final class ApocalypseEventManager {
 
 		ensureBossBar(server, Math.max(0, left));
 
+		if (left <= 0) {
+			finishApocalypse(server, state);
+			return;
+		}
+
 		// Каждые 20 тиков (1 сек) усиливаем враждебных мобов рядом с игроками и выдаём им зачарованную броню и оружие
 		if (left % 20 == 0) {
 			buffNearbyHostileMobs(server);
 		}
 
-		// Каждые 35 тиков (~1.75 сек) спавним дополнительные волны вооружённых мобов вокруг выживающих игроков
-		if (left % 35 == 10) {
+		// Каждые 35 тиков (~1.75 сек) спавним дополнительные волны вооружённых мобов вокруг выживающих игроков (останавливаем за 3 сек до финала)
+		if (left > 60 && left % 35 == 10) {
 			spawnApocalypseMobWaves(server);
-		}
-
-		if (left <= 0) {
-			finishApocalypse(server, state);
 		}
 	}
 
@@ -318,6 +320,7 @@ public final class ApocalypseEventManager {
 						continue;
 					}
 					mob.refreshPositionAndAngles(spawnPos.getX() + 0.5D, spawnPos.getY(), spawnPos.getZ() + 0.5D, rng.nextFloat() * 360.0F, 0.0F);
+					mob.addCommandTag(TAG_APOC_WAVE);
 					if (MobEvolutionManager.isEvolvableMob(mob)) {
 						MobEvolutionManager.initializeMobIfNeeded(mob, world);
 					}
@@ -728,6 +731,10 @@ public final class ApocalypseEventManager {
 			bossBar = null;
 		}
 
+		// Сразу после завершения 5-минутного Испытания убираем волновых мобов проклятой орды
+		// и снимаем проклятую броню/оружие/баффы с выживших натуральных мобов, возвращая мир к обычной сложности!
+		cleanupAllApocalypseMobs(server);
+
 		List<ServerPlayerEntity> survivors = new ArrayList<>();
 		for (ServerPlayerEntity p : server.getPlayerManager().getPlayerList()) {
 			if (p.isAlive() && !p.isSpectator() && !state.getDiedDuringApocalypse().contains(p.getUuid())) {
@@ -773,6 +780,66 @@ public final class ApocalypseEventManager {
 							.formatted(Formatting.GREEN, Formatting.BOLD),
 					false
 			);
+		}
+	}
+
+	/**
+	 * Полная зачистка проклятия мобов по окончании Испытания во всех загруженных измерениях:
+	 * - Мобы из волн орды (TAG_APOC_WAVE) растворяются во тьме.
+	 * - Натуральные мобы с проклятым снаряжением (TAG_APOC_GEARED) очищаются до обычного уровня сложности мира.
+	 */
+	public static void cleanupAllApocalypseMobs(MinecraftServer server) {
+		for (ServerWorld world : server.getWorlds()) {
+			List<HostileEntity> toProcess = new ArrayList<>();
+			for (net.minecraft.entity.Entity e : world.iterateEntities()) {
+				if (e instanceof HostileEntity h && h.isAlive()) {
+					if (h.getCommandTags().contains(TAG_APOC_WAVE) || h.getCommandTags().contains(TAG_APOC_GEARED)) {
+						toProcess.add(h);
+					}
+				}
+			}
+			for (HostileEntity mob : toProcess) {
+				if (mob.getCommandTags().contains(TAG_APOC_WAVE)) {
+					world.spawnParticles(ParticleTypes.SMOKE, mob.getX(), mob.getY() + 0.8D, mob.getZ(), 10, 0.3D, 0.45D, 0.3D, 0.03D);
+					world.spawnParticles(ParticleTypes.SCULK_SOUL, mob.getX(), mob.getY() + 0.9D, mob.getZ(), 4, 0.25D, 0.3D, 0.25D, 0.02D);
+					mob.discard();
+				} else {
+					cleanupPostApocalypseMob(mob, world);
+				}
+			}
+		}
+	}
+
+	/**
+	 * Очищает натурально заспавнившегося моба от проклятой брони, оружия, скорости, процентного урона и 100% эволюции Испытания
+	 * (в том числе при подгрузке чанков, которые были выгружены в момент завершения таймера).
+	 */
+	public static void cleanupPostApocalypseMob(HostileEntity mob, ServerWorld world) {
+		mob.removeCommandTag(TAG_APOC_GEARED);
+		mob.removeCommandTag(TAG_APOC_SPEEDSTER);
+		mob.removeCommandTag(MobEvolutionManager.TAG_PERCENT_MELEE);
+		mob.removeStatusEffect(StatusEffects.STRENGTH);
+		mob.removeStatusEffect(StatusEffects.SPEED);
+
+		mob.equipStack(EquipmentSlot.HEAD, ItemStack.EMPTY);
+		mob.equipStack(EquipmentSlot.CHEST, ItemStack.EMPTY);
+		mob.equipStack(EquipmentSlot.LEGS, ItemStack.EMPTY);
+		mob.equipStack(EquipmentSlot.FEET, ItemStack.EMPTY);
+		mob.equipStack(EquipmentSlot.OFFHAND, ItemStack.EMPTY);
+
+		if (mob instanceof AbstractSkeletonEntity skel) {
+			mob.equipStack(EquipmentSlot.MAINHAND, new ItemStack(Items.BOW));
+			skel.updateAttackType();
+		} else if (mob instanceof PillagerEntity) {
+			mob.equipStack(EquipmentSlot.MAINHAND, new ItemStack(Items.CROSSBOW));
+		} else if (mob instanceof VindicatorEntity) {
+			mob.equipStack(EquipmentSlot.MAINHAND, new ItemStack(Items.IRON_AXE));
+		} else if (mob instanceof ZombieEntity || mob instanceof AbstractPiglinEntity) {
+			mob.equipStack(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
+		}
+
+		if (MobEvolutionManager.isEvolvableMob(mob)) {
+			MobEvolutionManager.resetAndReinitializeAfterTrial(mob, world);
 		}
 	}
 
