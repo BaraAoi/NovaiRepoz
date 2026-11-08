@@ -433,7 +433,7 @@ public class HolyOrderEntity extends PathAwareEntity {
 			} else if (held.isOf(Items.BREAD) || held.isIn(ItemTags.CANDLES)) {
 				long now = sw.getTime();
 				if (now - acc.lastSmallTitheTick < 1200L) {
-					sp.sendMessage(Text.literal("✝ [Священник]: Скромные приношения хлебом и свечами принимаются раз в минуту — для великого доверия принеси золото, изумруды или трофеи с еретиков КБК!").formatted(Formatting.YELLOW), true);
+					sp.sendMessage(Text.literal("✝ [Священник]: Скромные приношения хлебом и свечами принимаются раз в минуту — для великого доверия принеси золото, изумруды или трофеи с еретиков КБК!").formatted(Formatting.YELLOW), false);
 					return ActionResult.SUCCESS;
 				}
 				acc.lastSmallTitheTick = now;
@@ -502,7 +502,7 @@ public class HolyOrderEntity extends PathAwareEntity {
 					Text.literal(following
 							? "⚔ [Рыцарь Люче]: Есть, знаменосец! Иду за твоей Хоругвью!"
 							: "🛡 [Рыцарь Люче]: Принято! Держу оборону на этом рубеже!").formatted(Formatting.GOLD),
-					true
+					false
 			);
 			return ActionResult.SUCCESS;
 		}
@@ -510,8 +510,8 @@ public class HolyOrderEntity extends PathAwareEntity {
 		String greet = FAITHFUL_GREETINGS[sw.random.nextInt(FAITHFUL_GREETINGS.length)];
 		sp.sendMessage(
 				Text.literal("✝ [Орден Люче]: ").formatted(Formatting.GOLD, Formatting.BOLD)
-						.append(Text.literal(greet + " (Ваше доверие: " + acc.holyOrderRep + "/100, убито КБК: " + acc.kbkKilledForChurch + "/5)").formatted(Formatting.WHITE)),
-				true
+						.append(Text.literal(greet).formatted(Formatting.WHITE)),
+				false
 		);
 		return ActionResult.SUCCESS;
 	}
@@ -643,10 +643,6 @@ public class HolyOrderEntity extends PathAwareEntity {
 			if (speechCooldown <= 0 && sw.random.nextInt(5) == 0) {
 				speechCooldown = 160;
 				String cry = KBK_WAR_CRIES[sw.random.nextInt(KBK_WAR_CRIES.length)];
-				for (ServerPlayerEntity sp : sw.getEntitiesByClass(ServerPlayerEntity.class, this.getBoundingBox().expand(26.0D), LivingEntity::isAlive)) {
-					sp.sendMessage(Text.literal("✝ [Орден Святой Люче] ").formatted(Formatting.GOLD, Formatting.BOLD)
-							.append(Text.literal(cry).formatted(Formatting.YELLOW)), true);
-				}
 				sw.playSound(null, this.getBlockPos(), SoundEvents.BLOCK_BELL_USE, SoundCategory.NEUTRAL, 1.1F, 1.15F);
 			}
 			return;
@@ -950,7 +946,6 @@ public class HolyOrderEntity extends PathAwareEntity {
 			int penalty = getRank() == RANK_CARDINAL ? 100 : 30;
 			acc.holyOrderRep = Math.max(-500, acc.holyOrderRep - penalty);
 			state.markDirty();
-			sp.sendMessage(Text.literal("✝ [Гнев Церкви]: Вы убили служителя Ордена Люче! (-" + penalty + " Репутации Церкви -> " + acc.holyOrderRep + ")").formatted(Formatting.RED, Formatting.BOLD), true);
 		}
 		if (getRank() == RANK_CARDINAL) {
 			this.dropStack(new ItemStack(ModItems.CRUSADE_BANNER, 1));

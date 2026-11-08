@@ -40,10 +40,6 @@ public class UnknownArtifactItem extends Item {
 		ItemStack stack = user.getStackInHand(hand);
 		if (!world.isClient() && user instanceof ServerPlayerEntity serverPlayer) {
 			if (ApocalypseEventManager.isActive(serverPlayer.getServer())) {
-				serverPlayer.sendMessage(
-						Text.literal("Проклятое испытание уже активно!").formatted(Formatting.RED, Formatting.BOLD),
-						true
-				);
 				return TypedActionResult.fail(stack);
 			}
 			if (!serverPlayer.isCreative()) {

@@ -74,10 +74,6 @@ public final class EgoPartyManager {
 		for (ActiveRave r : ACTIVE_RAVES) {
 			if (r.world == world && r.djPos.getSquaredDistance(djPos) <= 64.0D) {
 				r.ticksLeft = 600; // Продлеваем на 30 секунд
-				starter.sendMessage(
-						Text.literal("♪ Диджей поддал басов! Танцпол гудит ещё громче!").formatted(Formatting.LIGHT_PURPLE, Formatting.BOLD),
-						true
-				);
 				return;
 			}
 		}

@@ -147,11 +147,5 @@ public class AccountHudOverlay implements HudRenderCallback {
 			int whiteGold = (a << 24) | 0xFFFDF2;
 			context.fill(0, 0, sw, sh, whiteGold);
 		}
-
-		if (TimeOfTheWorldClientState.isInPostResetBannerWindow()) {
-			Text title = Text.literal("✦ MADE IN HEAVEN — МИР ПЕРЕЗАПУЩЕН ✦").formatted(Formatting.GOLD, Formatting.BOLD);
-			int tw = tr.getWidth(title);
-			context.drawText(tr, title, (sw - tw) / 2, sh / 4, 0xFFF5C0, true);
-		}
 	}
 }

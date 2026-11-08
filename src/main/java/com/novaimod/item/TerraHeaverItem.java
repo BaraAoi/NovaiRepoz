@@ -66,11 +66,6 @@ public class TerraHeaverItem extends Item {
 
 				TerraCataclysmEntity swarm = TerraCataclysmEntity.startBoulderSwarm(sw, sp, aim);
 				sw.spawnEntity(swarm);
-				sp.sendMessage(
-						Text.literal("⛰ КАТАКЛИЗМ ГЕОМАНТА: недра земли подняты в небо! ⛰")
-								.formatted(Formatting.GOLD, Formatting.BOLD),
-						true
-				);
 			}
 			user.swingHand(hand, true);
 		}
@@ -126,12 +121,6 @@ public class TerraHeaverItem extends Item {
 				victim.setOnFireFor(8.0F);
 			}
 		}
-
-		sp.sendMessage(
-				Text.literal("🌋 ТЕКТОНИЧЕСКИЙ РАЗЛОМ: линия лавовых гейзеров сокрушила врагов! 🌋")
-						.formatted(Formatting.GOLD, Formatting.BOLD),
-				true
-		);
 	}
 
 	@Override

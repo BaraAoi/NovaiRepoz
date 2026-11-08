@@ -144,7 +144,6 @@ public class UberGunItem extends BowItem {
 				world.playSound(null, sp.getBlockPos(), SoundEvents.BLOCK_NOTE_BLOCK_HAT.value(), SoundCategory.PLAYERS, 0.6F, 1.0F + usedTicks * 0.015F);
 			} else if (usedTicks == SNIPER_FULL_DRAW_TICKS) {
 				world.playSound(null, sp.getBlockPos(), SoundEvents.BLOCK_NOTE_BLOCK_CHIME.value(), SoundCategory.PLAYERS, 0.9F, 1.6F);
-				sp.sendMessage(Text.literal("🎯 СНАЙПЕРСКИЙ ЗАРЯД 100% — ГОТОВ К ВЫСТРЕЛУ!").formatted(Formatting.GOLD, Formatting.BOLD), true);
 			}
 		}
 	}

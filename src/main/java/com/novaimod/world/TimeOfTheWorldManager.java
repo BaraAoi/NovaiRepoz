@@ -103,10 +103,6 @@ public final class TimeOfTheWorldManager {
 		elapsedTicks = 0;
 		active = true;
 
-		for (ServerPlayerEntity sp : server.getPlayerManager().getPlayerList()) {
-			COSMIC_BAR.addPlayer(sp);
-		}
-
 		ServerWorld casterWorld = player.getServerWorld();
 		ChronoAstrolabeEntity astrolabe = ModEntities.CHRONO_ASTROLABE_ENTITY.create(casterWorld);
 		if (astrolabe != null) {
@@ -122,21 +118,10 @@ public final class TimeOfTheWorldManager {
 		casterWorld.playSound(null, player.getBlockPos(), SoundEvents.BLOCK_AMETHYST_BLOCK_CHIME, SoundCategory.MASTER, 1.8F, 0.85F);
 		casterWorld.playSound(null, player.getBlockPos(), SoundEvents.BLOCK_BELL_RESONATE, SoundCategory.MASTER, 1.5F, 0.7F);
 
-		COSMIC_BAR.setPercent(0.0F);
-		COSMIC_BAR.setColor(BossBar.Color.YELLOW);
-		COSMIC_BAR.setVisible(true);
+		COSMIC_BAR.clearPlayers();
+		COSMIC_BAR.setVisible(false);
 
 		broadcastSync(server, true, initialTimeOfDay, false);
-
-		WorldVirginLedger ledger = WorldVirginLedger.get(server);
-		String subtitle = virginRebootMode
-				? " (К откату: " + ledger.getTotalRecordedBlocks() + " блоков | Эталон мира: " + ledger.getVirginRosterCount() + " коренных существ)"
-				: " (Режим Прокрутки Эпох: ускорение ферм и печей)";
-		server.getPlayerManager().broadcast(
-				Text.literal("✦ 「TIME OF THE WORLD — MADE IN HEAVEN」: ВРЕМЯ НАЧИНАЕТ РАЗГОН!" + subtitle + " ✦")
-						.formatted(Formatting.GOLD, Formatting.BOLD),
-				false
-		);
 	}
 
 	public static void tickServer(MinecraftServer server) {
@@ -150,7 +135,6 @@ public final class TimeOfTheWorldManager {
 		}
 
 		long virtualTime = computeVirtualTimeOfDay(initialTimeOfDay, elapsedTicks, TOTAL_ACCEL_TICKS);
-		double speedMult = computeSpeedMultiplier(elapsedTicks, TOTAL_ACCEL_TICKS);
 		float progress = MathHelper.clamp((float) elapsedTicks / (float) TOTAL_ACCEL_TICKS, 0.0F, 1.0F);
 
 		boolean doDaylight = server.getGameRules().getBoolean(GameRules.DO_DAYLIGHT_CYCLE);
@@ -163,25 +147,10 @@ public final class TimeOfTheWorldManager {
 			broadcastSync(server, true, initialTimeOfDay, false);
 		}
 
-		String multStr = speedMult < 100.0D
-				? String.format("%.1fx", speedMult)
-				: String.format("%.0fx", speedMult);
-		String phaseLabel = progress < 0.30F ? "Пробуждение Хроноса"
-				: (progress < 0.65F ? "Вальс Рассветов и Закатов"
-				: (progress < 0.88F ? "Световой Поток Эпох" : "ТОЧКА СИНГУЛЯРНОСТИ"));
-		COSMIC_BAR.setPercent(progress);
-		COSMIC_BAR.setColor(progress < 0.55F ? BossBar.Color.YELLOW : (progress < 0.85F ? BossBar.Color.BLUE : BossBar.Color.WHITE));
-		COSMIC_BAR.setName(
-				Text.literal("✦ TIME OF THE WORLD [" + phaseLabel + "] — ").formatted(Formatting.GOLD, Formatting.BOLD)
-						.append(Text.literal(multStr).formatted(Formatting.AQUA, Formatting.BOLD))
-						.append(Text.literal(" ✦").formatted(Formatting.WHITE))
-		);
-
 		int tickInterval = Math.max(1, (int) Math.round(18.0D * Math.pow(1.0D - progress, 1.65D)));
 		boolean chimeTick = (elapsedTicks % tickInterval == 0);
 
 		for (ServerPlayerEntity sp : server.getPlayerManager().getPlayerList()) {
-			COSMIC_BAR.addPlayer(sp);
 			ServerWorld pw = sp.getServerWorld();
 
 			if (chimeTick) {
@@ -265,21 +234,13 @@ public final class TimeOfTheWorldManager {
 				accelerateEnvironmentAround(pw, sp.getBlockPos(), 2.5F);
 				pw.playSound(null, sp.getBlockPos(), SoundEvents.BLOCK_AMETHYST_BLOCK_CHIME, SoundCategory.MASTER, 2.0F, 1.25F);
 			}
-			server.getPlayerManager().broadcast(
-					Text.literal("✦ 「TIME OF THE WORLD」 — Новая эпоха наступила! Все посевы и печи вокруг ускорены. ✦")
-							.formatted(Formatting.GOLD, Formatting.BOLD),
-					false
-			);
 			return;
 		}
 
 		// === РЕЖИМ 0: ПОЛНЫЙ ПЕРЕЗАПУСК ВСЕЛЕННОЙ В ДЕВСТВЕННО ЧИСТЫЙ МИР! ===
 		broadcastSync(server, false, VIRGIN_MORNING_TIME, true);
 
-		int[] stats = WorldVirginLedger.get(server).restoreEntireWorldToVirginState(server);
-		int restoredBlocks = stats[0];
-		int restoredNatives = stats[1];
-		int purgedArtificial = stats[2];
+		WorldVirginLedger.get(server).restoreEntireWorldToVirginState(server);
 
 		ServerWorld overworld = server.getOverworld();
 		for (ServerWorld sw : server.getWorlds()) {
@@ -316,19 +277,10 @@ public final class TimeOfTheWorldManager {
 			pw.playSound(null, sp.getBlockPos(), SoundEvents.BLOCK_BELL_RESONATE, SoundCategory.MASTER, 1.7F, 1.25F);
 			pw.spawnParticles(ParticleTypes.END_ROD, sp.getX(), sp.getY() + 1.1D, sp.getZ(), 65, 1.8D, 1.3D, 1.8D, 0.08D);
 		}
-
-		server.getPlayerManager().broadcast(
-				Text.literal("✦ 「MADE IN HEAVEN」 — МИР ПЕРЕЗАПУЩЕН В ДЕВСТВЕННО ЧИСТОЕ СОСТОЯНИЕ! ")
-						.formatted(Formatting.AQUA, Formatting.BOLD)
-						.append(Text.literal("(Блоков: " + restoredBlocks + " | Коренных существ на местах: " + restoredNatives + " | Стерто чужеродных: " + purgedArtificial + ")")
-								.formatted(Formatting.GOLD, Formatting.BOLD)),
-				false
-		);
 	}
 
 	public static void onPlayerJoin(ServerPlayerEntity player) {
 		if (active) {
-			COSMIC_BAR.addPlayer(player);
 			ServerPlayNetworking.send(player, new ModPayloads.TimeOfTheWorldSyncPayload(
 					true, initialTimeOfDay, elapsedTicks, TOTAL_ACCEL_TICKS, false
 			));

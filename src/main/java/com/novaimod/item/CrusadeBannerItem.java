@@ -51,7 +51,6 @@ public class CrusadeBannerItem extends Item {
 
 		if (WhiteCapEntity.isWearingClanHood(sp)) {
 			sp.damage(sw.getDamageSources().magic(), 4.0F);
-			sp.sendMessage(Text.literal("✝ Святая Хоругвь обжигает руки того, кто носит проклятый колпак КБК!!").formatted(Formatting.RED, Formatting.BOLD), true);
 			return TypedActionResult.fail(stack);
 		}
 
@@ -59,7 +58,6 @@ public class CrusadeBannerItem extends Item {
 			Box cmdBox = sp.getBoundingBox().expand(28.0D, 12.0D, 28.0D);
 			List<HolyOrderEntity> squad = sw.getEntitiesByClass(HolyOrderEntity.class, cmdBox, e -> e.isAlive() && e.isCommandedBy(sp));
 			if (squad.isEmpty()) {
-				sp.sendMessage(Text.literal("⚔ Рядом нет призванных вами рыцарей — нажмите обычный ПКМ, чтобы поднять Хоругвь и призвать отряд!").formatted(Formatting.YELLOW), true);
 				return TypedActionResult.success(stack, false);
 			}
 			boolean follow = true;
@@ -69,8 +67,8 @@ public class CrusadeBannerItem extends Item {
 			sw.playSound(null, sp.getBlockPos(), SoundEvents.BLOCK_BELL_USE, SoundCategory.PLAYERS, 1.0F, 1.3F);
 			sp.sendMessage(
 					Text.literal(follow
-							? "⚔ [Хоругвь Люче]: Отряд Ордена построен в колонну и идёт за вами!"
-							: "🛡 [Хоругвь Люче]: Отряд Ордена занял круговую оборону на этой позиции!").formatted(Formatting.GOLD, Formatting.BOLD),
+							? "⚔ Режим Хоругви: Отряд следует за вами"
+							: "🛡 Режим Хоругви: Отряд держит оборону").formatted(Formatting.GOLD, Formatting.BOLD),
 					true
 			);
 			return TypedActionResult.success(stack, false);

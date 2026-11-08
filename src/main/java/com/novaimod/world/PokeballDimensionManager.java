@@ -122,10 +122,6 @@ public final class PokeballDimensionManager {
 		destWorld.spawnParticles(ParticleTypes.END_ROD, destPos.x, destPos.y + 1.0D, destPos.z, 32, 0.5D, 0.7D, 0.5D, 0.08D);
 		destWorld.spawnParticles(ParticleTypes.FLAME, destPos.x, destPos.y + 0.8D, destPos.z, 14, 0.4D, 0.4D, 0.4D, 0.04D);
 
-		occupant.sendMessage(
-				Text.literal("⚪ Покебол открылся — вы снова снаружи!").formatted(Formatting.AQUA, Formatting.BOLD),
-				true
-		);
 		return true;
 	}
 
@@ -173,8 +169,6 @@ public final class PokeballDimensionManager {
 				player.teleport(hw, holder.getX() + 0.8D, holder.getY(), holder.getZ() + 0.8D, holder.getYaw(), 0.0F);
 				hw.playSound(null, holder.getBlockPos(), SoundEvents.ENTITY_ENDERMAN_TELEPORT, SoundCategory.PLAYERS, 1.0F, 1.25F);
 				hw.spawnParticles(ParticleTypes.END_ROD, player.getX(), player.getY() + 1.0D, player.getZ(), 28, 0.45D, 0.6D, 0.45D, 0.07D);
-				holder.sendMessage(Text.literal("⚪ " + player.getName().getString() + " сам выбрался из вашего Покебола!").formatted(Formatting.YELLOW), true);
-				player.sendMessage(Text.literal("⚪ Вы нажали кнопку изнутри и выпрыгнули из Покебола!").formatted(Formatting.GREEN, Formatting.BOLD), true);
 				return true;
 			}
 		}
@@ -194,7 +188,6 @@ public final class PokeballDimensionManager {
 		player.teleport(retWorld, mySession.returnX, mySession.returnY, mySession.returnZ, mySession.returnYaw, mySession.returnPitch);
 		retWorld.playSound(null, BlockPos.ofFloored(retPos), SoundEvents.ENTITY_ENDERMAN_TELEPORT, SoundCategory.PLAYERS, 1.0F, 1.25F);
 		retWorld.spawnParticles(ParticleTypes.END_ROD, retPos.x, retPos.y + 1.0D, retPos.z, 28, 0.45D, 0.6D, 0.45D, 0.07D);
-		player.sendMessage(Text.literal("⚪ Вы выбрались наружу из Покебола!").formatted(Formatting.GREEN, Formatting.BOLD), true);
 		return true;
 	}
 

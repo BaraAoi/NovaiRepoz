@@ -96,13 +96,6 @@ public class GateOfBabylonItem extends Item {
 			}
 			sw.playSound(null, sp.getBlockPos(), SoundEvents.BLOCK_BELL_RESONATE, SoundCategory.MASTER, 1.5F, 1.35F);
 			sw.playSound(null, sp.getBlockPos(), SoundEvents.BLOCK_AMETHYST_BLOCK_CHIME, SoundCategory.MASTER, 1.8F, 1.15F);
-			sp.sendMessage(
-					Text.literal(crown
-							? "⚜ ВРАТА ВАВИЛОНА: 32 золотых портала сомкнулись в Корону! [Реликвий в хранилище: " + storedRelics + "/54]"
-							: "⚜ ВРАТА ВАВИЛОНА: 18 врат и Цепи Энкиду активированы! [Реликвий в хранилище: " + storedRelics + "/54]")
-							.formatted(Formatting.GOLD, Formatting.BOLD),
-					true
-			);
 			sp.getItemCooldownManager().set(this, 24);
 		}
 		return TypedActionResult.success(stack, world.isClient());

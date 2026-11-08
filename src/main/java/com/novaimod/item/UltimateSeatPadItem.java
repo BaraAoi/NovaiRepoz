@@ -46,17 +46,7 @@ public class UltimateSeatPadItem extends Item {
 					stack.decrement(1);
 				}
 				world.playSound(null, sp.getBlockPos(), SoundEvents.ITEM_ARMOR_EQUIP_LEATHER.value(), SoundCategory.PLAYERS, 1.0F, 1.15F);
-				sp.sendMessage(
-						Text.literal("✦ Поджопник надет в секретный слот! (100% защита + полёт, на скине невидим)")
-								.formatted(Formatting.LIGHT_PURPLE, Formatting.BOLD),
-						true
-				);
 				return TypedActionResult.success(stack, false);
-			} else {
-				sp.sendMessage(
-						Text.literal("Поджопник уже надет в вашем слоте инвентаря!").formatted(Formatting.YELLOW),
-						true
-				);
 			}
 		}
 		return TypedActionResult.pass(stack);

@@ -132,11 +132,6 @@ public class ScaleRayItem extends Item {
 			applyEntityScale(sp, targetScale);
 			sw.spawnParticles(ParticleTypes.END_ROD, sp.getX(), sp.getBodyY(0.5D), sp.getZ(), 28, 0.5D, 0.7D, 0.5D, 0.12D);
 			sw.playSound(null, sp.getBlockPos(), SoundEvents.BLOCK_BEACON_POWER_SELECT, SoundCategory.PLAYERS, 1.4F, enlarge ? 0.6F : 1.85F);
-			sp.sendMessage(
-					Text.literal(String.format("✦ Ваш собственный масштаб: x%.2f!", targetScale))
-							.formatted(enlarge ? Formatting.GOLD : Formatting.LIGHT_PURPLE, Formatting.BOLD),
-					true
-			);
 			return;
 		}
 
@@ -157,11 +152,6 @@ public class ScaleRayItem extends Item {
 
 		if (hitTarget == null) {
 			sw.playSound(null, sp.getBlockPos(), SoundEvents.BLOCK_DISPENSER_FAIL, SoundCategory.PLAYERS, 0.9F, 1.5F);
-			sp.sendMessage(
-					Text.literal("Наведите луч на существо (или посмотрите вниз под ноги, чтобы изменить СВОЙ размер!)")
-							.formatted(Formatting.GRAY),
-					true
-			);
 			return;
 		}
 
@@ -173,13 +163,6 @@ public class ScaleRayItem extends Item {
 
 		sw.spawnParticles(ParticleTypes.REVERSE_PORTAL, hitTarget.getX(), hitTarget.getBodyY(0.5D), hitTarget.getZ(), 24, 0.5D, 0.6D, 0.5D, 0.15D);
 		sw.playSound(null, hitTarget.getBlockPos(), SoundEvents.ENTITY_ILLUSIONER_MIRROR_MOVE, SoundCategory.PLAYERS, 1.4F, enlarge ? 0.55F : 1.85F);
-		sp.sendMessage(
-				Text.literal("✦ ")
-						.formatted(Formatting.GOLD)
-						.append(hitTarget.getName().copy().formatted(Formatting.AQUA, Formatting.BOLD))
-						.append(Text.literal(String.format(" -> масштаб x%.2f!", nextScale)).formatted(enlarge ? Formatting.GOLD : Formatting.LIGHT_PURPLE, Formatting.BOLD)),
-				true
-		);
 	}
 
 	private void triggerTelekinesis(ServerWorld sw, ServerPlayerEntity sp) {
@@ -194,40 +177,25 @@ public class ScaleRayItem extends Item {
 				living.addCommandTag(TAG_THROWN_BOMB);
 				sw.playSound(null, sp.getBlockPos(), SoundEvents.ENTITY_WARDEN_SONIC_BOOM, SoundCategory.PLAYERS, 1.6F, 1.25F);
 				sw.spawnParticles(ParticleTypes.SONIC_BOOM, living.getX(), living.getBodyY(0.5D), living.getZ(), 1, 0.0D, 0.0D, 0.0D, 0.0D);
-				sp.sendMessage(
-						Text.literal("☄ КАТАПУЛЬТА ТЕЛЕКИНЕЗА: цель запущена как живой снаряд!")
-								.formatted(Formatting.GOLD, Formatting.BOLD),
-						true
-				);
 				return;
 			}
 		}
 
 		LivingEntity target = raycastLivingTarget(sw, sp, 64.0D);
 		if (target == null || target instanceof PlayerEntity) {
-			sp.sendMessage(Text.literal("Наведите прицел на любого моба для захвата телекинезом!").formatted(Formatting.YELLOW), true);
 			return;
 		}
 		HELD_BY_PLAYER.put(sp.getUuid(), target.getUuid());
 		target.setNoGravity(true);
 		sw.playSound(null, sp.getBlockPos(), SoundEvents.BLOCK_BEACON_ACTIVATE, SoundCategory.PLAYERS, 1.3F, 1.6F);
-		sp.sendMessage(
-				Text.literal("✋ Захвачено телекинезом: ")
-						.formatted(Formatting.LIGHT_PURPLE)
-						.append(target.getName().copy().formatted(Formatting.AQUA, Formatting.BOLD))
-						.append(Text.literal(" (повторный ПКМ — мощный бросок!)").formatted(Formatting.GRAY)),
-				true
-		);
 	}
 
 	private void resetAllScales(ServerWorld sw, ServerPlayerEntity sp) {
 		applyEntityScale(sp, 1.0D);
 		Box area = sp.getBoundingBox().expand(64.0D);
-		int count = 0;
 		for (LivingEntity e : sw.getEntitiesByClass(LivingEntity.class, area, LivingEntity::isAlive)) {
 			if (Math.abs(getCurrentScale(e) - 1.0D) > 0.01D) {
 				applyEntityScale(e, 1.0D);
-				count++;
 			}
 		}
 		UUID rel = HELD_BY_PLAYER.remove(sp.getUuid());
@@ -238,11 +206,6 @@ public class ScaleRayItem extends Item {
 			}
 		}
 		sw.playSound(null, sp.getBlockPos(), SoundEvents.BLOCK_BEACON_DEACTIVATE, SoundCategory.PLAYERS, 1.3F, 1.35F);
-		sp.sendMessage(
-				Text.literal("✦ Масштаб игрока и существ вокруг (" + count + ") сброшен к норме x1.0!")
-						.formatted(Formatting.GREEN, Formatting.BOLD),
-				true
-		);
 	}
 
 	public static double getCurrentScale(LivingEntity entity) {

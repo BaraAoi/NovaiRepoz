@@ -84,10 +84,6 @@ public class SupernovaGenesisItem extends Item {
 			}
 
 			sw.playSound(null, sp.getBlockPos(), SoundEvents.BLOCK_BEACON_ACTIVATE, SoundCategory.MASTER, 1.6F, 0.65F);
-			sp.sendMessage(Text.literal(mode == 0
-					? "✹ КАТАКЛИЗМ СВЕРХНОВОЙ: Гипергигант разрывает гравитацию над целью!"
-					: "✹ КУЗНИЦА СВЕРХНОВОЙ: Запущен рентген-карьер руд и синтез алмазов!")
-					.formatted(Formatting.GOLD, Formatting.BOLD), true);
 			sp.getItemCooldownManager().set(this, 30);
 		}
 		return TypedActionResult.success(stack, world.isClient());

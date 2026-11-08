@@ -210,9 +210,6 @@ public class PartyDollEntity extends Entity {
 			ModPersistentState state = ModPersistentState.get(sw.getServer());
 			if (!this.isActive()) {
 				if (state.isApocalypseDollUsed()) {
-					Text msg = Text.literal("По каким-то причинам она не работает...").formatted(Formatting.RED);
-					player.sendMessage(msg, false);
-					player.sendMessage(msg, true);
 					sw.playSound(null, this.getBlockPos(), SoundEvents.BLOCK_DISPENSER_FAIL, SoundCategory.PLAYERS, 0.9F, 0.75F);
 					return ActionResult.CONSUME;
 				}
@@ -238,20 +235,11 @@ public class PartyDollEntity extends Entity {
 				sw.spawnParticles(ParticleTypes.HEART, this.getX(), this.getY() + 1.05D, this.getZ(), 8, 0.45D, 0.25D, 0.45D, 0.02D);
 				sw.spawnParticles(ParticleTypes.NOTE, this.getX(), this.getY() + 1.15D, this.getZ(), 10, 0.55D, 0.3D, 0.55D, 0.35D);
 			}
-			player.sendMessage(
-					Text.literal("♫ Кукла включена! Все вокруг замерли на месте и плющатся под бит Toyota Yaris!")
-							.formatted(Formatting.LIGHT_PURPLE, Formatting.BOLD),
-					true
-			);
 		} else {
 			if (this.getWorld() instanceof ServerWorld sw) {
 				stopYarisLoopIfNoOtherActive(sw);
 			}
 			this.getWorld().playSound(null, this.getBlockPos(), SoundEvents.BLOCK_NOTE_BLOCK_BASS.value(), SoundCategory.RECORDS, 0.7F, 0.75F);
-			player.sendMessage(
-					Text.literal("Кукла выключена — все вернулись в обычный режим.").formatted(Formatting.YELLOW),
-					true
-			);
 		}
 		return ActionResult.CONSUME;
 	}

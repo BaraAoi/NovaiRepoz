@@ -66,14 +66,12 @@ public class BureaucracySealItem extends Item {
 		}
 
 		Box area = sp.getBoundingBox().expand(9.0D, 4.5D, 9.0D);
-		int stampedCount = 0;
 		for (LivingEntity target : sw.getEntitiesByClass(LivingEntity.class, area, e -> e != sp && e.isAlive())) {
 			if (target instanceof ModNpcEntity npc) {
 				NpcRole role = npc.getNpcRole();
 				if (role == NpcRole.VOLODYA || role == NpcRole.COLLECTOR || role == NpcRole.MASTER_OF_SPORTS || role == NpcRole.ARMENIAN_BRIGADE || role == NpcRole.OMON) {
 					if (!"bureau_guard".equals(npc.getVariant()) && !"cage".equals(npc.getVariant())) {
 						npc.forceFleeFromSeal();
-						stampedCount++;
 					}
 				}
 				continue;
@@ -85,15 +83,9 @@ public class BureaucracySealItem extends Item {
 				target.velocityModified = true;
 				target.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, 100, 4));
 				target.addStatusEffect(new StatusEffectInstance(StatusEffects.WEAKNESS, 100, 1));
-				stampedCount++;
 			}
 		}
 
-		sp.sendMessage(
-				Text.literal("📕 ШТАМП «ОТКАЗАНО В ТРЁХ ЭКЗЕМПЛЯРАХ!» Поражено целей: " + stampedCount)
-						.formatted(Formatting.RED, Formatting.BOLD),
-				true
-		);
 		return TypedActionResult.success(stack, false);
 	}
 

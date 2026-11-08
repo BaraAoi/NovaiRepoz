@@ -114,11 +114,6 @@ public class AstralGateItem extends Item {
 		sw.spawnEntity(inv);
 		sw.playSound(null, sp.getX(), sp.getY(), sp.getZ(), SoundEvents.BLOCK_BEACON_DEACTIVATE, SoundCategory.PLAYERS, 2.0F, 0.65F);
 		sw.spawnParticles(ParticleTypes.REVERSE_PORTAL, sp.getX(), sp.getY() + 1.0D, sp.getZ(), 80, 3.0D, 1.2D, 3.0D, 0.25D);
-		sp.sendMessage(
-				Text.literal("🌌 ГРАВИТАЦИЯ ОТМЕНЕНА: все враги вознесены перед ударом о твердь! 🌌")
-						.formatted(Formatting.LIGHT_PURPLE, Formatting.BOLD),
-				true
-		);
 	}
 
 	private void executeAstralStarfall(ServerWorld sw, ServerPlayerEntity sp) {
@@ -170,11 +165,6 @@ public class AstralGateItem extends Item {
 		}
 
 		sw.playSound(null, sp.getX(), sp.getY(), sp.getZ(), SoundEvents.ENTITY_ENDER_DRAGON_GROWL, SoundCategory.PLAYERS, 1.8F, 1.35F);
-		sp.sendMessage(
-				Text.literal("☄ ЗВЁЗДНЫЙ ДОЖДЬ ЭНДА: 36 астральных комет обрушились с небес! ☄")
-						.formatted(Formatting.LIGHT_PURPLE, Formatting.BOLD),
-				true
-		);
 	}
 
 	private void executeSupernovaPurge(ServerWorld sw, ServerPlayerEntity sp) {
@@ -225,11 +215,6 @@ public class AstralGateItem extends Item {
 
 		sw.spawnParticles(ParticleTypes.FLASH, sp.getX(), sp.getY() + 1.5D, sp.getZ(), 2, 0.0D, 0.0D, 0.0D, 0.0D);
 		sw.playSound(null, sp.getX(), sp.getY(), sp.getZ(), SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, SoundCategory.PLAYERS, 1.8F, 1.15F);
-		sp.sendMessage(
-				Text.literal("☀ СВЕРХНОВАЯ ЗАЧИСТКА: испепелено врагов — " + smited + ", светила обращены! ☀")
-						.formatted(Formatting.GOLD, Formatting.BOLD),
-				true
-		);
 	}
 
 	private void executeSonicBlink(ServerWorld sw, ServerPlayerEntity sp) {
@@ -263,12 +248,7 @@ public class AstralGateItem extends Item {
 		sp.fallDistance = 0.0F;
 		sp.teleport(sw, dest.x, dest.y, dest.z, sp.getYaw(), sp.getPitch());
 		sw.playSound(null, dest.x, dest.y, dest.z, SoundEvents.ENTITY_WARDEN_SONIC_BOOM, SoundCategory.PLAYERS, 1.8F, 1.25F);
-		sw.spawnParticles(ParticleTypes.REVERSE_PORTAL, dest.x, dest.y + 1.0D, dest.z, 45, 0.6D, 1.0D, 0.6D, 0.18D);
-		sp.sendMessage(
-				Text.literal("⚡ КВАНТОВЫЙ СКАЧОК: мгновенный прорыв пространства! ⚡")
-						.formatted(Formatting.AQUA, Formatting.BOLD),
-				true
-		);
+		sw.spawnParticles(ParticleTypes.REVERSE_PORTAL, dest.x, dest.y + 1.0D, dest.z, 45, 0.6D, 1.0D, dest.z - dest.z + 0.6D, 0.18D);
 	}
 
 	@Override

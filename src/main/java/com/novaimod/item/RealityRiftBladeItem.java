@@ -118,11 +118,6 @@ public class RealityRiftBladeItem extends Item {
 				sw.spawnEntity(dome);
 				sw.playSound(null, sp.getX(), sp.getY(), sp.getZ(), SoundEvents.BLOCK_RESPAWN_ANCHOR_SET_SPAWN, SoundCategory.PLAYERS, 1.8F, 1.45F);
 				sw.playSound(null, sp.getX(), sp.getY(), sp.getZ(), SoundEvents.ENTITY_WARDEN_HEARTBEAT, SoundCategory.PLAYERS, 2.0F, 0.85F);
-				sp.sendMessage(
-						Text.literal("✦ ПРИГОВОР ПРОСТРАНСТВА: реальность застыла перед расколом! ✦")
-								.formatted(Formatting.LIGHT_PURPLE, Formatting.BOLD),
-						true
-				);
 			} else {
 				// ПКМ: Пространственный Разрез (3D-серп, летящий сквозь стены на 85 блоков!)
 				Vec3d look = sp.getRotationVec(1.0F).normalize();

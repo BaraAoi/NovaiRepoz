@@ -28,8 +28,7 @@ import net.minecraft.world.World;
  * Интерактивный вращающийся «Компас Белых Колпаков» (`novaimod:white_cap_compass`):
  * - Стрелка плавно крутится и пружинит в реальном времени (32 кадра + физика инерции стрелки),
  *   всегда указывая СТРОГО на ближайшую Главную Цитадель Белых Колпаков (`white_cap_citadel`)!
- * - ПКМ — показывает точное расстояние в блоках до Главной Цитадели Белых Колпаков.
- * - Имеет крафт на верстаке!
+ * - Никаких лишних надписей и показаний дистанции над полоской ХП.
  */
 public class WhiteCapCompassItem extends Item {
 	public static final String CITADEL_TYPE = "white_cap_citadel";
@@ -111,40 +110,22 @@ public class WhiteCapCompassItem extends Item {
 	public TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {
 		ItemStack stack = user.getStackInHand(hand);
 		if (world.isClient()) {
-			return TypedActionResult.success(stack, true);
+			return TypedActionResult.pass(stack);
 		}
 		if (!(user instanceof ServerPlayerEntity sp) || !(world instanceof ServerWorld sw)) {
 			return TypedActionResult.pass(stack);
 		}
 
-		if (sw.getRegistryKey() != World.OVERWORLD) {
-			sp.sendMessage(Text.literal("🧭 Главная Цитадель Белых Колпаков находится только в Верхнем мире!").formatted(Formatting.YELLOW), true);
-			return TypedActionResult.success(stack, false);
+		if (sw.getRegistryKey() == World.OVERWORLD) {
+			ModPersistentState.StructureEntry best = refreshTrackedTarget(stack, sw, sp);
+			if (best != null && sp.isCreative() && sp.getPitch() > 68.0F) {
+				BlockPos dest = best.pos;
+				sp.teleport(sw, dest.getX() + 0.5D, dest.getY() + 1.0D, dest.getZ() + 15.5D, 180.0F, 0.0F);
+				sw.playSound(null, sp.getBlockPos(), SoundEvents.ENTITY_ENDERMAN_TELEPORT, SoundCategory.PLAYERS, 1.0F, 1.15F);
+				return TypedActionResult.success(stack, false);
+			}
 		}
-
-		ModPersistentState.StructureEntry best = refreshTrackedTarget(stack, sw, sp);
-		if (best == null) {
-			sp.sendMessage(Text.literal("🧭 Поблизости ещё не обнаружена «" + CITADEL_TITLE + "» — пройдитесь немного по суше, и стрелка захватит цель!").formatted(Formatting.YELLOW), true);
-			return TypedActionResult.success(stack, false);
-		}
-
-		BlockPos dest = best.pos;
-
-		if (sp.isCreative() && sp.getPitch() > 68.0F) {
-			sp.teleport(sw, dest.getX() + 0.5D, dest.getY() + 1.0D, dest.getZ() + 15.5D, 180.0F, 0.0F);
-			sw.playSound(null, sp.getBlockPos(), SoundEvents.ENTITY_ENDERMAN_TELEPORT, SoundCategory.PLAYERS, 1.0F, 1.15F);
-			sp.sendMessage(Text.literal("🧭 Перенос ко входу: " + CITADEL_TITLE + "!").formatted(Formatting.GREEN, Formatting.BOLD), true);
-			return TypedActionResult.success(stack, false);
-		}
-
-		int dist = (int) Math.round(Math.sqrt(dest.getSquaredDistance(sp.getBlockPos())));
-		sw.playSound(null, sp.getBlockPos(), SoundEvents.ITEM_LODESTONE_COMPASS_LOCK, SoundCategory.PLAYERS, 0.85F, 1.2F);
-		sp.sendMessage(
-				Text.literal("🧭 Стрелка ведёт к «" + CITADEL_TITLE + "» — осталось ").formatted(Formatting.WHITE)
-						.append(Text.literal(dist + " бл.").formatted(Formatting.AQUA, Formatting.BOLD)),
-				true
-		);
-		return TypedActionResult.success(stack, false);
+		return TypedActionResult.pass(stack);
 	}
 
 	@Override
@@ -152,7 +133,6 @@ public class WhiteCapCompassItem extends Item {
 		tooltip.add(Text.literal("Интерактивный компас (вращающаяся стрелка!)").formatted(Formatting.AQUA, Formatting.BOLD));
 		tooltip.add(Text.literal("• Всегда ведёт строго в: ").formatted(Formatting.GRAY)
 				.append(Text.literal(CITADEL_TITLE).formatted(Formatting.WHITE, Formatting.BOLD)));
-		tooltip.add(Text.literal("• ПКМ — показать точное расстояние до Главной Цитадели").formatted(Formatting.GREEN));
 		tooltip.add(Text.literal("• Крафт: 4 железа, 3 белой шерсти, 1 редстоун и 1 обычный компас").formatted(Formatting.DARK_GRAY));
 	}
 }

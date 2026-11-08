@@ -498,9 +498,6 @@ public class WhiteCapEntity extends PathAwareEntity {
 			if (isWearingClanHood(sp)) {
 				playerCloseTicks.remove(uuid);
 				if (warningCooldown <= 0 && this.squaredDistanceTo(sp) < 49.0D && sw.random.nextInt(14) == 0) {
-					String line = BROTHER_GREETINGS[sw.random.nextInt(BROTHER_GREETINGS.length)];
-					sp.sendMessage(Text.literal("[Белый Колпак] ").formatted(Formatting.AQUA, Formatting.BOLD)
-							.append(Text.literal(line).formatted(Formatting.WHITE)), true);
 					warningCooldown = 220;
 				}
 				continue;
@@ -548,9 +545,6 @@ public class WhiteCapEntity extends PathAwareEntity {
 					alertNearbyClanAgainst(sp);
 				} else if (warningCooldown <= 0) {
 					this.getLookControl().lookAt(sp, 35.0F, 35.0F);
-					String warn = SUSPICIOUS_WARNINGS[sw.random.nextInt(SUSPICIOUS_WARNINGS.length)];
-					sp.sendMessage(Text.literal("[Белый Колпак] ").formatted(Formatting.WHITE, Formatting.BOLD)
-							.append(Text.literal(warn).formatted(Formatting.GRAY)), true);
 					sw.playSound(null, this.getBlockPos(), SoundEvents.ENTITY_VINDICATOR_AMBIENT, SoundCategory.HOSTILE, 0.9F, 0.8F);
 					warningCooldown = 90;
 				}
@@ -558,9 +552,6 @@ public class WhiteCapEntity extends PathAwareEntity {
 				playerCloseTicks.put(uuid, Math.max(0, playerCloseTicks.getOrDefault(uuid, 0) - 5));
 				if (warningCooldown <= 0 && sw.random.nextInt(8) == 0) {
 					this.getLookControl().lookAt(sp, 30.0F, 30.0F);
-					String warn = SUSPICIOUS_WARNINGS[sw.random.nextInt(SUSPICIOUS_WARNINGS.length)];
-					sp.sendMessage(Text.literal("[Белый Колпак] ").formatted(Formatting.WHITE, Formatting.BOLD)
-							.append(Text.literal(warn).formatted(Formatting.GRAY)), true);
 					warningCooldown = 180;
 				}
 			} else {
@@ -630,14 +621,7 @@ public class WhiteCapEntity extends PathAwareEntity {
 	}
 
 	private void shoutBattleCryNearby(ServerWorld sw) {
-		boolean fightingChurch = this.getTarget() instanceof HolyOrderEntity || this.getTarget() instanceof LuceEntity;
-		String cry = fightingChurch
-				? "Святоши Ордена Люче! Залить их кресты и витражи чумной кислотой!! Слава КБК!!"
-				: BATTLE_CRIES[sw.random.nextInt(BATTLE_CRIES.length)];
-		for (ServerPlayerEntity sp : sw.getEntitiesByClass(ServerPlayerEntity.class, this.getBoundingBox().expand(24.0D), LivingEntity::isAlive)) {
-			sp.sendMessage(Text.literal("[Клан Белых Колпаков] ").formatted(Formatting.AQUA, Formatting.BOLD)
-					.append(Text.literal(cry).formatted(Formatting.WHITE)), true);
-		}
+		sw.playSound(null, this.getBlockPos(), SoundEvents.ENTITY_VINDICATOR_CELEBRATE, SoundCategory.HOSTILE, 0.9F, 0.85F);
 	}
 
 	private void maintainHomePatrol() {

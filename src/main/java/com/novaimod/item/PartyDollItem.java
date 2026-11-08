@@ -39,11 +39,6 @@ public class PartyDollItem extends Item {
 		if (!world.isClient() && world instanceof ServerWorld sw && ApocalypseEventManager.isActive(sw.getServer())) {
 			ModPersistentState state = ModPersistentState.get(sw.getServer());
 			if (state.isApocalypseDollUsed()) {
-				if (player != null) {
-					Text msg = Text.literal("По каким-то причинам она не работает...").formatted(Formatting.RED);
-					player.sendMessage(msg, false);
-					player.sendMessage(msg, true);
-				}
 				sw.playSound(null, context.getBlockPos(), SoundEvents.BLOCK_DISPENSER_FAIL, SoundCategory.PLAYERS, 0.9F, 0.75F);
 				return ActionResult.FAIL;
 			}

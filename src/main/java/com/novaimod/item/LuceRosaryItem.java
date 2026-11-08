@@ -53,7 +53,6 @@ public class LuceRosaryItem extends Item {
 			sp.addStatusEffect(new StatusEffectInstance(StatusEffects.REGENERATION, 20 * 8, 1));
 			sw.playSound(null, sp.getBlockPos(), SoundEvents.BLOCK_AMETHYST_BLOCK_CHIME, SoundCategory.PLAYERS, 1.2F, 1.3F);
 			sw.spawnParticles(ParticleTypes.END_ROD, sp.getX(), sp.getBodyY(0.6D), sp.getZ(), 24, 0.4D, 0.5D, 0.4D, 0.05D);
-			sp.sendMessage(Text.literal("📿 Миссионерские Чётки Люче сотворили чудо исцеления! (+4 сердца)").formatted(Formatting.YELLOW, Formatting.BOLD), true);
 		}
 
 		// В руках отпугивает фантомов и криперов
@@ -81,11 +80,9 @@ public class LuceRosaryItem extends Item {
 		sw.spawnParticles(ParticleTypes.END_ROD, sp.getX(), sp.getBodyY(0.6D), sp.getZ(), 20, 0.5D, 0.5D, 0.5D, 0.04D);
 
 		Box area = sp.getBoundingBox().expand(18.0D);
-		int calmed = 0;
 		for (LuceEntity luce : sw.getEntitiesByClass(LuceEntity.class, area, LuceEntity::isAlive)) {
 			if (luce.isWrathMode()) {
 				luce.calmDownWithRosary(sp);
-				calmed++;
 			}
 		}
 		for (LivingEntity undead : sw.getEntitiesByClass(LivingEntity.class, sp.getBoundingBox().expand(9.0D), e -> e.isAlive() && e.getType().isIn(EntityTypeTags.UNDEAD))) {
@@ -93,9 +90,6 @@ public class LuceRosaryItem extends Item {
 			undead.addStatusEffect(new StatusEffectInstance(StatusEffects.WEAKNESS, 120, 1));
 		}
 
-		if (calmed == 0) {
-			sp.sendMessage(Text.literal("📿 Святая молитва Чёток отогнала тьму и нежить вокруг!").formatted(Formatting.YELLOW), true);
-		}
 		return TypedActionResult.success(stack, false);
 	}
 

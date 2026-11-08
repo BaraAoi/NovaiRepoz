@@ -95,7 +95,6 @@ public class MirrorPrismItem extends Item {
 			}
 			sw.playSound(null, sp.getBlockPos(), SoundEvents.BLOCK_AMETHYST_BLOCK_CHIME, SoundCategory.MASTER, 2.0F, 1.35F);
 			sw.playSound(null, sp.getBlockPos(), SoundEvents.BLOCK_BEACON_POWER_SELECT, SoundCategory.MASTER, 1.5F, 1.55F);
-			sp.sendMessage(Text.literal("💠 Купол Зеркального Измерения развёрнут на 20 сек.: взрывы и снаряды отражаются!").formatted(Formatting.LIGHT_PURPLE, Formatting.BOLD), true);
 			sp.getItemCooldownManager().set(this, 30);
 		}
 		return TypedActionResult.success(stack, world.isClient());
@@ -132,9 +131,6 @@ public class MirrorPrismItem extends Item {
 					sw.spawnParticles(ParticleTypes.FLASH, cx, original.getBodyY(0.5D), cz, 1, 0.0D, 0.0D, 0.0D, 0.0D);
 					sw.spawnParticles(ParticleTypes.END_ROD, cx, original.getBodyY(0.5D), cz, 32, 0.5D, 0.7D, 0.5D, 0.08D);
 					sw.playSound(null, original.getBlockPos(), SoundEvents.BLOCK_AMETHYST_CLUSTER_BREAK, SoundCategory.MASTER, 1.6F, 1.35F);
-					sp.sendMessage(Text.literal("💠 Призма преломила реальность и создала зеркального двойника: ")
-							.formatted(Formatting.AQUA)
-							.append(original.getDisplayName().copy().formatted(Formatting.LIGHT_PURPLE, Formatting.BOLD)), true);
 					return;
 				}
 			}
@@ -155,7 +151,6 @@ public class MirrorPrismItem extends Item {
 			}
 		}
 		sw.playSound(null, sp.getBlockPos(), SoundEvents.BLOCK_AMETHYST_BLOCK_CHIME, SoundCategory.MASTER, 1.8F, 1.25F);
-		sp.sendMessage(Text.literal("💠 Из зеркальных граней вышли 2 Призматических Стража!").formatted(Formatting.AQUA, Formatting.BOLD), true);
 	}
 
 	@Override

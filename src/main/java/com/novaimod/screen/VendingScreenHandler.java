@@ -100,12 +100,6 @@ public class VendingScreenHandler extends ScreenHandler {
 					0.9F,
 					1.2F
 			);
-			player.sendMessage(
-					Text.literal("[Торговый аппарат] Принято товаров на сумму +")
-							.formatted(Formatting.GREEN)
-							.append(Text.literal(totalEarned + " ₽").formatted(Formatting.GOLD, Formatting.BOLD)),
-					true
-			);
 			this.sendContentUpdates();
 		}
 	}

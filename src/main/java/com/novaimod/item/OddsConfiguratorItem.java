@@ -28,10 +28,6 @@ public class OddsConfiguratorItem extends Item {
 		ItemStack stack = user.getStackInHand(hand);
 		if (!world.isClient() && user instanceof ServerPlayerEntity serverPlayer) {
 			if (!serverPlayer.isCreative() && !serverPlayer.hasPermissionLevel(2)) {
-				serverPlayer.sendMessage(
-						Text.literal("Этот предмет доступен только в творческом режиме!").formatted(Formatting.RED),
-						true
-				);
 				return TypedActionResult.fail(stack);
 			}
 			ModServerNetworking.openOddsConfigScreen(serverPlayer);

@@ -459,11 +459,6 @@ public final class MfoArmorSetManager {
 		}
 		if (transformedAny) {
 			player.getServerWorld().playSound(null, player.getBlockPos(), SoundEvents.BLOCK_BEACON_ACTIVATE, SoundCategory.PLAYERS, 0.85F, 1.4F);
-			player.sendMessage(
-					Text.literal("⚡ Сет Лучника (4/4): Ваш Лук Взыскателя трансформировался в УБЕРГАН! (Клавиша R / Shift+ПКМ — смена режима)")
-							.formatted(Formatting.AQUA, Formatting.BOLD),
-					true
-			);
 		}
 	}
 
@@ -486,11 +481,6 @@ public final class MfoArmorSetManager {
 		if (revertedAny) {
 			player.stopUsingItem();
 			player.getServerWorld().playSound(null, player.getBlockPos(), SoundEvents.BLOCK_BEACON_DEACTIVATE, SoundCategory.PLAYERS, 0.8F, 1.2F);
-			player.sendMessage(
-					Text.literal("Сет Лучника не полон — Уберган вернулся в форму Лука Взыскателя.")
-							.formatted(Formatting.YELLOW),
-					true
-			);
 		}
 	}
 

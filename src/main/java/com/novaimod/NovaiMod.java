@@ -232,16 +232,12 @@ public class NovaiMod implements ModInitializer {
 					acc.lastSmallTitheTick = now;
 					acc.holyOrderRep = Math.min(500, acc.holyOrderRep + 2);
 					state.markDirty();
-					sp.sendMessage(Text.literal("🐶 Сантино с аппетитом съел угощение! (+2 Доверия Церкви Люче -> " + acc.holyOrderRep + "/100)").formatted(Formatting.AQUA), true);
-				} else {
-					sp.sendMessage(Text.literal("🐶 Сантино радостно виляет хвостиком!").formatted(Formatting.AQUA), true);
 				}
 				return ActionResult.SUCCESS;
 			}
 
 			sw.spawnParticles(ParticleTypes.HEART, santino.getX(), santino.getBodyY(0.75D), santino.getZ(), 3, 0.25D, 0.25D, 0.25D, 0.02D);
 			sw.playSound(null, santino.getBlockPos(), SoundEvents.ENTITY_WOLF_AMBIENT, SoundCategory.NEUTRAL, 0.9F, 1.35F);
-			sp.sendMessage(Text.literal("🐶 Вы погладили пёсика Сантино! Он преданно охраняет Святую Люче от еретиков КБК.").formatted(Formatting.AQUA), true);
 			return ActionResult.SUCCESS;
 		});
 
@@ -275,12 +271,6 @@ public class NovaiMod implements ModInitializer {
 						acc.kbkKilledForChurch += killPoints;
 						acc.holyOrderRep = Math.min(500, acc.holyOrderRep + repGain);
 						state.markDirty();
-						rewarded.sendMessage(
-								Text.literal("✝ [Война с КБК]: Еретик повержен! (+").formatted(Formatting.GOLD, Formatting.BOLD)
-										.append(Text.literal(repGain + " Доверия Церкви [" + acc.holyOrderRep + "/100] | КБК: " + acc.kbkKilledForChurch + "/5").formatted(Formatting.GREEN))
-										.append(Text.literal(")").formatted(Formatting.GOLD)),
-								true
-						);
 					}
 				}
 			}
@@ -288,20 +278,13 @@ public class NovaiMod implements ModInitializer {
 
 		PlayerBlockBreakEvents.BEFORE.register((world, player, pos, state, blockEntity) -> {
 			if (world instanceof ServerWorld sw && PokeballDimensionManager.isProtectedPokeballShell(sw, pos)) {
-				if (player instanceof ServerPlayerEntity sp) {
-					sp.sendMessage(Text.literal("Оболочка Покебола неразрушима! Нажмите ПКМ по белой кнопке Покебола для выхода.").formatted(Formatting.RED), true);
-				}
 				return false;
 			}
 			if (world instanceof ServerWorld sw && player instanceof ServerPlayerEntity sp
 					&& BureaucraticHellManager.isProtectedMinistryBlock(sw, sp, pos)) {
-				sp.sendMessage(Text.literal("Стены Министерства неразрушимы без Справки Формы №404-СНОС!").formatted(Formatting.RED), true);
 				return false;
 			}
 			if (!world.isClient() && DetentionManager.isPlayerRestrictedFromBreaking(player)) {
-				if (player instanceof ServerPlayerEntity sp) {
-					sp.sendMessage(Text.literal("Здесь нельзя ломать блоки!").formatted(Formatting.RED), true);
-				}
 				return false;
 			}
 			if (world instanceof ServerWorld sw && !player.isCreative() && !player.isSpectator()
@@ -310,9 +293,6 @@ public class NovaiMod implements ModInitializer {
 				if (!guards.isEmpty()) {
 					guards.get(0).markPlayerEnemy(player, 600);
 					guards.get(0).alertNearbyClanAgainst(player);
-					if (player instanceof ServerPlayerEntity sp) {
-						sp.sendMessage(Text.literal("[Белый Колпак] Эй, мародёр! Не смей ломать лагерь Белых Колпаков!!").formatted(Formatting.RED, Formatting.BOLD), true);
-					}
 				}
 			}
 			if (world instanceof ServerWorld sw && !player.isCreative() && !player.isSpectator()) {
@@ -325,9 +305,6 @@ public class NovaiMod implements ModInitializer {
 						pState.markDirty();
 						churchGuards.get(0).markPlayerEnemy(player, 500);
 						churchGuards.get(0).alertNearbyChurchAgainst(player);
-						if (player instanceof ServerPlayerEntity sp) {
-							sp.sendMessage(Text.literal("✝ [Орден Люче] Святотатство! Не смей разрушать храм Церкви Света!!").formatted(Formatting.RED, Formatting.BOLD), true);
-						}
 					}
 				}
 			}

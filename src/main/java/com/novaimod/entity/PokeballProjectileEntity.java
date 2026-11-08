@@ -119,9 +119,6 @@ public class PokeballProjectileEntity extends ThrownItemEntity {
 		// 2. ПОПАДАНИЕ В ЛЮБОЕ ЖИВОЕ СУЩЕСТВО (Кошкодевочка, житель, животное, моб, NPC и т.д.)
 		if (living instanceof EnderDragonEntity || living instanceof WitherEntity
 				|| (living instanceof HolyOrderEntity ho && ho.getRank() == HolyOrderEntity.RANK_CARDINAL)) {
-			if (this.getOwner() instanceof ServerPlayerEntity sp) {
-				sp.sendMessage(Text.literal("🔴 Священный Босс отразил Покебол!").formatted(Formatting.RED), true);
-			}
 			resolved = true;
 			giveOrDropBall(sw, this.getOwner(), this.getPos(), ball);
 			this.discard();
@@ -144,9 +141,6 @@ public class PokeballProjectileEntity extends ThrownItemEntity {
 			boolean oathDone = (this.getOwner() instanceof ServerPlayerEntity sp)
 					&& com.novaimod.data.ModPersistentState.get(sw.getServer()).getAccount(sp.getUuid()).lucePilgrimOathComplete;
 			if (!oathDone) {
-				if (this.getOwner() instanceof ServerPlayerEntity sp) {
-					sp.sendMessage(Text.literal("🐶 Сантино верен только Люче! Заслужите сперва её Обет Паломника.").formatted(Formatting.YELLOW), true);
-				}
 				resolved = true;
 				giveOrDropBall(sw, this.getOwner(), this.getPos(), ball);
 				this.discard();
@@ -177,13 +171,6 @@ public class PokeballProjectileEntity extends ThrownItemEntity {
 
 			living.discard();
 
-			if (this.getOwner() instanceof ServerPlayerEntity sp) {
-				sp.sendMessage(
-						Text.literal("🔴 Покебол поймал: ").formatted(Formatting.RED, Formatting.BOLD)
-								.append(Text.literal(displayName + " (" + hp + "/" + maxHp + " ХП)").formatted(Formatting.GREEN, Formatting.BOLD)),
-						true
-				);
-			}
 			giveOrDropBall(sw, this.getOwner(), capturePos, ball);
 			this.discard();
 		}
@@ -221,11 +208,8 @@ public class PokeballProjectileEntity extends ThrownItemEntity {
 
 		if ("player".equals(type)) {
 			int pocketId = PokeballItem.getPocketId(ball);
-			boolean released = PokeballDimensionManager.releasePlayerAt(sw.getServer(), pocketId, sw, pos);
+			PokeballDimensionManager.releasePlayerAt(sw.getServer(), pocketId, sw, pos);
 			PokeballItem.clearPokeballData(ball);
-			if (!released && owner instanceof ServerPlayerEntity sp) {
-				sp.sendMessage(Text.literal("⚪ Игрок уже покинул этот Покебол!").formatted(Formatting.YELLOW), true);
-			}
 			if (!(owner instanceof PlayerEntity p && p.getAbilities().creativeMode)) {
 				giveOrDropBall(sw, owner, pos, ball);
 			}
@@ -234,7 +218,6 @@ public class PokeballProjectileEntity extends ThrownItemEntity {
 
 		if ("mob".equals(type)) {
 			NbtCompound mobNbt = PokeballItem.getMobNbt(ball);
-			String name = PokeballItem.getCapturedName(ball);
 			if (mobNbt != null && !mobNbt.isEmpty()) {
 				float yaw = owner != null ? owner.getYaw() + 180.0F : sw.random.nextFloat() * 360.0F;
 				Entity restored = EntityType.loadEntityWithPassengers(mobNbt, sw, e -> {
@@ -249,13 +232,6 @@ public class PokeballProjectileEntity extends ThrownItemEntity {
 					sw.spawnNewEntityAndPassengers(restored);
 					sw.playSound(null, BlockPos.ofFloored(pos), SoundEvents.ENTITY_ENDERMAN_TELEPORT, SoundCategory.PLAYERS, 1.0F, 1.3F);
 					sw.spawnParticles(ParticleTypes.END_ROD, pos.x, pos.y + 0.7D, pos.z, 24, 0.35D, 0.45D, 0.35D, 0.07D);
-					if (owner instanceof ServerPlayerEntity sp) {
-						sp.sendMessage(
-								Text.literal("⚪ Вперёд, ").formatted(Formatting.WHITE, Formatting.BOLD)
-										.append(Text.literal(name + "!").formatted(Formatting.AQUA, Formatting.BOLD)),
-								true
-						);
-					}
 				}
 			}
 			PokeballItem.clearPokeballData(ball);

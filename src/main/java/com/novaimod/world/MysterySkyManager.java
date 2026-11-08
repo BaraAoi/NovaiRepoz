@@ -428,10 +428,6 @@ public final class MysterySkyManager {
 				player.teleport(overworld, s.centerX + 0.5D, s.baseY + 2.0D, s.centerZ + 1.5D, 180.0F, 0.0F);
 				player.setVelocity(0.0D, 0.0D, 0.0D);
 				overworld.playSound(null, player.getBlockPos(), SoundEvents.ENTITY_ENDERMAN_TELEPORT, SoundCategory.PLAYERS, 0.8F, 0.7F);
-				player.sendMessage(
-						Text.literal("От автомата не убежать... Сделай свой выбор.").formatted(Formatting.DARK_RED, Formatting.BOLD),
-						true
-				);
 			}
 		}
 

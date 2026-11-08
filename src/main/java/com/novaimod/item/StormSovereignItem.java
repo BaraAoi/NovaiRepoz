@@ -111,24 +111,20 @@ public class StormSovereignItem extends Item {
 					sw.spawnEntity(vortex);
 				}
 				sw.playSound(null, sp.getBlockPos(), SoundEvents.ITEM_TRIDENT_THUNDER.value(), SoundCategory.MASTER, 1.8F, 0.9F);
-				sp.sendMessage(Text.literal("⚡ Над целью бушует 3D Вихрь Тысячи Молний!").formatted(Formatting.AQUA, Formatting.BOLD), true);
 				sp.getItemCooldownManager().set(this, 24);
 			} else {
 				// Электромагнитный Пылесос Лута и Опыта с 80 блоков!
 				Box magnetBox = sp.getBoundingBox().expand(80.0D);
-				int pulledItems = 0;
 				for (ItemEntity ie : sw.getEntitiesByClass(ItemEntity.class, magnetBox, Entity::isAlive)) {
 					sw.spawnParticles(ParticleTypes.ELECTRIC_SPARK, ie.getX(), ie.getY() + 0.2D, ie.getZ(), 6, 0.15D, 0.15D, 0.15D, 0.08D);
 					ie.setPickupDelay(0);
 					ie.refreshPositionAndAngles(sp.getX(), sp.getY() + 0.5D, sp.getZ(), 0.0F, 0.0F);
-					pulledItems += ie.getStack().getCount();
 				}
 				for (ExperienceOrbEntity xp : sw.getEntitiesByClass(ExperienceOrbEntity.class, magnetBox, Entity::isAlive)) {
 					xp.refreshPositionAndAngles(sp.getX(), sp.getY() + 0.5D, sp.getZ(), 0.0F, 0.0F);
 				}
 				sw.playSound(null, sp.getBlockPos(), SoundEvents.BLOCK_BEACON_POWER_SELECT, SoundCategory.PLAYERS, 1.5F, 1.65F);
 				sw.spawnParticles(ParticleTypes.ELECTRIC_SPARK, sp.getX(), sp.getBodyY(0.5D), sp.getZ(), 35, 0.8D, 0.8D, 0.8D, 0.2D);
-				sp.sendMessage(Text.literal("⚡ Электромагнитный импульс притянул к вам предметов: " + pulledItems + "!").formatted(Formatting.AQUA, Formatting.BOLD), true);
 				sp.getItemCooldownManager().set(this, 15);
 			}
 		}

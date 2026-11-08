@@ -251,7 +251,7 @@ public class CatgirlEntity extends PathAwareEntity {
 			sp.sendMessage(
 					Text.literal("[" + name + "] ").formatted(Formatting.LIGHT_PURPLE, Formatting.BOLD)
 							.append(Text.literal(thanks).formatted(Formatting.GREEN)),
-					true
+					false
 			);
 			return ActionResult.SUCCESS;
 		}
@@ -269,7 +269,7 @@ public class CatgirlEntity extends PathAwareEntity {
 			sp.sendMessage(
 					Text.literal("[" + name + "] ").formatted(Formatting.LIGHT_PURPLE, Formatting.BOLD)
 							.append(Text.literal("Хорошо! Я побегу следом за тобой! Мяу~").formatted(Formatting.AQUA)),
-					true
+					false
 			);
 		} else if (nextMode == MODE_HOME) {
 			this.homePos = this.getBlockPos();
@@ -283,7 +283,7 @@ public class CatgirlEntity extends PathAwareEntity {
 			sp.sendMessage(
 					Text.literal("[" + name + "] ").formatted(Formatting.LIGHT_PURPLE, Formatting.BOLD)
 							.append(Text.literal("Присяду здесь и подожду тебя!").formatted(Formatting.YELLOW)),
-					true
+					false
 			);
 		}
 		return ActionResult.SUCCESS;
@@ -314,12 +314,6 @@ public class CatgirlEntity extends PathAwareEntity {
 				if (!nearby.isEmpty()) {
 					ServerPlayerEntity p = nearby.get(0);
 					this.getLookControl().lookAt(p, 35.0F, 35.0F);
-					String plea = CAGE_PLEA_LINES[sw.random.nextInt(CAGE_PLEA_LINES.length)];
-					p.sendMessage(
-							Text.literal("[" + VARIANT_NAMES[getVariantId()] + " в клетке] ").formatted(Formatting.AQUA, Formatting.BOLD)
-									.append(Text.literal(plea).formatted(Formatting.WHITE)),
-							true
-					);
 					sw.playSound(null, this.getBlockPos(), SoundEvents.ENTITY_CAT_BEG_FOR_FOOD, SoundCategory.NEUTRAL, 0.85F, 1.2F);
 					speechCooldown = 140;
 				}
@@ -383,12 +377,6 @@ public class CatgirlEntity extends PathAwareEntity {
 					if (owner instanceof ServerPlayerEntity sp && this.squaredDistanceTo(sp) <= 196.0D) {
 						sp.addStatusEffect(new StatusEffectInstance(StatusEffects.REGENERATION, 120, 0, true, false, true));
 						if (speechCooldown <= 0 && sw.random.nextInt(8) == 0) {
-							String line = HOME_HAPPY_LINES[sw.random.nextInt(HOME_HAPPY_LINES.length)];
-							sp.sendMessage(
-									Text.literal("[" + VARIANT_NAMES[getVariantId()] + "] ").formatted(Formatting.LIGHT_PURPLE, Formatting.BOLD)
-											.append(Text.literal(line).formatted(Formatting.WHITE)),
-									true
-							);
 							sw.playSound(null, this.getBlockPos(), SoundEvents.ENTITY_CAT_PURR, SoundCategory.NEUTRAL, 0.9F, 1.15F);
 							speechCooldown = 360;
 						}

@@ -512,7 +512,7 @@ public class ModNpcEntity extends PathAwareEntity {
 			if (!player.getInventory().insertStack(slip)) {
 				player.dropItem(slip, false);
 			}
-			player.sendMessage(Text.literal("📄 Выдан «Талон-Направление №Ж-994»!").formatted(Formatting.GREEN), true);
+			player.sendMessage(Text.literal("📄 Выдан «Талон-Направление №Ж-994»!").formatted(Formatting.GREEN), false);
 		}
 	}
 
@@ -636,7 +636,7 @@ public class ModNpcEntity extends PathAwareEntity {
 		player.getServerWorld().playSound(null, player.getBlockPos(), SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.NEUTRAL, 1.0F, 1.0F);
 		player.sendMessage(
 				Text.literal("Получен предмет: Жетон возрождения!").formatted(Formatting.GREEN, Formatting.BOLD),
-				true
+				false
 		);
 	}
 
@@ -941,11 +941,6 @@ public class ModNpcEntity extends PathAwareEntity {
 				hunted.velocityModified = true;
 				hunted.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, 50, 1));
 				sw.playSound(null, hunted.getBlockPos(), SoundEvents.BLOCK_ANVIL_PLACE, SoundCategory.HOSTILE, 0.85F, 0.6F);
-				hunted.sendMessage(
-						Text.literal("📜 [Ревизор Архива]: ШТРАФ ЗА ШУМ МЕЖДУ СТЕЛЛАЖАМИ! (Присядьте на Shift за полками, чтобы спрятаться!)")
-								.formatted(Formatting.DARK_RED, Formatting.BOLD),
-						true
-				);
 			}
 		} else if (this.anchorPos != null && this.lifeTicks % 55 == 0) {
 			double rx = this.anchorPos.getX() + (this.getRandom().nextInt(25) - 12);
@@ -1078,13 +1073,6 @@ public class ModNpcEntity extends PathAwareEntity {
 				&& !source.isOf(DamageTypes.GENERIC_KILL)) {
 			if (!this.getWorld().isClient()) {
 				this.getWorld().playSound(null, this.getBlockPos(), SoundEvents.BLOCK_ANVIL_LAND, SoundCategory.HOSTILE, 0.9F, 1.5F);
-				if (source.getAttacker() instanceof ServerPlayerEntity sp) {
-					sp.sendMessage(
-							Text.literal("🚫 [АКТ №000]: Урон отклонён! У вас нет Справки на убийство монстра Склада в 3 экземплярах!")
-									.formatted(Formatting.RED, Formatting.BOLD),
-							true
-					);
-				}
 			}
 			return false;
 		}

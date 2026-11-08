@@ -77,7 +77,6 @@ public class AuroraWeaverItem extends Item {
 			}
 			sw.playSound(null, sp.getBlockPos(), SoundEvents.BLOCK_AMETHYST_BLOCK_CHIME, SoundCategory.MASTER, 2.0F, 0.85F);
 			sw.playSound(null, sp.getBlockPos(), SoundEvents.BLOCK_BEACON_ACTIVATE, SoundCategory.MASTER, 1.2F, 1.45F);
-			sp.sendMessage(Text.literal("🌌 Над миром раскинулись занавеси Северного Сияния и Звездопада!").formatted(Formatting.AQUA, Formatting.BOLD), true);
 			sp.getItemCooldownManager().set(this, 24);
 		}
 		return TypedActionResult.success(stack, world.isClient());

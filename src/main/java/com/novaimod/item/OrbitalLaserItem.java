@@ -102,11 +102,6 @@ public class OrbitalLaserItem extends Item {
 			sw.spawnEntity(laser);
 
 			sw.playSound(null, sp.getX(), sp.getY(), sp.getZ(), SoundEvents.BLOCK_BEACON_ACTIVATE, SoundCategory.PLAYERS, 2.0F, 1.55F);
-			sp.sendMessage(
-					Text.literal("☄ ОРБИТАЛЬНЫЙ СПУТНИК НАВЕДЁН: сведение плазменного луча! ☄")
-							.formatted(Formatting.AQUA, Formatting.BOLD),
-					true
-			);
 			user.swingHand(hand, true);
 		}
 		return TypedActionResult.success(stack, world.isClient());

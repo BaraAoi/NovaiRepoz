@@ -101,7 +101,6 @@ public class LuceStaffItem extends SwordItem {
 					e.setOnFireFor(4);
 				}
 			}
-			sp.sendMessage(Text.literal("✝ Благословение Паломника очистило и укрепило всех союзников!").formatted(Formatting.GOLD, Formatting.BOLD), true);
 			return TypedActionResult.success(stack, false);
 		}
 

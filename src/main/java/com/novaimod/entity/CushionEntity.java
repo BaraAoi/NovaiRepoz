@@ -104,7 +104,6 @@ public class CushionEntity extends Entity {
 			return false;
 		}
 		if (this.hasPassengers()) {
-			player.sendMessage(Text.literal("Эта подушка уже занята!").formatted(Formatting.YELLOW), true);
 			return false;
 		}
 		player.setYaw(this.getCushionYaw());
@@ -112,11 +111,6 @@ public class CushionEntity extends Entity {
 		this.getWorld().playSound(null, this.getBlockPos(), SoundEvents.BLOCK_WOOL_STEP, SoundCategory.BLOCKS, 0.85F, 1.05F);
 		if (isInJacuzziWater()) {
 			this.getWorld().playSound(null, this.getBlockPos(), SoundEvents.BLOCK_BUBBLE_COLUMN_UPWARDS_AMBIENT, SoundCategory.BLOCKS, 0.85F, 1.0F);
-			player.sendMessage(
-					Text.literal("♨ Вы устроились на мягкой подушке в джакузи! (Shift — встать)")
-							.formatted(Formatting.AQUA),
-					true
-			);
 		}
 		return true;
 	}

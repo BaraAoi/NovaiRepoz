@@ -99,7 +99,6 @@ public class GenesisCubeItem extends Item {
 			}
 
 			sw.playSound(null, targetPos, SoundEvents.BLOCK_BEACON_ACTIVATE, SoundCategory.MASTER, 1.5F, 1.35F);
-			sp.sendMessage(Text.literal("🏛 Куб Творца возводит: " + blueprintTitle(bp)).formatted(Formatting.AQUA, Formatting.BOLD), true);
 			sp.getItemCooldownManager().set(this, 25);
 		}
 		return TypedActionResult.success(stack, world.isClient());

@@ -182,7 +182,6 @@ public final class BureaucraticHellManager {
 		if (!isInBureaucraticHell(world)) {
 			if (holdingKeyOrSeal && state.getBlock() instanceof DoorBlock) {
 				if (DetentionManager.isPlayerRestrictedFromBreaking(player)) {
-					player.sendMessage(Text.literal("Сначала отбудьте наказание!").formatted(Formatting.RED), true);
 					return true;
 				}
 				enterBureaucraticHellViaDoor(player);
@@ -288,10 +287,6 @@ public final class BureaucraticHellManager {
 		player.teleport(destWorld, dx, dy, dz, yaw, 0.0F);
 		teleportFollowingCatgirls(player, fromWorld, destWorld, dx, dy, dz);
 		destWorld.playSound(null, BlockPos.ofFloored(dx, dy, dz), SoundEvents.BLOCK_WOODEN_DOOR_CLOSE, SoundCategory.PLAYERS, 1.0F, 1.0F);
-		player.sendMessage(
-				Text.literal("🚪 Вы вышли через дверь обратно в обычный мир!").formatted(Formatting.GREEN, Formatting.BOLD),
-				true
-		);
 	}
 
 	private static void rideElevatorToFloor(ServerPlayerEntity player, int floorIndex) {
@@ -309,17 +304,8 @@ public final class BureaucraticHellManager {
 
 		if (targetY == FLOOR_5_Y) {
 			world.playSound(null, BlockPos.ofFloored(dx, dy, dz), SoundEvents.BLOCK_IRON_TRAPDOOR_OPEN, SoundCategory.BLOCKS, 1.0F, 0.55F);
-			player.sendMessage(
-					Text.literal("🕸 Лифт со скрежетом остановился... " + FLOOR_NAMES[floorIndex] + " (воздух полон вековой пыли!)")
-							.formatted(Formatting.GRAY, Formatting.ITALIC),
-					true
-			);
 		} else {
 			world.playSound(null, BlockPos.ofFloored(dx, dy, dz), SoundEvents.BLOCK_NOTE_BLOCK_CHIME.value(), SoundCategory.BLOCKS, 1.1F, 1.25F);
-			player.sendMessage(
-					Text.literal("🔔 ДИНЬ! " + FLOOR_NAMES[floorIndex]).formatted(Formatting.YELLOW, Formatting.BOLD),
-					true
-			);
 		}
 	}
 

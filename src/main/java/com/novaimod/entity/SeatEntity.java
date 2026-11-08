@@ -95,7 +95,6 @@ public class SeatEntity extends Entity {
 		}
 		Box checkBox = new Box(pos).expand(0.2D);
 		if (!world.getEntitiesByClass(SeatEntity.class, checkBox, Entity::hasPassengers).isEmpty()) {
-			player.sendMessage(Text.literal("Это место в джакузи уже занято!").formatted(Formatting.YELLOW), true);
 			return;
 		}
 
@@ -108,10 +107,5 @@ public class SeatEntity extends Entity {
 		world.spawnEntity(seat);
 		player.startRiding(seat, true);
 		world.playSound(null, pos, SoundEvents.BLOCK_BUBBLE_COLUMN_UPWARDS_AMBIENT, SoundCategory.BLOCKS, 0.9F, 1.0F);
-		player.sendMessage(
-				Text.literal("♨ Вы устроились в горячем джакузи с пузырьками! (Shift — встать)")
-						.formatted(Formatting.AQUA),
-				true
-		);
 	}
 }

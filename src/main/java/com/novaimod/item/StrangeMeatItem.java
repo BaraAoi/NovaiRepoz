@@ -37,27 +37,12 @@ public class StrangeMeatItem extends Item {
 			if (roll == 0) {
 				player.addStatusEffect(new StatusEffectInstance(StatusEffects.REGENERATION, 200, 1));
 				player.addStatusEffect(new StatusEffectInstance(StatusEffects.SPEED, 300, 1));
-				player.sendMessage(
-						Text.literal("Мясо оказалось на удивление сочным — но что это был за привкус?!")
-								.formatted(Formatting.GOLD, Formatting.ITALIC),
-						true
-				);
 			} else if (roll == 1) {
 				player.addStatusEffect(new StatusEffectInstance(StatusEffects.STRENGTH, 260, 0));
 				player.addStatusEffect(new StatusEffectInstance(StatusEffects.GLOWING, 160, 0));
-				player.sendMessage(
-						Text.literal("После странного стейка вы буквально начали светиться в темноте...")
-								.formatted(Formatting.YELLOW, Formatting.ITALIC),
-						true
-				);
 			} else {
 				player.addStatusEffect(new StatusEffectInstance(StatusEffects.NAUSEA, 90, 0));
 				player.addStatusEffect(new StatusEffectInstance(StatusEffects.ABSORPTION, 400, 1));
-				player.sendMessage(
-						Text.literal("Повар явно что-то не договаривает про рецепт этого мяса...")
-								.formatted(Formatting.LIGHT_PURPLE, Formatting.ITALIC),
-						true
-				);
 			}
 		}
 		return result;

@@ -367,12 +367,12 @@ public class LuceEntity extends PathAwareEntity {
 			this.dataTracker.set(COMPANION_MODE, next);
 			if (next == MODE_GUARD_HOME) {
 				this.homePos = this.getBlockPos().toImmutable();
-				sp.sendMessage(Text.literal("✝ [Люче]: Я буду хранить этот дом и часовню от нечисти и лазутчиков КБК!").formatted(Formatting.GREEN), true);
+				sp.sendMessage(Text.literal("✝ [Люче]: Я буду хранить этот дом и часовню от нечисти и лазутчиков КБК!").formatted(Formatting.GREEN), false);
 			} else if (next == MODE_FOLLOW) {
-				sp.sendMessage(Text.literal("✝ [Люче]: В путь, брат во Свете! Идём крушить нежить и еретиков КБК вместе с Сантино!").formatted(Formatting.AQUA), true);
+				sp.sendMessage(Text.literal("✝ [Люче]: В путь, брат во Свете! Идём крушить нежить и еретиков КБК вместе с Сантино!").formatted(Formatting.AQUA), false);
 			} else {
 				this.getNavigation().stop();
-				sp.sendMessage(Text.literal("✝ [Люче]: Я останусь здесь и помолюсь о твоей победе~").formatted(Formatting.YELLOW), true);
+				sp.sendMessage(Text.literal("✝ [Люче]: Я останусь здесь и помолюсь о твоей победе~").formatted(Formatting.YELLOW), false);
 			}
 			return ActionResult.SUCCESS;
 		}
@@ -442,7 +442,7 @@ public class LuceEntity extends PathAwareEntity {
 			if (repGain <= 3) {
 				long now = sw.getTime();
 				if (now - acc.lastSmallTitheTick < 1200L) {
-					sp.sendMessage(Text.literal("✝ [Люче]: Хлеб и свечи принимаются раз в минуту! Принеси изумруды, золото или трофеи поверженных еретиков КБК!").formatted(Formatting.YELLOW), true);
+					sp.sendMessage(Text.literal("✝ [Люче]: Хлеб и свечи принимаются раз в минуту! Принеси изумруды, золото или трофеи поверженных еретиков КБК!").formatted(Formatting.YELLOW), false);
 					return ActionResult.SUCCESS;
 				}
 				acc.lastSmallTitheTick = now;
