@@ -116,14 +116,41 @@ public class PokeballProjectileEntity extends ThrownItemEntity {
 		}
 
 		// 2. ПОПАДАНИЕ В ЛЮБОЕ ЖИВОЕ СУЩЕСТВО (Кошкодевочка, житель, животное, моб, NPC и т.д.)
-		if (living instanceof EnderDragonEntity || living instanceof WitherEntity) {
+		if (living instanceof EnderDragonEntity || living instanceof WitherEntity
+				|| (living instanceof HolyOrderEntity ho && ho.getRank() == HolyOrderEntity.RANK_CARDINAL)) {
 			if (this.getOwner() instanceof ServerPlayerEntity sp) {
-				sp.sendMessage(Text.literal("🔴 Босс слишком огромен для стандартного Покебола!").formatted(Formatting.RED), true);
+				sp.sendMessage(Text.literal("🔴 Священный Босс отразил Покебол!").formatted(Formatting.RED), true);
 			}
 			resolved = true;
 			giveOrDropBall(sw, this.getOwner(), this.getPos(), ball);
 			this.discard();
 			return;
+		}
+
+		if (living instanceof LuceEntity luce && (luce.isWrathMode()
+				|| !(this.getOwner() instanceof PlayerEntity p && luce.isFriendOf(p)))) {
+			if (this.getOwner() instanceof ServerPlayerEntity sp) {
+				sp.sendMessage(Text.literal("✝ [Люче]: Сначала пройди 3 Испытания Веры и принеси Обет Паломника — в Покебол без доверия я не пойду!").formatted(Formatting.GOLD, Formatting.BOLD), false);
+			}
+			sw.playSound(null, living.getBlockPos(), SoundEvents.BLOCK_BELL_USE, SoundCategory.NEUTRAL, 1.0F, 1.25F);
+			resolved = true;
+			giveOrDropBall(sw, this.getOwner(), this.getPos(), ball);
+			this.discard();
+			return;
+		}
+
+		if (living instanceof net.minecraft.entity.passive.WolfEntity w && w.getCommandTags().contains(LuceEntity.TAG_SANTINO_DOG)) {
+			boolean oathDone = (this.getOwner() instanceof ServerPlayerEntity sp)
+					&& com.novaimod.data.ModPersistentState.get(sw.getServer()).getAccount(sp.getUuid()).lucePilgrimOathComplete;
+			if (!oathDone) {
+				if (this.getOwner() instanceof ServerPlayerEntity sp) {
+					sp.sendMessage(Text.literal("🐶 Сантино верен только Люче! Заслужите сперва её Обет Паломника.").formatted(Formatting.YELLOW), true);
+				}
+				resolved = true;
+				giveOrDropBall(sw, this.getOwner(), this.getPos(), ball);
+				this.discard();
+				return;
+			}
 		}
 
 		NbtCompound mobNbt = new NbtCompound();

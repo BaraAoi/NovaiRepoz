@@ -9,6 +9,7 @@ import com.novaimod.ai.evolution.MobEvolutionManager;
 import com.novaimod.data.ModPersistentState;
 import com.novaimod.economy.CasinoGamesManager;
 import com.novaimod.entity.CushionEntity;
+import com.novaimod.entity.HolyOrderEntity;
 import com.novaimod.entity.LuceEntity;
 import com.novaimod.entity.PartyDollEntity;
 import com.novaimod.entity.WhiteCapEntity;
@@ -43,13 +44,19 @@ import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
+import net.fabricmc.fabric.api.event.player.UseEntityCallback;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.passive.WolfEntity;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.particle.ParticleTypes;
+import net.minecraft.registry.tag.ItemTags;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.sound.SoundCategory;
+import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Formatting;
@@ -159,12 +166,75 @@ public class NovaiMod implements ModInitializer {
 				}
 			}
 			if (entity instanceof WolfEntity wolf
-					&& wolf.getCommandTags().contains(LuceEntity.TAG_SANTINO_DOG)
-					&& source.getAttacker() instanceof ServerPlayerEntity offender
-					&& !offender.isCreative()) {
-				LuceEntity.onSantinoHurt(wolf, offender);
+					&& wolf.getCommandTags().contains(LuceEntity.TAG_SANTINO_DOG)) {
+				// Сантино и Церковь Люче никогда не наносят дружественного урона друг другу
+				if (source.getAttacker() instanceof LuceEntity || source.getAttacker() instanceof HolyOrderEntity) {
+					return false;
+				}
+				if (source.getAttacker() instanceof ServerPlayerEntity offender && !offender.isCreative()) {
+					LuceEntity.onSantinoHurt(wolf, offender);
+				}
+			}
+			if ((entity instanceof LuceEntity || entity instanceof HolyOrderEntity)
+					&& source.getAttacker() instanceof WolfEntity w
+					&& w.getCommandTags().contains(LuceEntity.TAG_SANTINO_DOG)) {
+				return false;
 			}
 			return true;
+		});
+
+		// Защита пёсика Сантино от приручения косточкой и усаживания чужими игроками!
+		UseEntityCallback.EVENT.register((player, world, hand, entity, hitResult) -> {
+			if (hand != Hand.MAIN_HAND || player.isSpectator()) {
+				return ActionResult.PASS;
+			}
+			if (!(entity instanceof WolfEntity santino) || !santino.getCommandTags().contains(LuceEntity.TAG_SANTINO_DOG)) {
+				return ActionResult.PASS;
+			}
+			if (world.isClient()) {
+				return ActionResult.SUCCESS;
+			}
+			if (!(world instanceof ServerWorld sw) || !(player instanceof ServerPlayerEntity sp)) {
+				return ActionResult.SUCCESS;
+			}
+
+			ItemStack held = sp.getStackInHand(hand);
+			if (held.isOf(Items.BONE)) {
+				sw.playSound(null, santino.getBlockPos(), SoundEvents.ENTITY_WOLF_AMBIENT, SoundCategory.NEUTRAL, 1.0F, 1.2F);
+				sp.sendMessage(
+						Text.literal("🐶 [Сантино]: Гав-гав! (Сантино верен ТОЛЬКО Святой Люче — приручить его косточкой или натравить на Люче невозможно!)")
+								.formatted(Formatting.YELLOW, Formatting.BOLD),
+						false
+				);
+				return ActionResult.SUCCESS;
+			}
+
+			if (held.isIn(ItemTags.MEAT)) {
+				if (!sp.isInCreativeMode()) {
+					held.decrement(1);
+				}
+				santino.heal(8.0F);
+				sw.spawnParticles(ParticleTypes.HEART, santino.getX(), santino.getBodyY(0.8D), santino.getZ(), 6, 0.3D, 0.3D, 0.3D, 0.02D);
+				sw.playSound(null, santino.getBlockPos(), SoundEvents.ENTITY_WOLF_AMBIENT, SoundCategory.NEUTRAL, 1.0F, 1.3F);
+
+				ModPersistentState state = ModPersistentState.get(sw.getServer());
+				ModPersistentState.PlayerFinanceData acc = state.getAccount(sp.getUuid());
+				long now = sw.getTime();
+				if (now - acc.lastSmallTitheTick >= 600L && acc.holyOrderRep >= 0) {
+					acc.lastSmallTitheTick = now;
+					acc.holyOrderRep = Math.min(500, acc.holyOrderRep + 2);
+					state.markDirty();
+					sp.sendMessage(Text.literal("🐶 Сантино с аппетитом съел угощение! (+2 Доверия Церкви Люче -> " + acc.holyOrderRep + "/100)").formatted(Formatting.AQUA), true);
+				} else {
+					sp.sendMessage(Text.literal("🐶 Сантино радостно виляет хвостиком!").formatted(Formatting.AQUA), true);
+				}
+				return ActionResult.SUCCESS;
+			}
+
+			sw.spawnParticles(ParticleTypes.HEART, santino.getX(), santino.getBodyY(0.75D), santino.getZ(), 3, 0.25D, 0.25D, 0.25D, 0.02D);
+			sw.playSound(null, santino.getBlockPos(), SoundEvents.ENTITY_WOLF_AMBIENT, SoundCategory.NEUTRAL, 0.9F, 1.35F);
+			sp.sendMessage(Text.literal("🐶 Вы погладили пёсика Сантино! Он преданно охраняет Святую Люче от еретиков КБК.").formatted(Formatting.AQUA), true);
+			return ActionResult.SUCCESS;
 		});
 
 		ServerLivingEntityEvents.AFTER_DEATH.register((entity, damageSource) -> {
@@ -173,6 +243,38 @@ public class NovaiMod implements ModInitializer {
 				ApocalypseEventManager.onPlayerDeath(deadPlayer);
 			} else {
 				MobEvolutionManager.onMobDeath(entity);
+				// Награда Церкви Люче за истребление вражеской фракции «Клан Белых Колпаков» (КБК)!
+				if (entity instanceof WhiteCapEntity deadKbk && entity.getWorld() instanceof ServerWorld sw) {
+					ServerPlayerEntity rewarded = null;
+					if (damageSource.getAttacker() instanceof ServerPlayerEntity killer && !WhiteCapEntity.isWearingClanHood(killer)) {
+						rewarded = killer;
+					} else if (damageSource.getAttacker() instanceof HolyOrderEntity || damageSource.getAttacker() instanceof LuceEntity) {
+						var helpers = sw.getEntitiesByClass(
+								ServerPlayerEntity.class,
+								deadKbk.getBoundingBox().expand(22.0D),
+								p -> p.isAlive() && !p.isSpectator() && !WhiteCapEntity.isWearingClanHood(p)
+						);
+						if (!helpers.isEmpty()) {
+							rewarded = helpers.get(0);
+						}
+					}
+					if (rewarded != null) {
+						boolean boss = deadKbk.getRank() == WhiteCapEntity.RANK_GRAND_MASTER;
+						int killPoints = boss ? 5 : 1;
+						int repGain = boss ? 60 : 12;
+						ModPersistentState state = ModPersistentState.get(sw.getServer());
+						ModPersistentState.PlayerFinanceData acc = state.getAccount(rewarded.getUuid());
+						acc.kbkKilledForChurch += killPoints;
+						acc.holyOrderRep = Math.min(500, acc.holyOrderRep + repGain);
+						state.markDirty();
+						rewarded.sendMessage(
+								Text.literal("✝ [Война с КБК]: Еретик повержен! (+").formatted(Formatting.GOLD, Formatting.BOLD)
+										.append(Text.literal(repGain + " Доверия Церкви [" + acc.holyOrderRep + "/100] | КБК: " + acc.kbkKilledForChurch + "/5").formatted(Formatting.GREEN))
+										.append(Text.literal(")").formatted(Formatting.GOLD)),
+								true
+						);
+					}
+				}
 			}
 		});
 
@@ -202,6 +304,22 @@ public class NovaiMod implements ModInitializer {
 					guards.get(0).alertNearbyClanAgainst(player);
 					if (player instanceof ServerPlayerEntity sp) {
 						sp.sendMessage(Text.literal("[Белый Колпак] Эй, мародёр! Не смей ломать лагерь Белых Колпаков!!").formatted(Formatting.RED, Formatting.BOLD), true);
+					}
+				}
+			}
+			if (world instanceof ServerWorld sw && !player.isCreative() && !player.isSpectator()) {
+				var churchGuards = sw.getEntitiesByClass(HolyOrderEntity.class, new net.minecraft.util.math.Box(pos).expand(14.0D), LivingEntity::isAlive);
+				if (!churchGuards.isEmpty() && !churchGuards.get(0).isCommandedBy(player)) {
+					ModPersistentState state = ModPersistentState.get(sw.getServer());
+					ModPersistentState.PlayerFinanceData acc = state.getAccount(player.getUuid());
+					if (!acc.lucePilgrimOathComplete) {
+						acc.holyOrderRep = Math.max(-500, acc.holyOrderRep - 10);
+						state.markDirty();
+						churchGuards.get(0).markPlayerEnemy(player, 500);
+						churchGuards.get(0).alertNearbyChurchAgainst(player);
+						if (player instanceof ServerPlayerEntity sp) {
+							sp.sendMessage(Text.literal("✝ [Орден Люче] Святотатство! Не смей разрушать храм Церкви Света!!").formatted(Formatting.RED, Formatting.BOLD), true);
+						}
 					}
 				}
 			}
@@ -293,6 +411,14 @@ public class NovaiMod implements ModInitializer {
 												LuceWorldManager.buildLuceShrine(world, pos);
 												ModPersistentState.get(world.getServer()).recordStructure("luce_shrine", world.getRegistryKey().getValue().toString(), pos);
 											}
+											case "cathedral", "luce_cathedral" -> {
+												LuceWorldManager.buildLuceCathedral(world, pos);
+												ModPersistentState.get(world.getServer()).recordStructure("luce_cathedral", world.getRegistryKey().getValue().toString(), pos);
+											}
+											case "abbey", "luce_abbey" -> {
+												LuceWorldManager.buildLuceAbbeyOutpost(world, pos);
+												ModPersistentState.get(world.getServer()).recordStructure("luce_abbey", world.getRegistryKey().getValue().toString(), pos);
+											}
 											default -> ModStructureGenerator.buildBiomeCasino(world, pos, "plains");
 										}
 										ctx.getSource().sendFeedback(() -> Text.literal("Построено заведение: " + type + " на " + pos.toShortString()).formatted(Formatting.GREEN), true);
@@ -317,6 +443,12 @@ public class NovaiMod implements ModInitializer {
 							.then(CommandManager.literal("bureaucracy").executes(ctx -> {
 								ServerPlayerEntity p = ctx.getSource().getPlayerOrThrow();
 								BureaucraticHellManager.enterBureaucraticHellViaDoor(p);
+								return 1;
+							}))
+							.then(CommandManager.literal("faith").executes(ctx -> {
+								ServerPlayerEntity p = ctx.getSource().getPlayerOrThrow();
+								ModPersistentState.PlayerFinanceData acc = ModPersistentState.get(p.getServer()).getAccount(p.getUuid());
+								ctx.getSource().sendFeedback(() -> Text.literal("✝ Репутация Церкви Люче: " + acc.holyOrderRep + "/100 | Побеждено КБК: " + acc.kbkKilledForChurch + "/5 | Обет Люче: " + (acc.lucePilgrimOathComplete ? "ПРИНЯТ" : "НЕТ")).formatted(Formatting.GOLD), false);
 								return 1;
 							}))
 			);

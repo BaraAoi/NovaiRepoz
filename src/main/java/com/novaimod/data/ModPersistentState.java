@@ -82,6 +82,12 @@ public class ModPersistentState extends PersistentState {
 		public float preBureauYaw = 0.0F;
 		public long lastCafeteriaRationDay = -1L;
 
+		// === v4.2.0: РЕПУТАЦИЯ ЦЕРКВИ ЛЮЧЕ И ВОЙНА С КБК ===
+		public int holyOrderRep = 0;
+		public int kbkKilledForChurch = 0;
+		public boolean lucePilgrimOathComplete = false;
+		public long lastSmallTitheTick = -24000L;
+
 		// Плавное развитие мобов (прогресс игрока и учёт смертей от конкретных типов мобов)
 		public long ticksLivedInWorld = 0L;
 		public int highestGearScore = 0;
@@ -134,6 +140,10 @@ public class ModPersistentState extends PersistentState {
 			tag.putDouble("preBureauZ", preBureauZ);
 			tag.putFloat("preBureauYaw", preBureauYaw);
 			tag.putLong("lastCafeteriaRationDay", lastCafeteriaRationDay);
+			tag.putInt("holyOrderRep", holyOrderRep);
+			tag.putInt("kbkKilledForChurch", kbkKilledForChurch);
+			tag.putBoolean("lucePilgrimOathComplete", lucePilgrimOathComplete);
+			tag.putLong("lastSmallTitheTick", lastSmallTitheTick);
 
 			tag.putLong("ticksLivedInWorld", ticksLivedInWorld);
 			tag.putInt("highestGearScore", highestGearScore);
@@ -201,6 +211,10 @@ public class ModPersistentState extends PersistentState {
 			d.preBureauZ = tag.getDouble("preBureauZ");
 			d.preBureauYaw = tag.getFloat("preBureauYaw");
 			d.lastCafeteriaRationDay = tag.contains("lastCafeteriaRationDay") ? tag.getLong("lastCafeteriaRationDay") : -1L;
+			d.holyOrderRep = tag.getInt("holyOrderRep");
+			d.kbkKilledForChurch = tag.getInt("kbkKilledForChurch");
+			d.lucePilgrimOathComplete = tag.getBoolean("lucePilgrimOathComplete");
+			d.lastSmallTitheTick = tag.contains("lastSmallTitheTick") ? tag.getLong("lastSmallTitheTick") : -24000L;
 
 			d.ticksLivedInWorld = tag.getLong("ticksLivedInWorld");
 			d.highestGearScore = tag.getInt("highestGearScore");

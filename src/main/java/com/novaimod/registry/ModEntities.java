@@ -5,6 +5,8 @@ import com.novaimod.entity.CatgirlEntity;
 import com.novaimod.entity.CelestialMeteorEntity;
 import com.novaimod.entity.CelestialOrbEntity;
 import com.novaimod.entity.CushionEntity;
+import com.novaimod.entity.HolyOrderEntity;
+import com.novaimod.entity.HolyWaterEntity;
 import com.novaimod.entity.InfinityEyeEntity;
 import com.novaimod.entity.InfinityPearlEntity;
 import com.novaimod.entity.LuceEntity;
@@ -204,6 +206,26 @@ public final class ModEntities {
 					.build("luce")
 	);
 
+	public static final EntityType<HolyOrderEntity> HOLY_ORDER_ENTITY = Registry.register(
+			Registries.ENTITY_TYPE,
+			Identifier.of(NovaiMod.MOD_ID, "holy_order"),
+			EntityType.Builder.<HolyOrderEntity>create(HolyOrderEntity::new, SpawnGroup.CREATURE)
+					.dimensions(0.6F, 1.95F)
+					.makeFireImmune()
+					.maxTrackingRange(12)
+					.build("holy_order")
+	);
+
+	public static final EntityType<HolyWaterEntity> HOLY_WATER_ENTITY = Registry.register(
+			Registries.ENTITY_TYPE,
+			Identifier.of(NovaiMod.MOD_ID, "holy_water_entity"),
+			EntityType.Builder.<HolyWaterEntity>create(HolyWaterEntity::new, SpawnGroup.MISC)
+					.dimensions(0.28F, 0.28F)
+					.maxTrackingRange(8)
+					.trackingTickInterval(3)
+					.build("holy_water_entity")
+	);
+
 	private ModEntities() {
 	}
 
@@ -212,5 +234,6 @@ public final class ModEntities {
 		FabricDefaultAttributeRegistry.register(WHITE_CAP_ENTITY, WhiteCapEntity.createWhiteCapAttributes());
 		FabricDefaultAttributeRegistry.register(CATGIRL_ENTITY, CatgirlEntity.createCatgirlAttributes());
 		FabricDefaultAttributeRegistry.register(LUCE_ENTITY, LuceEntity.createLuceAttributes());
+		FabricDefaultAttributeRegistry.register(HOLY_ORDER_ENTITY, HolyOrderEntity.createHolyOrderAttributes());
 	}
 }

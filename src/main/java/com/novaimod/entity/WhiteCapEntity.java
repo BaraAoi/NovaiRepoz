@@ -244,6 +244,13 @@ public class WhiteCapEntity extends PathAwareEntity {
 				|| entity.getCommandTags().contains(TAG_CITADEL_PRISONER)) {
 			return false;
 		}
+		// Клан Белых Колпаков ведёт открытую войну против Церкви и Ордена Святой Люче!
+		if (entity instanceof HolyOrderEntity || entity instanceof LuceEntity) {
+			return true;
+		}
+		if (entity instanceof net.minecraft.entity.passive.WolfEntity w && w.getCommandTags().contains(LuceEntity.TAG_SANTINO_DOG)) {
+			return true;
+		}
 		return entity instanceof EndermanEntity
 				|| entity instanceof EndermiteEntity
 				|| entity instanceof ShulkerEntity
@@ -496,6 +503,16 @@ public class WhiteCapEntity extends PathAwareEntity {
 
 			double distSq = this.squaredDistanceTo(sp);
 
+			// 0. На игроке регалии ненавистной Церкви Святой Люче (Жёлтый Дождевик, Посох или Хоругвь Ордена)!
+			if (distSq <= 225.0D && HolyOrderEntity.isWearingLuceRegalia(sp)) {
+				sp.sendMessage(Text.literal("[Белый Колпак] ").formatted(Formatting.RED, Formatting.BOLD)
+						.append(Text.literal("Приспешник Церкви Люче в жёлтых тряпках святош!! Травить его чумными колбами!!").formatted(Formatting.YELLOW)), false);
+				sw.playSound(null, this.getBlockPos(), SoundEvents.ENTITY_PILLAGER_AMBIENT, SoundCategory.HOSTILE, 1.2F, 0.75F);
+				markPlayerEnemy(sp, 700);
+				alertNearbyClanAgainst(sp);
+				continue;
+			}
+
 			// 1. В руках игрока предметы ненавистной скверны Края/Ада -> мгновенная тревога!
 			if (distSq <= 144.0D && isHoldingForbiddenTaint(sp)) {
 				sp.sendMessage(Text.literal("[Белый Колпак] ").formatted(Formatting.RED, Formatting.BOLD)
@@ -608,7 +625,10 @@ public class WhiteCapEntity extends PathAwareEntity {
 	}
 
 	private void shoutBattleCryNearby(ServerWorld sw) {
-		String cry = BATTLE_CRIES[sw.random.nextInt(BATTLE_CRIES.length)];
+		boolean fightingChurch = this.getTarget() instanceof HolyOrderEntity || this.getTarget() instanceof LuceEntity;
+		String cry = fightingChurch
+				? "Святоши Ордена Люче! Залить их кресты и витражи чумной кислотой!! Слава КБК!!"
+				: BATTLE_CRIES[sw.random.nextInt(BATTLE_CRIES.length)];
 		for (ServerPlayerEntity sp : sw.getEntitiesByClass(ServerPlayerEntity.class, this.getBoundingBox().expand(24.0D), LivingEntity::isAlive)) {
 			sp.sendMessage(Text.literal("[Клан Белых Колпаков] ").formatted(Formatting.AQUA, Formatting.BOLD)
 					.append(Text.literal(cry).formatted(Formatting.WHITE)), true);

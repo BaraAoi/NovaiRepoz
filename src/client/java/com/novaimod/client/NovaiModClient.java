@@ -8,6 +8,8 @@ import com.novaimod.client.render.CatgirlEntityModel;
 import com.novaimod.client.render.CatgirlEntityRenderer;
 import com.novaimod.client.render.CelestialOrbEntityRenderer;
 import com.novaimod.client.render.CushionEntityRenderer;
+import com.novaimod.client.render.HolyOrderEntityModel;
+import com.novaimod.client.render.HolyOrderEntityRenderer;
 import com.novaimod.client.render.LuceEntityModel;
 import com.novaimod.client.render.LuceEntityRenderer;
 import com.novaimod.client.render.LuceRaincoatArmorRenderer;
@@ -91,14 +93,20 @@ public class NovaiModClient implements ClientModInitializer {
 				LuceEntityRenderer.LUCE_MODEL_LAYER,
 				LuceEntityModel::getTexturedModelData
 		);
+		EntityModelLayerRegistry.registerModelLayer(
+				HolyOrderEntityRenderer.HOLY_ORDER_MODEL_LAYER,
+				HolyOrderEntityModel::getTexturedModelData
+		);
 		EntityRendererRegistry.register(ModEntities.MOD_NPC, ModNpcRenderer::new);
 		EntityRendererRegistry.register(ModEntities.SEAT_ENTITY, EmptyEntityRenderer::new);
 		EntityRendererRegistry.register(ModEntities.CUSHION_ENTITY, CushionEntityRenderer::new);
 		EntityRendererRegistry.register(ModEntities.PARTY_DOLL_ENTITY, PartyDollEntityRenderer::new);
 		EntityRendererRegistry.register(ModEntities.WHITE_CAP_ENTITY, WhiteCapEntityRenderer::new);
 		EntityRendererRegistry.register(ModEntities.PLAGUE_FLASK_ENTITY, ctx -> new FlyingItemEntityRenderer<>(ctx, 1.15F, false));
+		EntityRendererRegistry.register(ModEntities.HOLY_WATER_ENTITY, ctx -> new FlyingItemEntityRenderer<>(ctx, 1.15F, false));
 		EntityRendererRegistry.register(ModEntities.CATGIRL_ENTITY, CatgirlEntityRenderer::new);
 		EntityRendererRegistry.register(ModEntities.LUCE_ENTITY, LuceEntityRenderer::new);
+		EntityRendererRegistry.register(ModEntities.HOLY_ORDER_ENTITY, HolyOrderEntityRenderer::new);
 		EntityRendererRegistry.register(ModEntities.POKEBALL_PROJECTILE_ENTITY, ctx -> new FlyingItemEntityRenderer<>(ctx, 1.05F, false));
 		ArmorRenderer.register(new WhiteCapHoodArmorRenderer(), ModItems.WHITE_CAP_HOOD);
 		ArmorRenderer.register(new LuceRaincoatArmorRenderer(), ModItems.LUCE_RAINCOAT);

@@ -92,8 +92,9 @@ public class PlagueFlaskEntity extends ThrownItemEntity {
 				continue;
 			}
 
+			boolean churchEnemy = target instanceof HolyOrderEntity || target instanceof LuceEntity;
 			boolean abomination = WhiteCapEntity.isHatedAbomination(target);
-			float dmg = abomination ? 38.0F : 14.0F;
+			float dmg = churchEnemy ? 20.0F : (abomination ? 38.0F : 14.0F);
 
 			if (target instanceof EnderDragonEntity dragon) {
 				WhiteCapEntity.damageEnderDragon(sw, dragon, owner instanceof LivingEntity le ? le : null, 42.0F);

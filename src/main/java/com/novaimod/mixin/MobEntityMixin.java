@@ -18,7 +18,10 @@ import com.novaimod.ai.evolution.RetreatAndRecoverGoal;
 import com.novaimod.ai.evolution.SkeletonTacticalCombatGoal;
 import com.novaimod.ai.evolution.TerrainAmbushGoal;
 import com.novaimod.ai.evolution.TrailPursuitAndSearchGoal;
+import com.novaimod.entity.HolyOrderEntity;
+import com.novaimod.entity.LuceEntity;
 import com.novaimod.entity.PartyDollEntity;
+import com.novaimod.entity.WhiteCapEntity;
 import com.novaimod.world.ApocalypseEventManager;
 import com.novaimod.world.TimeStopManager;
 
@@ -33,9 +36,11 @@ import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.entity.mob.PathAwareEntity;
 import net.minecraft.entity.mob.SpiderEntity;
 import net.minecraft.entity.mob.ZombieEntity;
+import net.minecraft.entity.passive.WolfEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.DyeColor;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
@@ -101,6 +106,14 @@ public abstract class MobEntityMixin extends LivingEntity implements EvolvedMobA
 	private void novai$friendlyWhilePartyDollActive(LivingEntity target, CallbackInfo ci) {
 		if (target != null && (PartyDollEntity.isUnderActiveDollAura(this) || PartyDollEntity.isUnderActiveDollAura(target))) {
 			ci.cancel();
+			return;
+		}
+		// Пёсик Люче «Сантино» НИКОГДА и ни при каких условиях не может быть натравлен на Люче или рыцарей её Церкви!
+		if (target != null && (Object) this instanceof WolfEntity wolf && wolf.getCommandTags().contains(LuceEntity.TAG_SANTINO_DOG)) {
+			if (target instanceof LuceEntity || target instanceof HolyOrderEntity
+					|| (target instanceof WolfEntity w2 && w2.getCommandTags().contains(LuceEntity.TAG_SANTINO_DOG))) {
+				ci.cancel();
+			}
 		}
 	}
 
@@ -238,6 +251,27 @@ public abstract class MobEntityMixin extends LivingEntity implements EvolvedMobA
 			}
 			if (this.novai$disorganizedTicks > 0) {
 				this.novai$disorganizedTicks--;
+			}
+
+			// Защита верности Сантино: сбрасывает любое ложное приручение игроком из старых сохранений и кусает еретиков КБК!
+			if (this.age % 20 == 3 && self instanceof WolfEntity santino && santino.getCommandTags().contains(LuceEntity.TAG_SANTINO_DOG)) {
+				if (!santino.isTamed() || !LuceEntity.SANTINO_SACRED_OWNER_UUID.equals(santino.getOwnerUuid())) {
+					santino.setTamed(true, false);
+					santino.setOwnerUuid(LuceEntity.SANTINO_SACRED_OWNER_UUID);
+					santino.setCollarColor(DyeColor.YELLOW);
+					santino.setSitting(false);
+					santino.setInSittingPose(false);
+				}
+				if (santino.getTarget() instanceof LuceEntity || santino.getTarget() instanceof HolyOrderEntity) {
+					santino.setTarget(null);
+					santino.stopAnger();
+				}
+				if (santino.getTarget() == null) {
+					var kbkList = sw.getEntitiesByClass(WhiteCapEntity.class, santino.getBoundingBox().expand(18.0D, 8.0D, 18.0D), LivingEntity::isAlive);
+					if (!kbkList.isEmpty()) {
+						santino.setTarget(kbkList.get(0));
+					}
+				}
 			}
 		}
 

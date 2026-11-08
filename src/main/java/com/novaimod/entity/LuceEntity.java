@@ -68,6 +68,10 @@ import net.minecraft.world.World;
  */
 public class LuceEntity extends PathAwareEntity {
 	public static final String TAG_SANTINO_DOG = "novai_santino_dog";
+	public static final UUID SANTINO_SACRED_OWNER_UUID = UUID.fromString("00000000-0000-4000-8000-0000004c5543");
+
+	public static final int REQUIRED_KBK_KILLS = 5;
+	public static final int REQUIRED_CHURCH_REP = 100;
 
 	public static final int MODE_FOLLOW = 0;
 	public static final int MODE_GUARD_HOME = 1;
@@ -278,19 +282,38 @@ public class LuceEntity extends PathAwareEntity {
 				|| source.isOf(DamageTypes.ON_FIRE)) {
 			return true;
 		}
+		if (source.getAttacker() instanceof WolfEntity w && w.getCommandTags().contains(TAG_SANTINO_DOG)) {
+			return true;
+		}
+		if (source.getAttacker() instanceof HolyOrderEntity) {
+			return true;
+		}
 		return super.isInvulnerableTo(source);
 	}
 
-	private static boolean isPilgrimOffering(ItemStack stack) {
+	private static boolean isOathRelicGift(ItemStack stack) {
 		if (stack.isEmpty()) {
 			return false;
 		}
-		return stack.isOf(Items.EMERALD)
-				|| stack.isOf(Items.GOLD_INGOT)
-				|| stack.isOf(Items.GOLDEN_APPLE)
-				|| stack.isOf(Items.BREAD)
-				|| stack.isOf(Items.AMETHYST_SHARD)
-				|| stack.isIn(ItemTags.CANDLES);
+		return stack.isOf(Items.GOLDEN_APPLE)
+				|| stack.isOf(Items.ENCHANTED_GOLDEN_APPLE)
+				|| stack.isOf(Items.DIAMOND)
+				|| stack.isOf(Items.EMERALD_BLOCK);
+	}
+
+	private static int getOfferingRepValue(ItemStack stack) {
+		if (stack.isEmpty()) return 0;
+		if (stack.isOf(ModItems.WHITE_CAP_HOOD)) return 45;
+		if (stack.isOf(ModItems.WHITE_CAP_FLASK)) return 15;
+		if (stack.isOf(Items.ENCHANTED_GOLDEN_APPLE)) return 30;
+		if (stack.isOf(Items.GOLDEN_APPLE)) return 18;
+		if (stack.isOf(Items.DIAMOND)) return 15;
+		if (stack.isOf(Items.EMERALD_BLOCK)) return 25;
+		if (stack.isOf(Items.EMERALD)) return 8;
+		if (stack.isOf(Items.GOLD_INGOT)) return 6;
+		if (stack.isOf(Items.AMETHYST_SHARD)) return 5;
+		if (stack.isOf(Items.BREAD) || stack.isIn(ItemTags.CANDLES)) return 3;
+		return 0;
 	}
 
 	private static boolean isUnholyProvocation(ItemStack stack) {
@@ -317,8 +340,60 @@ public class LuceEntity extends PathAwareEntity {
 			return ActionResult.PASS;
 		}
 
-		// 1. Покаянное пожертвование паломника!
-		if (isPilgrimOffering(held)) {
+		// 0. На игроке надет проклятый Колпак Чумного Доктора враждебного Клана Белых Колпаков (КБК)!
+		if (WhiteCapEntity.isWearingClanHood(sp)) {
+			awakenDivineWrath(sp, "ТЫ ЯВИЛСЯ В СВЯТЫНЮ В КЛЮВАСТОМ КОЛПАКЕ ЕРЕТИКОВ КБК?! ИМЕНЕМ ЦЕРКВИ — ПРИМИ ОЧИЩЕНИЕ СВЕТОМ!!");
+			return ActionResult.SUCCESS;
+		}
+
+		// 1. Провокация нечестивыми предметами!
+		if (isUnholyProvocation(held)) {
+			awakenDivineWrath(sp, "ТЫ СМЕЕШЬ СОВАТЬ МНЕ В ЛИЦО ЭТУ ЕРЕТИЧЕСКУЮ ГАДОСТЬ?! ПОКАЙСЯ ПЕРЕД СИЛОЙ БОГА И АНИМЕ!!");
+			return ActionResult.SUCCESS;
+		}
+
+		ModPersistentState state = ModPersistentState.get(sw.getServer());
+		ModPersistentState.PlayerFinanceData acc = state.getAccount(sp.getUuid());
+
+		// Если игрок уже принёс Обет именно этой Люче — переключение режимов компаньона!
+		if (isFriendOf(sp)) {
+			if (acc.holyOrderRep < -20) {
+				this.friendUuid = null;
+				this.dataTracker.set(COMPANION_MODE, MODE_GUARD_HOME);
+				sp.sendMessage(Text.literal("✝ [Люче]: Ты предал нашу Церковь! Получи Индульгенцию у Священника Собора, прежде чем звать меня в путь!").formatted(Formatting.RED, Formatting.BOLD), false);
+				return ActionResult.SUCCESS;
+			}
+			int next = (getCompanionMode() + 1) % 3;
+			this.dataTracker.set(COMPANION_MODE, next);
+			if (next == MODE_GUARD_HOME) {
+				this.homePos = this.getBlockPos().toImmutable();
+				sp.sendMessage(Text.literal("✝ [Люче]: Я буду хранить этот дом и часовню от нечисти и лазутчиков КБК!").formatted(Formatting.GREEN), true);
+			} else if (next == MODE_FOLLOW) {
+				sp.sendMessage(Text.literal("✝ [Люче]: В путь, брат во Свете! Идём крушить нежить и еретиков КБК вместе с Сантино!").formatted(Formatting.AQUA), true);
+			} else {
+				this.getNavigation().stop();
+				sp.sendMessage(Text.literal("✝ [Люче]: Я останусь здесь и помолюсь о твоей победе~").formatted(Formatting.YELLOW), true);
+			}
+			return ActionResult.SUCCESS;
+		}
+
+		// Если игрок враг Церкви (отрицательная репутация)
+		if (acc.holyOrderRep < 0) {
+			sp.sendMessage(
+					Text.literal("✝ [Люче]: ").formatted(Formatting.GOLD, Formatting.BOLD)
+							.append(Text.literal("На твоих руках грех против нашей Церкви (Репутация: " + acc.holyOrderRep + ")! Иди в Кафедральный Собор к Священнику и принеси покаянную Индульгенцию!").formatted(Formatting.RED)),
+					false
+			);
+			return ActionResult.SUCCESS;
+		}
+
+		// 2. Проверка ТРЁХ СТУПЕНЕЙ ИСПЫТАНИЯ ПАЛОМНИКА (Люче НЕ становится компаньоном просто так!)
+		boolean debtClean = acc.debt == 0L;
+		boolean kbkProven = acc.kbkKilledForChurch >= REQUIRED_KBK_KILLS;
+		boolean repProven = acc.holyOrderRep >= REQUIRED_CHURCH_REP;
+
+		// Если все 3 условия уже выполнены И игрок протягивает Великий Дар Обета (Золотое яблоко / Алмаз / Изумрудный блок) -> ПРИНЯТИЕ В КОМПАНЬОНЫ!
+		if (debtClean && kbkProven && repProven && isOathRelicGift(held)) {
 			if (!sp.isInCreativeMode()) {
 				held.decrement(1);
 			}
@@ -326,57 +401,87 @@ public class LuceEntity extends PathAwareEntity {
 			if (this.homePos == null) {
 				this.homePos = sp.getBlockPos().toImmutable();
 			}
-			this.donationsCount++;
+			acc.lucePilgrimOathComplete = true;
+			acc.holyOrderRep = Math.min(500, acc.holyOrderRep + 20);
+			state.markDirty();
+
 			this.setHealth(this.getMaxHealth());
-			this.triggerCastAnim(24);
+			this.triggerCastAnim(30);
+			this.dataTracker.set(COMPANION_MODE, MODE_FOLLOW);
 
-			// Очищаем негативные эффекты и даруем благословение!
-			sp.removeStatusEffect(StatusEffects.POISON);
-			sp.removeStatusEffect(StatusEffects.WITHER);
-			sp.removeStatusEffect(StatusEffects.SLOWNESS);
-			sp.removeStatusEffect(StatusEffects.WEAKNESS);
-			sp.removeStatusEffect(StatusEffects.DARKNESS);
-			sp.addStatusEffect(new StatusEffectInstance(StatusEffects.REGENERATION, 20 * 20, 1));
-			sp.addStatusEffect(new StatusEffectInstance(StatusEffects.ABSORPTION, 20 * 90, 1));
+			sp.addStatusEffect(new StatusEffectInstance(StatusEffects.REGENERATION, 20 * 25, 1));
+			sp.addStatusEffect(new StatusEffectInstance(StatusEffects.ABSORPTION, 20 * 120, 2));
 
-			sw.playSound(null, this.getBlockPos(), SoundEvents.BLOCK_BELL_USE, SoundCategory.PLAYERS, 1.0F, 1.25F);
-			sw.spawnParticles(ParticleTypes.END_ROD, sp.getX(), sp.getBodyY(0.6D), sp.getZ(), 24, 0.45D, 0.6D, 0.45D, 0.05D);
+			sw.playSound(null, this.getBlockPos(), SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, SoundCategory.PLAYERS, 1.15F, 1.1F);
+			sw.playSound(null, this.getBlockPos(), SoundEvents.BLOCK_BELL_RESONATE, SoundCategory.PLAYERS, 1.3F, 1.2F);
+			sw.spawnParticles(ParticleTypes.END_ROD, sp.getX(), sp.getBodyY(0.6D), sp.getZ(), 40, 0.55D, 0.7D, 0.55D, 0.07D);
 
-			if (!this.relicsGifted && this.donationsCount >= 3) {
+			if (!this.relicsGifted) {
 				this.relicsGifted = true;
 				giveStackOrDrop(sp, new ItemStack(ModItems.LUCE_RAINCOAT, 1));
 				giveStackOrDrop(sp, new ItemStack(ModItems.LUCE_STAFF, 1));
 				giveStackOrDrop(sp, new ItemStack(ModItems.LUCE_ROSARY, 1));
-				this.dataTracker.set(COMPANION_MODE, MODE_FOLLOW);
-				sw.playSound(null, this.getBlockPos(), SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, SoundCategory.PLAYERS, 1.1F, 1.1F);
 				sp.sendMessage(
-						Text.literal("✝ [Люче]: ").formatted(Formatting.GOLD, Formatting.BOLD)
-								.append(Text.literal("Твоё сердце чисто, паломник! Прими мои святые дары: Жёлтый Дождевик, Посох Бордоне и Миссионерские Чётки — и пойдём вместе нести Свет!").formatted(Formatting.YELLOW)),
+						Text.literal("✝ [Обет Святой Люче]: ").formatted(Formatting.GOLD, Formatting.BOLD)
+								.append(Text.literal("Ты очистился от долгов, сокрушил еретиков КБК и доказал верность Церкви Света! Прими мои святые реликвии — Жёлтый Дождевик, Посох Бордоне и Чётки — отныне я и Сантино твои верные спутники!").formatted(Formatting.YELLOW)),
 						false
 				);
 			} else {
-				this.dataTracker.set(COMPANION_MODE, MODE_FOLLOW);
-				int rem = Math.max(0, 3 - this.donationsCount);
-				String tail = !this.relicsGifted
-						? " (Ещё пожертвований до дара реликвий Люче: " + rem + "!)"
-						: " (Я иду с тобой!)";
 				sp.sendMessage(
-						Text.literal("✝ [Люче]: ").formatted(Formatting.YELLOW, Formatting.BOLD)
-								.append(Text.literal("Благодарю за пожертвование! Твои грехи отпущены, благословение даровано — я пойду с тобой в паломничество!" + tail).formatted(Formatting.WHITE)),
+						Text.literal("✝ [Люче]: ").formatted(Formatting.GOLD, Formatting.BOLD)
+								.append(Text.literal("Твой Обет Паломника принят! Отныне я иду за тобой в любое испытание!").formatted(Formatting.YELLOW)),
 						false
 				);
 			}
 			return ActionResult.SUCCESS;
 		}
 
-		// 2. Провокация нечестивыми предметами или тяжкими грехами без покаяния!
-		ModPersistentState state = ModPersistentState.get(sw.getServer());
-		ModPersistentState.PlayerFinanceData acc = state.getAccount(sp.getUuid());
-		if (isUnholyProvocation(held)) {
-			awakenDivineWrath(sp, "ТЫ СМЕЕШЬ СОВАТЬ МНЕ В ЛИЦО ЭТУ ЕРЕТИЧЕСКУЮ ГАДОСТЬ?! ПОКАЙСЯ ПЕРЕД СИЛОЙ БОГА И АНИМЕ!!");
+		// 3. Обычные пожертвования и военные трофеи КБК: повышают Доверие Церкви и благословляют, но ещё НЕ делают компаньоном!
+		int repGain = getOfferingRepValue(held);
+		if (repGain > 0) {
+			if (repGain <= 3) {
+				long now = sw.getTime();
+				if (now - acc.lastSmallTitheTick < 1200L) {
+					sp.sendMessage(Text.literal("✝ [Люче]: Хлеб и свечи принимаются раз в минуту! Принеси изумруды, золото или трофеи поверженных еретиков КБК!").formatted(Formatting.YELLOW), true);
+					return ActionResult.SUCCESS;
+				}
+				acc.lastSmallTitheTick = now;
+			}
+			if (held.isOf(ModItems.WHITE_CAP_HOOD)) {
+				acc.kbkKilledForChurch += 2;
+			}
+			if (!sp.isInCreativeMode()) {
+				held.decrement(1);
+			}
+			this.donationsCount++;
+			acc.holyOrderRep = Math.min(500, acc.holyOrderRep + repGain);
+			state.markDirty();
+			this.setHealth(this.getMaxHealth());
+			this.triggerCastAnim(22);
+
+			sp.removeStatusEffect(StatusEffects.POISON);
+			sp.removeStatusEffect(StatusEffects.WITHER);
+			sp.removeStatusEffect(StatusEffects.SLOWNESS);
+			sp.removeStatusEffect(StatusEffects.WEAKNESS);
+			sp.removeStatusEffect(StatusEffects.DARKNESS);
+			sp.addStatusEffect(new StatusEffectInstance(StatusEffects.REGENERATION, 20 * 16, 1));
+			sp.addStatusEffect(new StatusEffectInstance(StatusEffects.ABSORPTION, 20 * 60, 0));
+
+			sw.playSound(null, this.getBlockPos(), SoundEvents.BLOCK_BELL_USE, SoundCategory.PLAYERS, 1.0F, 1.25F);
+			sw.spawnParticles(ParticleTypes.END_ROD, sp.getX(), sp.getBodyY(0.6D), sp.getZ(), 20, 0.45D, 0.55D, 0.45D, 0.05D);
+
+			sp.sendMessage(
+					Text.literal("✝ [Люче]: Благодарю за дар Церкви! (+").formatted(Formatting.GOLD, Formatting.BOLD)
+							.append(Text.literal(repGain + " Доверия -> " + acc.holyOrderRep + "/" + REQUIRED_CHURCH_REP).formatted(Formatting.GREEN))
+							.append(Text.literal(")").formatted(Formatting.GOLD)),
+					false
+			);
+			sendPilgrimTrialStatus(sp, acc);
 			return ActionResult.SUCCESS;
 		}
-		if (!isFriendOf(sp) && acc.debt >= 15_000L) {
+
+		// 4. Предупреждение злостным должникам МФО или показ прогресса Испытания Паломника!
+		if (acc.debt >= 15_000L) {
 			String warn = SINNER_WARNING_LINES[sw.random.nextInt(SINNER_WARNING_LINES.length)];
 			sw.playSound(null, this.getBlockPos(), SoundEvents.BLOCK_BELL_RESONATE, SoundCategory.NEUTRAL, 0.9F, 0.9F);
 			sp.sendMessage(
@@ -384,41 +489,44 @@ public class LuceEntity extends PathAwareEntity {
 							.append(Text.literal(warn).formatted(Formatting.RED)),
 					false
 			);
-			return ActionResult.SUCCESS;
+		} else {
+			String line = PEACEFUL_LINES[sw.random.nextInt(PEACEFUL_LINES.length)];
+			sw.playSound(null, this.getBlockPos(), SoundEvents.BLOCK_AMETHYST_BLOCK_CHIME, SoundCategory.PLAYERS, 0.9F, 1.2F);
+			sp.sendMessage(Text.literal("✝ [Люче]: ").formatted(Formatting.YELLOW, Formatting.BOLD)
+					.append(Text.literal(line).formatted(Formatting.WHITE)), false);
 		}
+		sendPilgrimTrialStatus(sp, acc);
+		return ActionResult.SUCCESS;
+	}
 
-		// 3. Дружественное переключение режима спутницы (или знакомство для безгрешного игрока!)
-		if (this.friendUuid == null) {
-			this.friendUuid = sp.getUuid();
-			this.dataTracker.set(COMPANION_MODE, MODE_FOLLOW);
-			sw.playSound(null, this.getBlockPos(), SoundEvents.BLOCK_AMETHYST_BLOCK_CHIME, SoundCategory.PLAYERS, 1.0F, 1.2F);
+	private static void sendPilgrimTrialStatus(ServerPlayerEntity sp, ModPersistentState.PlayerFinanceData acc) {
+		boolean debtOk = acc.debt == 0L;
+		boolean kbkOk = acc.kbkKilledForChurch >= REQUIRED_KBK_KILLS;
+		boolean repOk = acc.holyOrderRep >= REQUIRED_CHURCH_REP;
+
+		sp.sendMessage(Text.literal("=== ✝ Обет Спутника Святой Люче (3 Испытания Веры) ✝ ===").formatted(Formatting.GOLD, Formatting.BOLD), false);
+		sp.sendMessage(
+				Text.literal(debtOk ? "  ✔ [1/3] Свобода от ростовщиков МФО: Долг 0 ₽" : "  ✖ [1/3] Погасите весь долг МФО (сейчас: " + acc.debt + " ₽)")
+						.formatted(debtOk ? Formatting.GREEN : Formatting.RED),
+				false
+		);
+		sp.sendMessage(
+				Text.literal((kbkOk ? "  ✔ " : "  ✖ ") + "[2/3] Священная Война против КБК: побеждено " + acc.kbkKilledForChurch + " / " + REQUIRED_KBK_KILLS + " Белых Колпаков")
+						.formatted(kbkOk ? Formatting.GREEN : Formatting.YELLOW),
+				false
+		);
+		sp.sendMessage(
+				Text.literal((repOk ? "  ✔ " : "  ✖ ") + "[3/3] Доверие Церкви Света: " + acc.holyOrderRep + " / " + REQUIRED_CHURCH_REP + " (дары Церкви и победы над КБК)")
+						.formatted(repOk ? Formatting.GREEN : Formatting.YELLOW),
+				false
+		);
+		if (debtOk && kbkOk && repOk) {
 			sp.sendMessage(
-					Text.literal("✝ [Люче]: Привет, добрый путник! На тебе нет тяжких грехов — пойдём в паломничество вместе! (ПКМ — сменить режим, 3 дара золотом/изумрудом/хлебом — получить мои реликвии!)")
-							.formatted(Formatting.YELLOW),
+					Text.literal("  ★ Все испытания пройдены! Протяните Люче Золотое яблоко или Алмаз (ПКМ), чтобы принести Обет и позвать её в компаньоны!")
+							.formatted(Formatting.AQUA, Formatting.BOLD),
 					false
 			);
-			return ActionResult.SUCCESS;
 		}
-
-		if (isFriendOf(sp)) {
-			int next = (getCompanionMode() + 1) % 3;
-			this.dataTracker.set(COMPANION_MODE, next);
-			if (next == MODE_GUARD_HOME) {
-				this.homePos = this.getBlockPos().toImmutable();
-				sp.sendMessage(Text.literal("✝ [Люче]: Я буду хранить этот дом и часовню от любой нечисти!").formatted(Formatting.GREEN), true);
-			} else if (next == MODE_FOLLOW) {
-				sp.sendMessage(Text.literal("✝ [Люче]: В путь! Я иду за тобой с посохом паломника!").formatted(Formatting.AQUA), true);
-			} else {
-				this.getNavigation().stop();
-				sp.sendMessage(Text.literal("✝ [Люче]: Я останусь здесь и помолюсь о твоём здравии~").formatted(Formatting.YELLOW), true);
-			}
-			return ActionResult.SUCCESS;
-		}
-
-		String line = PEACEFUL_LINES[sw.random.nextInt(PEACEFUL_LINES.length)];
-		sp.sendMessage(Text.literal("✝ [Люче]: ").formatted(Formatting.YELLOW, Formatting.BOLD)
-				.append(Text.literal(line).formatted(Formatting.WHITE)), false);
-		return ActionResult.SUCCESS;
 	}
 
 	private static void giveStackOrDrop(ServerPlayerEntity sp, ItemStack stack) {
@@ -511,6 +619,18 @@ public class LuceEntity extends PathAwareEntity {
 					} else if (dSq > 3.6D * 3.6D) {
 						this.getNavigation().startMovingTo(owner, 1.15D);
 					}
+					// Верный пёсик Сантино бежит в паломничество вслед за Люче!
+					if (this.age % 15 == 0) {
+						for (WolfEntity santino : sw.getEntitiesByClass(WolfEntity.class, this.getBoundingBox().expand(26.0D),
+								w -> w.isAlive() && w.getCommandTags().contains(TAG_SANTINO_DOG))) {
+							double sDistSq = santino.squaredDistanceTo(this);
+							if (sDistSq > 20.0D * 20.0D) {
+								santino.refreshPositionAndAngles(this.getX() + 0.9D, this.getY(), this.getZ() - 0.9D, this.getYaw(), 0.0F);
+							} else if (sDistSq > 4.0D * 4.0D && santino.getTarget() == null) {
+								santino.getNavigation().startMovingTo(this, 1.2D);
+							}
+						}
+					}
 					return;
 				}
 			}
@@ -525,8 +645,14 @@ public class LuceEntity extends PathAwareEntity {
 
 	private LivingEntity findNearbyUnholyMonster(ServerWorld sw, double radius) {
 		Box box = this.getBoundingBox().expand(radius, 6.0D, radius);
+		// Первым делом Люче карает еретиков Клана Белых Колпаков (КБК), если они осмелились подойти!
+		List<WhiteCapEntity> kbk = sw.getEntitiesByClass(WhiteCapEntity.class, box.expand(6.0D, 2.0D, 6.0D), LivingEntity::isAlive);
+		if (!kbk.isEmpty()) {
+			return kbk.get(0);
+		}
 		List<LivingEntity> list = sw.getEntitiesByClass(LivingEntity.class, box, e -> {
-			if (!e.isAlive() || e == this) return false;
+			if (!e.isAlive() || e == this || e instanceof HolyOrderEntity || e instanceof CatgirlEntity) return false;
+			if (e instanceof WolfEntity w && w.getCommandTags().contains(TAG_SANTINO_DOG)) return false;
 			return e.getType().isIn(EntityTypeTags.UNDEAD)
 					|| e instanceof BlazeEntity
 					|| e instanceof GhastEntity

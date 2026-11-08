@@ -11,8 +11,11 @@ import com.novaimod.item.BureaucracySealItem;
 import com.novaimod.item.CatgirlSpawnEggItem;
 import com.novaimod.item.CelestialWrathItem;
 import com.novaimod.item.ChronoScepterItem;
+import com.novaimod.item.CrusadeBannerItem;
 import com.novaimod.item.CushionItem;
 import com.novaimod.item.DrunkenOblivionItem;
+import com.novaimod.item.HolyOrderSpawnEggItem;
+import com.novaimod.item.HolyWaterItem;
 import com.novaimod.item.InfinityEyeItem;
 import com.novaimod.item.LuceRaincoatItem;
 import com.novaimod.item.LuceRosaryItem;
@@ -281,6 +284,22 @@ public final class ModItems {
 			new LuceSpawnEggItem(new Item.Settings().maxCount(64).rarity(Rarity.EPIC).fireproof())
 	);
 
+	// === v4.2.0: ФРАКЦИЯ «ОРДЕН СВЕТА И ЦЕРКОВЬ СВЯТОЙ ЛЮЧЕ» (ВОЙНА ПРОТИВ КБК!) ===
+	public static final Item CRUSADE_BANNER = register(
+			"crusade_banner",
+			new CrusadeBannerItem(new Item.Settings().maxCount(1).rarity(Rarity.EPIC).fireproof())
+	);
+
+	public static final Item HOLY_WATER = register(
+			"holy_water",
+			new HolyWaterItem(new Item.Settings().maxCount(16).rarity(Rarity.RARE))
+	);
+
+	public static final Item HOLY_ORDER_SPAWN_EGG = register(
+			"holy_order_spawn_egg",
+			new HolyOrderSpawnEggItem(new Item.Settings().maxCount(64).rarity(Rarity.RARE))
+	);
+
 	public static final Map<DyeColor, Item> CUSHIONS = new EnumMap<>(DyeColor.class);
 
 	static {
@@ -336,10 +355,13 @@ public final class ModItems {
 						entries.add(LUCE_RAINCOAT);
 						entries.add(LUCE_STAFF);
 						entries.add(LUCE_ROSARY);
+						entries.add(CRUSADE_BANNER);
+						entries.add(HOLY_WATER);
 						entries.add(WHITE_CAP_SPAWN_EGG);
 						entries.add(WHITE_CAP_BOSS_SPAWN_EGG);
 						entries.add(CATGIRL_SPAWN_EGG);
 						entries.add(LUCE_SPAWN_EGG);
+						entries.add(HOLY_ORDER_SPAWN_EGG);
 						entries.add(ODDS_CONFIGURATOR);
 						for (DyeColor color : DyeColor.values()) {
 							entries.add(CUSHIONS.get(color));
@@ -366,10 +388,13 @@ public final class ModItems {
 						entries.add(LUCE_RAINCOAT);
 						entries.add(LUCE_STAFF);
 						entries.add(LUCE_ROSARY);
+						entries.add(CRUSADE_BANNER);
+						entries.add(HOLY_WATER);
 						entries.add(WHITE_CAP_SPAWN_EGG);
 						entries.add(WHITE_CAP_BOSS_SPAWN_EGG);
 						entries.add(CATGIRL_SPAWN_EGG);
 						entries.add(LUCE_SPAWN_EGG);
+						entries.add(HOLY_ORDER_SPAWN_EGG);
 						entries.add(REALITY_RIFT_BLADE);
 						entries.add(ORBITAL_LASER);
 						entries.add(TERRA_HEAVER);
