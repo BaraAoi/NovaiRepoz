@@ -46,8 +46,8 @@ import net.minecraft.entity.passive.WolfEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.projectile.ProjectileEntity;
 import net.minecraft.inventory.Inventory;
-import net.minecraft.inventory.SimpleInventory;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.collection.DefaultedList;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtList;
@@ -731,8 +731,16 @@ public class WorldVirginLedger extends PersistentState {
 		for (ServerPlayerEntity sp : server.getPlayerManager().getPlayerList()) {
 			scrubMobPokeballsInInventory(sp.getInventory());
 			scrubMobPokeballsInInventory(sp.getEnderChestInventory());
-			SimpleInventory vault = state.getOrCreateBabylonVault(sp.getUuid());
-			if (scrubMobPokeballsInInventory(vault)) {
+			DefaultedList<ItemStack> vault = state.getBabylonVault(sp.getUuid());
+			boolean vaultChanged = false;
+			for (ItemStack stack : vault) {
+				if (!stack.isEmpty() && stack.getItem() instanceof PokeballItem
+						&& "mob".equals(PokeballItem.getCaptureType(stack))) {
+					PokeballItem.clearPokeballData(stack);
+					vaultChanged = true;
+				}
+			}
+			if (vaultChanged) {
 				state.markDirty();
 			}
 		}
