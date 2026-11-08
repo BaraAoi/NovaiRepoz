@@ -59,10 +59,10 @@ public class CatgirlEntity extends PathAwareEntity {
 	private static final String[] VARIANT_NAMES = new String[]{"Широ", "Куро", "Мико", "Юки"};
 
 	private static final String[] CAGE_PLEA_LINES = new String[]{
-			"Т-ты ведь не один из тех учёных?! Они держали меня в этой клетке на самой глубине базы...",
-			"Я полностью в своём разуме, я всё понимаю! Пожалуйста, открой дверь клетки и забери меня к себе домой!",
-			"Здесь так холодно и страшно... Учёные бросили лабораторию, а меня оставили взаперти...",
-			"Обещаю, я не доставлю хлопот! Просто выведи меня отсюда к солнечному свету..."
+			"Я полностью в своём разуме, я всё понимаю! Пожалуйста, открой калитку и забери меня к себе домой!",
+			"Бюрократы посадили меня в этот изолятор, потому что у меня нет Справки №38-МЯУ на пушистые ушки и хвост!",
+			"Здесь вечные очереди, пыль и бумаги... Пожалуйста, выведи меня через Приёмную в настоящий живой мир!",
+			"Обещаю, я не доставлю хлопот! Просто забери меня отсюда к себе домой..."
 	};
 
 	private static final String[] HOME_HAPPY_LINES = new String[]{
@@ -146,6 +146,15 @@ public class CatgirlEntity extends PathAwareEntity {
 
 	public void setOwnerUuid(UUID uuid) {
 		this.ownerUuid = uuid;
+	}
+
+	public boolean isOwnedBy(PlayerEntity player) {
+		return player != null && this.ownerUuid != null && this.ownerUuid.equals(player.getUuid());
+	}
+
+	public void configureVariant(int variant, boolean rescued) {
+		setVariantId(variant);
+		setRescued(rescued);
 	}
 
 	public void setHomePos(BlockPos pos) {

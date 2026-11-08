@@ -1036,7 +1036,7 @@ public class ModNpcEntity extends PathAwareEntity {
 				WhiteCapEntity auditor = ModEntities.WHITE_CAP_ENTITY.create(sw);
 				if (auditor != null) {
 					auditor.refreshPositionAndAngles(this.getX() + i * 2.5D, this.getY(), this.getZ() + 2.0D, 0.0F, 0.0F);
-					auditor.configureRank(WhiteCapEntity.RANK_DOCTOR);
+					auditor.setRank(WhiteCapEntity.RANK_APOTHECARY);
 					auditor.setCustomName(Text.literal("Старший Аудитор Колпаков").formatted(Formatting.GOLD));
 					sw.spawnEntity(auditor);
 				}

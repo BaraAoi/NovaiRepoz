@@ -1107,7 +1107,7 @@ public final class BureaucraticHellManager {
 					.withMessage(1, Text.literal(l1))
 					.withMessage(2, Text.literal(l2))
 					.withMessage(3, Text.literal(l3));
-			sign.setFrontText(txt);
+			sign.setText(txt, true);
 			sign.setWaxed(true);
 			sign.markDirty();
 		}
