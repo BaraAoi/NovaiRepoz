@@ -141,11 +141,6 @@ public class NovaiMod implements ModInitializer {
 			WorldVirginLedger.onEntityLoaded(entity, world);
 		});
 
-		ServerLivingEntityEvents.ALLOW_DEATH.register((entity, damageSource, damageAmount) -> {
-			WorldVirginLedger.recordMobBeforeDeath(entity);
-			return true;
-		});
-
 		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
 			ServerPlayerEntity player = handler.getPlayer();
 			ModPersistentState state = ModPersistentState.get(server);
@@ -356,14 +351,16 @@ public class NovaiMod implements ModInitializer {
 			}
 
 			structureCheckTicker++;
+			if (structureCheckTicker % 20 == 0) {
+				WorldVirginLedger.tickPendingChunkRestores(server);
+			}
 			if (structureCheckTicker >= 40) {
 				structureCheckTicker = 0;
-				WorldVirginLedger.runWithBypass(() -> {
-					ModStructureGenerator.tickWorldGeneration(server);
-					WhiteCapWorldManager.tickClanWorld(server);
-					BureaucraticHellManager.tickBureaucraticChecks(server);
-					LuceWorldManager.tickLuceWorld(server);
-				});
+				ModStructureGenerator.tickWorldGeneration(server);
+				WhiteCapWorldManager.tickClanWorld(server);
+				AbandonedLabManager.tickLabs(server);
+				BureaucraticHellManager.tickBureaucraticChecks(server);
+				LuceWorldManager.tickLuceWorld(server);
 			}
 		});
 	}

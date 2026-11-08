@@ -2,6 +2,7 @@ package com.novaimod.item;
 
 import java.util.List;
 
+import com.novaimod.data.WorldVirginLedger;
 import com.novaimod.entity.CatgirlEntity;
 import com.novaimod.registry.ModEntities;
 
@@ -37,6 +38,7 @@ public class CatgirlSpawnEggItem extends Item {
 
 		CatgirlEntity catgirl = ModEntities.CATGIRL_ENTITY.create(sw);
 		if (catgirl != null) {
+			catgirl.addCommandTag(WorldVirginLedger.TAG_NON_VIRGIN);
 			catgirl.refreshPositionAndAngles(spawnPos.getX() + 0.5D, spawnPos.getY(), spawnPos.getZ() + 0.5D, sw.random.nextFloat() * 360.0F, 0.0F);
 			catgirl.setVariantId(sw.random.nextInt(4));
 			catgirl.setRescued(true);

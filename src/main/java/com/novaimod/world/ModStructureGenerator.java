@@ -2,6 +2,7 @@ package com.novaimod.world;
 
 import com.novaimod.block.TradeMachineBlock;
 import com.novaimod.data.ModPersistentState;
+import com.novaimod.data.WorldVirginLedger;
 import com.novaimod.entity.CushionEntity;
 import com.novaimod.entity.HolyOrderEntity;
 import com.novaimod.entity.LuceEntity;
@@ -412,6 +413,10 @@ public final class ModStructureGenerator {
 	// 1. МИКРОКРЕДИТНАЯ ОРГАНИЗАЦИЯ (МФО)
 	// =========================================================================
 	public static void buildMfoOffice(ServerWorld world, BlockPos origin) {
+		WorldVirginLedger.runInStructureGenScope(() -> buildMfoOfficeInternal(world, origin));
+	}
+
+	private static void buildMfoOfficeInternal(ServerWorld world, BlockPos origin) {
 		fillFoundation(world, origin.add(-6, -4, -6), origin.add(6, -1, 7), Blocks.STONE_BRICKS.getDefaultState());
 		fillBox(world, origin.add(-7, 0, -8), origin.add(7, 7, 7), Blocks.AIR.getDefaultState());
 
@@ -466,6 +471,10 @@ public final class ModStructureGenerator {
 	// 2. ПРОДУКТОВЫЙ МАГАЗИН
 	// =========================================================================
 	public static void buildGroceryStore(ServerWorld world, BlockPos origin) {
+		WorldVirginLedger.runInStructureGenScope(() -> buildGroceryStoreInternal(world, origin));
+	}
+
+	private static void buildGroceryStoreInternal(ServerWorld world, BlockPos origin) {
 		fillFoundation(world, origin.add(-5, -4, -5), origin.add(5, -1, 5), Blocks.COBBLESTONE.getDefaultState());
 		fillBox(world, origin.add(-6, 0, -7), origin.add(6, 6, 6), Blocks.AIR.getDefaultState());
 
@@ -523,6 +532,10 @@ public final class ModStructureGenerator {
 	// 3. ШАХТЁРСКАЯ ЛАВКА
 	// =========================================================================
 	public static void buildMinerShop(ServerWorld world, BlockPos origin) {
+		WorldVirginLedger.runInStructureGenScope(() -> buildMinerShopInternal(world, origin));
+	}
+
+	private static void buildMinerShopInternal(ServerWorld world, BlockPos origin) {
 		for (int dx = -5; dx <= 5; dx++) {
 			for (int dy = 0; dy <= 5; dy++) {
 				for (int dz = -6; dz <= 5; dz++) {
@@ -574,6 +587,10 @@ public final class ModStructureGenerator {
 	// 4. ЛАВОВЫЙ КУРОРТ НА БЕРЕГУ НАСТОЯЩЕГО ОЗЕРА ЛАВЫ В НЕЗЕРЕ
 	// =========================================================================
 	public static void buildLavaResort(ServerWorld nether, BlockPos origin) {
+		WorldVirginLedger.runInStructureGenScope(() -> buildLavaResortInternal(nether, origin));
+	}
+
+	private static void buildLavaResortInternal(ServerWorld nether, BlockPos origin) {
 		// Расчищаем береговой пляж с видом прямо на естественное озеро лавы спереди (+Z)
 		fillBox(nether, origin.add(-8, 1, -6), origin.add(8, 7, 3), Blocks.AIR.getDefaultState());
 
@@ -638,6 +655,10 @@ public final class ModStructureGenerator {
 	// 5. БИОМНОЕ КАЗИНО
 	// =========================================================================
 	public static void buildBiomeCasino(ServerWorld world, BlockPos origin, String style) {
+		WorldVirginLedger.runInStructureGenScope(() -> buildBiomeCasinoInternal(world, origin, style));
+	}
+
+	private static void buildBiomeCasinoInternal(ServerWorld world, BlockPos origin, String style) {
 		Block wallBlock;
 		Block pillarBlock;
 		Block floorPrimary;
@@ -751,6 +772,10 @@ public final class ModStructureGenerator {
 	//    Повар, Эйнштейн, Сталин, Свити Фик, Тусовщицы, Танцпол, Бассейн и Джакузи с мозаичным полом и Подушками!)
 	// =========================================================================
 	public static void buildEgoIsland(ServerWorld world, BlockPos origin) {
+		WorldVirginLedger.runInStructureGenScope(() -> buildEgoIslandInternal(world, origin));
+	}
+
+	private static void buildEgoIslandInternal(ServerWorld world, BlockPos origin) {
 		// Расчищаем воздух над всем островом (включая высокий золотой купол церкви!)
 		fillBox(world, origin.add(-25, 1, -27), origin.add(25, 16, 25), Blocks.AIR.getDefaultState());
 

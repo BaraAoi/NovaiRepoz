@@ -1,5 +1,6 @@
 package com.novaimod.entity;
 
+import com.novaimod.data.WorldVirginLedger;
 import com.novaimod.registry.ModEntities;
 import com.novaimod.registry.ModItems;
 
@@ -255,6 +256,9 @@ public class CushionEntity extends Entity {
 		CushionEntity cushion = ModEntities.CUSHION_ENTITY.create(world);
 		if (cushion == null) {
 			return null;
+		}
+		if (!WorldVirginLedger.isInStructureGenScope()) {
+			cushion.addCommandTag(WorldVirginLedger.TAG_NON_VIRGIN);
 		}
 		float yaw = frontDir.asRotation();
 		cushion.refreshPositionAndAngles(px, py, pz, yaw, 0.0F);

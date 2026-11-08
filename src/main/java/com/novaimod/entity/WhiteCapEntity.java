@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.novaimod.data.WorldVirginLedger;
 import com.novaimod.registry.ModEntities;
 import com.novaimod.registry.ModItems;
 
@@ -189,6 +190,10 @@ public class WhiteCapEntity extends PathAwareEntity {
 		this.homePos = pos;
 		this.homeRadius = radius;
 		this.setPersistent();
+	}
+
+	public boolean isVirginGarrisonCandidate() {
+		return this.homePos != null;
 	}
 
 	private void applyRankStats(int rank) {
@@ -724,6 +729,7 @@ public class WhiteCapEntity extends PathAwareEntity {
 			for (int i = 0; i < 2; i++) {
 				WhiteCapEntity guard = ModEntities.WHITE_CAP_ENTITY.create(sw);
 				if (guard != null) {
+					guard.addCommandTag(WorldVirginLedger.TAG_NON_VIRGIN);
 					double ang = sw.random.nextDouble() * Math.PI * 2.0D;
 					guard.refreshPositionAndAngles(this.getX() + Math.cos(ang) * 2.5D, this.getY(), this.getZ() + Math.sin(ang) * 2.5D, this.getYaw(), 0.0F);
 					guard.setRank(i == 0 ? RANK_HUNTER : RANK_APOTHECARY);

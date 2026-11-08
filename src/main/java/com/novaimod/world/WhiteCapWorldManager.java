@@ -3,6 +3,7 @@ package com.novaimod.world;
 import java.util.List;
 
 import com.novaimod.data.ModPersistentState;
+import com.novaimod.data.WorldVirginLedger;
 import com.novaimod.entity.WhiteCapEntity;
 import com.novaimod.registry.ModEntities;
 import com.novaimod.registry.ModItems;
@@ -202,6 +203,10 @@ public final class WhiteCapWorldManager {
 	// 1. ГЛАВНАЯ БАЗА — «ЦИТАДЕЛЬ БЕЛЫХ КОЛПАКОВ» (25x25 + высокий шпиль-колпак!)
 	// =========================================================================
 	public static void buildWhiteCapCitadel(ServerWorld world, BlockPos center) {
+		WorldVirginLedger.runInStructureGenScope(() -> buildWhiteCapCitadelInternal(world, center));
+	}
+
+	private static void buildWhiteCapCitadelInternal(ServerWorld world, BlockPos center) {
 		int cx = center.getX();
 		int y = center.getY();
 		int cz = center.getZ();
@@ -429,6 +434,10 @@ public final class WhiteCapWorldManager {
 	// 2. СРЕДНЯЯ БАЗА — «КАРАНТИННЫЙ ФОРТ БЕЛЫХ КОЛПАКОВ» (17x17 + башня)
 	// =========================================================================
 	public static void buildFortifiedOutpost(ServerWorld world, BlockPos center) {
+		WorldVirginLedger.runInStructureGenScope(() -> buildFortifiedOutpostInternal(world, center));
+	}
+
+	private static void buildFortifiedOutpostInternal(ServerWorld world, BlockPos center) {
 		int cx = center.getX();
 		int y = center.getY();
 		int cz = center.getZ();
@@ -527,6 +536,10 @@ public final class WhiteCapWorldManager {
 	// 3. ПОЛЕВОЙ ОХОТНИЧИЙ ЛАГЕРЬ (белые шатры-колпаки + костёр + котёл)
 	// =========================================================================
 	public static void buildFieldCamp(ServerWorld world, BlockPos center) {
+		WorldVirginLedger.runInStructureGenScope(() -> buildFieldCampInternal(world, center));
+	}
+
+	private static void buildFieldCampInternal(ServerWorld world, BlockPos center) {
 		int cx = center.getX();
 		int y = center.getY();
 		int cz = center.getZ();
@@ -582,6 +595,10 @@ public final class WhiteCapWorldManager {
 	// 4. АДСКИЙ ЭКСПЕДИЦИОННЫЙ ЛАГЕРЬ В НЕЗЕРЕ (охота на Всполохов и Иссушителей!)
 	// =========================================================================
 	public static void buildNetherExpeditionCamp(ServerWorld world, BlockPos center) {
+		WorldVirginLedger.runInStructureGenScope(() -> buildNetherExpeditionCampInternal(world, center));
+	}
+
+	private static void buildNetherExpeditionCampInternal(ServerWorld world, BlockPos center) {
 		int cx = center.getX();
 		int y = center.getY();
 		int cz = center.getZ();
@@ -671,6 +688,9 @@ public final class WhiteCapWorldManager {
 		WhiteCapEntity member = ModEntities.WHITE_CAP_ENTITY.create(world);
 		if (member == null) {
 			return;
+		}
+		if (!WorldVirginLedger.isInStructureGenScope()) {
+			member.addCommandTag(WorldVirginLedger.TAG_NON_VIRGIN);
 		}
 		member.refreshPositionAndAngles(pos.getX() + 0.5D, pos.getY(), pos.getZ() + 0.5D, world.random.nextFloat() * 360.0F, 0.0F);
 		member.setRank(rank);

@@ -1,6 +1,7 @@
 package com.novaimod.world;
 
 import com.novaimod.data.ModPersistentState;
+import com.novaimod.data.WorldVirginLedger;
 import com.novaimod.entity.CushionEntity;
 import com.novaimod.entity.HolyOrderEntity;
 import com.novaimod.entity.LuceEntity;
@@ -177,6 +178,7 @@ public final class LuceWorldManager {
 				for (int i = 0; i < kbkRanks.length; i++) {
 					WhiteCapEntity kbk = ModEntities.WHITE_CAP_ENTITY.create(world);
 					if (kbk != null) {
+						kbk.addCommandTag(WorldVirginLedger.TAG_NON_VIRGIN);
 						kbk.refreshPositionAndAngles(kbkSpot.getX() + (i - 1) + 0.5D, kbkSpot.getY() + 1.0D, kbkSpot.getZ() + 0.5D, 180.0F, 0.0F);
 						kbk.setRank(kbkRanks[i]);
 						kbk.setHomeAnchor(kbkSpot, 40);
@@ -231,6 +233,9 @@ public final class LuceWorldManager {
 		if (m == null) {
 			return null;
 		}
+		if (!WorldVirginLedger.isInStructureGenScope()) {
+			m.addCommandTag(WorldVirginLedger.TAG_NON_VIRGIN);
+		}
 		m.refreshPositionAndAngles(pos.getX() + 0.5D, pos.getY(), pos.getZ() + 0.5D, 0.0F, 0.0F);
 		m.setRank(rank);
 		m.setHomeAnchor(anchor, radius);
@@ -246,6 +251,9 @@ public final class LuceWorldManager {
 		WolfEntity wolf = EntityType.WOLF.create(world);
 		if (wolf == null) {
 			return null;
+		}
+		if (!WorldVirginLedger.isInStructureGenScope()) {
+			wolf.addCommandTag(WorldVirginLedger.TAG_NON_VIRGIN);
 		}
 		wolf.refreshPositionAndAngles(pos.getX() + 0.5D, pos.getY(), pos.getZ() + 0.5D, 0.0F, 0.0F);
 		wolf.setTamed(true, false);
@@ -273,6 +281,10 @@ public final class LuceWorldManager {
 	// 1. ГЛАВНАЯ ТВЕРДЫНЯ ЦЕРКВИ — «КАФЕДРАЛЬНЫЙ СОБОР СВЯТОЙ ЛЮЧЕ» (23x29)
 	// =========================================================================
 	public static void buildLuceCathedral(ServerWorld world, BlockPos origin) {
+		WorldVirginLedger.runInStructureGenScope(() -> buildLuceCathedralInternal(world, origin));
+	}
+
+	private static void buildLuceCathedralInternal(ServerWorld world, BlockPos origin) {
 		int ox = origin.getX();
 		int oy = origin.getY();
 		int oz = origin.getZ();
@@ -490,6 +502,10 @@ public final class LuceWorldManager {
 	// 2. УКРЕПЛЁННАЯ ЗАСТАВА ОРДЕНА ЛЮЧЕ («luce_abbey», 15x15)
 	// =========================================================================
 	public static void buildLuceAbbeyOutpost(ServerWorld world, BlockPos origin) {
+		WorldVirginLedger.runInStructureGenScope(() -> buildLuceAbbeyOutpostInternal(world, origin));
+	}
+
+	private static void buildLuceAbbeyOutpostInternal(ServerWorld world, BlockPos origin) {
 		int ox = origin.getX();
 		int oy = origin.getY();
 		int oz = origin.getZ();
@@ -554,6 +570,10 @@ public final class LuceWorldManager {
 	// 3. «ЧАСОВНЯ СВЯТОЙ ЛЮЧЕ» (`luce_shrine`, 15x17)
 	// =========================================================================
 	public static void buildLuceShrine(ServerWorld world, BlockPos origin) {
+		WorldVirginLedger.runInStructureGenScope(() -> buildLuceShrineInternal(world, origin));
+	}
+
+	private static void buildLuceShrineInternal(ServerWorld world, BlockPos origin) {
 		int ox = origin.getX();
 		int oy = origin.getY();
 		int oz = origin.getZ();

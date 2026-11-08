@@ -2,6 +2,7 @@ package com.novaimod.item;
 
 import java.util.List;
 
+import com.novaimod.data.WorldVirginLedger;
 import com.novaimod.entity.WhiteCapEntity;
 import com.novaimod.registry.ModEntities;
 
@@ -43,6 +44,7 @@ public class WhiteCapSpawnEggItem extends Item {
 
 		WhiteCapEntity entity = ModEntities.WHITE_CAP_ENTITY.create(sw);
 		if (entity != null) {
+			entity.addCommandTag(WorldVirginLedger.TAG_NON_VIRGIN);
 			entity.refreshPositionAndAngles(
 					spawnPos.getX() + 0.5D,
 					spawnPos.getY(),

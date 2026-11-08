@@ -3,6 +3,7 @@ package com.novaimod.world;
 import java.util.List;
 
 import com.novaimod.data.ModPersistentState;
+import com.novaimod.data.WorldVirginLedger;
 import com.novaimod.entity.CatgirlEntity;
 import com.novaimod.registry.ModEntities;
 import com.novaimod.registry.ModItems;
@@ -121,6 +122,10 @@ public final class AbandonedLabManager {
 	}
 
 	public static void buildAbandonedScientistLab(ServerWorld world, BlockPos surfaceOrigin) {
+		WorldVirginLedger.runInStructureGenScope(() -> buildAbandonedScientistLabInternal(world, surfaceOrigin));
+	}
+
+	private static void buildAbandonedScientistLabInternal(ServerWorld world, BlockPos surfaceOrigin) {
 		int cx = surfaceOrigin.getX();
 		int surfY = surfaceOrigin.getY();
 		int cz = surfaceOrigin.getZ();

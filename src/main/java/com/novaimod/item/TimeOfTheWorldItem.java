@@ -51,7 +51,7 @@ public class TimeOfTheWorldItem extends Item {
 	public static String modeTitle(int mode) {
 		return mode == 1
 				? "Прокрутка Эпох (Рост урожая и плавка печей без сброса мира)"
-				: "Полный Перезапуск в Девственно Чистый Мир (Все блоки + Все мобы)";
+				: "Перезапуск в Девственно Чистый Мир (Эталон при создании мира)";
 	}
 
 	@Override
@@ -83,8 +83,9 @@ public class TimeOfTheWorldItem extends Item {
 		tooltip.add(Text.literal("Задача: ").formatted(Formatting.GRAY)
 				.append(Text.literal(modeTitle(mode)).formatted(Formatting.AQUA)));
 		tooltip.add(Text.literal("• ПКМ: Плавный разгон Дня и Ночи (1x -> 2400x) и Перезапуск Мира!").formatted(Formatting.YELLOW));
-		tooltip.add(Text.literal("  Возвращает ВСЕ сломанные/взорванные блоки и ВСЕХ убитых мобов").formatted(Formatting.GREEN));
-		tooltip.add(Text.literal("  в девственно чистое изначальное состояние Дня 1!").formatted(Formatting.GREEN));
+		tooltip.add(Text.literal("  Восстанавливает ВСЕ блоки и ТОЛЬКО изначальных существ мира").formatted(Formatting.GREEN));
+		tooltip.add(Text.literal("  (коренных животных без размножения и NPC/мобов всех строений —").formatted(Formatting.GREEN));
+		tooltip.add(Text.literal("  приручённые и Кошкодевочки возвращаются обратно в свои клетки/места!).").formatted(Formatting.GREEN));
 		tooltip.add(Text.literal("• Повторный ПКМ: Мгновенный финал | Shift+ПКМ: Сменить режим").formatted(Formatting.GRAY));
 	}
 }

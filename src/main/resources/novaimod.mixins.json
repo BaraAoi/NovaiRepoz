@@ -15,7 +15,8 @@
 		"GrindstoneScreenHandlerMixin",
 		"TickManagerMixin",
 		"EndermanEntityMixin",
-		"WorldMixin"
+		"WorldMixin",
+		"StructureTemplateMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

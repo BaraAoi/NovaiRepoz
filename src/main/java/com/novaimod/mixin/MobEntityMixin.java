@@ -18,6 +18,7 @@ import com.novaimod.ai.evolution.RetreatAndRecoverGoal;
 import com.novaimod.ai.evolution.SkeletonTacticalCombatGoal;
 import com.novaimod.ai.evolution.TerrainAmbushGoal;
 import com.novaimod.ai.evolution.TrailPursuitAndSearchGoal;
+import com.novaimod.data.WorldVirginLedger;
 import com.novaimod.entity.HolyOrderEntity;
 import com.novaimod.entity.LuceEntity;
 import com.novaimod.entity.PartyDollEntity;
@@ -25,14 +26,17 @@ import com.novaimod.entity.WhiteCapEntity;
 import com.novaimod.world.ApocalypseEventManager;
 import com.novaimod.world.TimeStopManager;
 
+import net.minecraft.entity.EntityData;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.SpawnReason;
 import net.minecraft.entity.ai.goal.GoalSelector;
 import net.minecraft.entity.mob.AbstractSkeletonEntity;
 import net.minecraft.entity.mob.Angerable;
 import net.minecraft.entity.mob.CreeperEntity;
 import net.minecraft.entity.mob.HostileEntity;
 import net.minecraft.entity.mob.MobEntity;
+import net.minecraft.entity.mob.Monster;
 import net.minecraft.entity.mob.PathAwareEntity;
 import net.minecraft.entity.mob.SpiderEntity;
 import net.minecraft.entity.mob.ZombieEntity;
@@ -42,6 +46,8 @@ import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.LocalDifficulty;
+import net.minecraft.world.ServerWorldAccess;
 import net.minecraft.world.World;
 
 /**
@@ -92,6 +98,32 @@ public abstract class MobEntityMixin extends LivingEntity implements EvolvedMobA
 
 	protected MobEntityMixin(EntityType<? extends LivingEntity> entityType, World world) {
 		super(entityType, world);
+	}
+
+	@Inject(method = "initialize", at = @At("TAIL"))
+	private void novai$tagVirginWorldOriginOnInitialize(
+			ServerWorldAccess world,
+			LocalDifficulty difficulty,
+			SpawnReason spawnReason,
+			EntityData entityData,
+			CallbackInfoReturnable<EntityData> cir
+	) {
+		MobEntity self = (MobEntity) (Object) this;
+		if (self.getCommandTags().contains(WorldVirginLedger.TAG_VIRGIN_RECORDED)
+				|| self.getCommandTags().contains(WorldVirginLedger.TAG_TEMP_SUMMON)) {
+			return;
+		}
+		boolean isVirginCreation = WorldVirginLedger.isInStructureGenScope()
+				|| spawnReason == SpawnReason.STRUCTURE
+				|| (spawnReason == SpawnReason.CHUNK_GENERATION && !(self instanceof Monster));
+
+		if (isVirginCreation) {
+			self.removeCommandTag(WorldVirginLedger.TAG_NON_VIRGIN);
+			self.addCommandTag(WorldVirginLedger.TAG_VIRGIN_NATIVE);
+		} else if (!self.getCommandTags().contains(WorldVirginLedger.TAG_VIRGIN_NATIVE)) {
+			// Ночные монстры (NATURAL), размножение (BREEDING), спавн-яйца, команды, спавнеры, големы игрока и т.д.
+			self.addCommandTag(WorldVirginLedger.TAG_NON_VIRGIN);
+		}
 	}
 
 	@Inject(method = "isAffectedByDaylight", at = @At("HEAD"), cancellable = true)

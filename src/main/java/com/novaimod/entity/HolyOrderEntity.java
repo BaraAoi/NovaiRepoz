@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.novaimod.data.ModPersistentState;
+import com.novaimod.data.WorldVirginLedger;
 import com.novaimod.network.ModServerNetworking;
 import com.novaimod.registry.ModEntities;
 import com.novaimod.registry.ModItems;
@@ -179,6 +180,10 @@ public class HolyOrderEntity extends PathAwareEntity {
 
 	public boolean isCommandedBy(PlayerEntity player) {
 		return player != null && this.bannerCommanderUuid != null && this.bannerCommanderUuid.equals(player.getUuid());
+	}
+
+	public boolean isVirginGarrisonCandidate() {
+		return this.homePos != null && this.temporarySummonTicks < 0 && this.bannerCommanderUuid == null;
 	}
 
 	public boolean toggleCommanderOrder() {
@@ -891,6 +896,7 @@ public class HolyOrderEntity extends PathAwareEntity {
 		for (int i = -1; i <= 1; i += 2) {
 			HolyOrderEntity guard = ModEntities.HOLY_ORDER_ENTITY.create(sw);
 			if (guard != null) {
+				guard.addCommandTag(WorldVirginLedger.TAG_NON_VIRGIN);
 				guard.refreshPositionAndAngles(this.getX() + i * 2.2D, this.getY(), this.getZ() + 1.5D, this.getYaw(), 0.0F);
 				guard.setRank(i < 0 ? RANK_CRUSADER : RANK_INQUISITOR);
 				guard.setHomeAnchor(this.getBlockPos(), 24);

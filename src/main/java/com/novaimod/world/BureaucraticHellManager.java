@@ -5,6 +5,7 @@ import java.util.List;
 import com.novaimod.NovaiMod;
 import com.novaimod.block.TradeMachineBlock;
 import com.novaimod.data.ModPersistentState;
+import com.novaimod.data.WorldVirginLedger;
 import com.novaimod.entity.CatgirlEntity;
 import com.novaimod.entity.CushionEntity;
 import com.novaimod.entity.LuceEntity;
@@ -393,6 +394,10 @@ public final class BureaucraticHellManager {
 	}
 
 	public static void buildEntireMinistryComplex(ServerWorld world) {
+		WorldVirginLedger.runInStructureGenScope(() -> buildEntireMinistryComplexInternal(world));
+	}
+
+	private static void buildEntireMinistryComplexInternal(ServerWorld world) {
 		// Строим оболочку всех 7 этажей, лифтовой узел и маршевую лестницу
 		for (int i = 0; i < ALL_FLOOR_YS.length; i++) {
 			int fy = ALL_FLOOR_YS[i];

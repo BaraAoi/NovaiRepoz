@@ -130,7 +130,7 @@ public final class TimeOfTheWorldManager {
 
 		WorldVirginLedger ledger = WorldVirginLedger.get(server);
 		String subtitle = virginRebootMode
-				? " (К восстановлению: " + ledger.getTotalRecordedBlocks() + " блоков и " + ledger.getDeadMobsCount() + " душ)"
+				? " (К откату: " + ledger.getTotalRecordedBlocks() + " блоков | Эталон мира: " + ledger.getVirginRosterCount() + " коренных существ)"
 				: " (Режим Прокрутки Эпох: ускорение ферм и печей)";
 		server.getPlayerManager().broadcast(
 				Text.literal("✦ 「TIME OF THE WORLD — MADE IN HEAVEN」: ВРЕМЯ НАЧИНАЕТ РАЗГОН!" + subtitle + " ✦")
@@ -278,7 +278,8 @@ public final class TimeOfTheWorldManager {
 
 		int[] stats = WorldVirginLedger.get(server).restoreEntireWorldToVirginState(server);
 		int restoredBlocks = stats[0];
-		int revivedMobs = stats[1];
+		int restoredNatives = stats[1];
+		int purgedArtificial = stats[2];
 
 		ServerWorld overworld = server.getOverworld();
 		for (ServerWorld sw : server.getWorlds()) {
@@ -319,7 +320,7 @@ public final class TimeOfTheWorldManager {
 		server.getPlayerManager().broadcast(
 				Text.literal("✦ 「MADE IN HEAVEN」 — МИР ПЕРЕЗАПУЩЕН В ДЕВСТВЕННО ЧИСТОЕ СОСТОЯНИЕ! ")
 						.formatted(Formatting.AQUA, Formatting.BOLD)
-						.append(Text.literal("(Восстановлено блоков: " + restoredBlocks + " | Воскрешено мобов: " + revivedMobs + ")")
+						.append(Text.literal("(Блоков: " + restoredBlocks + " | Коренных существ на местах: " + restoredNatives + " | Стерто чужеродных: " + purgedArtificial + ")")
 								.formatted(Formatting.GOLD, Formatting.BOLD)),
 				false
 		);

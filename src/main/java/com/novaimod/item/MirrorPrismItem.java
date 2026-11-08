@@ -121,6 +121,9 @@ public class MirrorPrismItem extends Item {
 				double cx = original.getX() + Math.cos(angle) * 1.6D;
 				double cz = original.getZ() + Math.sin(angle) * 1.6D;
 				Entity clone = EntityType.loadEntityWithPassengers(mobNbt, sw, e -> {
+					e.removeCommandTag(WorldVirginLedger.TAG_VIRGIN_NATIVE);
+					e.removeCommandTag(WorldVirginLedger.TAG_VIRGIN_RECORDED);
+					e.addCommandTag(WorldVirginLedger.TAG_NON_VIRGIN);
 					e.addCommandTag(WorldVirginLedger.TAG_TEMP_SUMMON);
 					e.refreshPositionAndAngles(cx, original.getY(), cz, original.getYaw(), original.getPitch());
 					return e;

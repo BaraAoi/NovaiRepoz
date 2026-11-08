@@ -2,6 +2,7 @@ package com.novaimod.item;
 
 import java.util.List;
 
+import com.novaimod.data.WorldVirginLedger;
 import com.novaimod.entity.HolyOrderEntity;
 import com.novaimod.entity.LuceEntity;
 import com.novaimod.entity.WhiteCapEntity;
@@ -89,6 +90,7 @@ public class CrusadeBannerItem extends Item {
 		for (int i = 0; i < ranks.length; i++) {
 			HolyOrderEntity knight = ModEntities.HOLY_ORDER_ENTITY.create(sw);
 			if (knight != null) {
+				knight.addCommandTag(WorldVirginLedger.TAG_NON_VIRGIN);
 				knight.refreshPositionAndAngles(
 						sp.getX() + offsets[i][0],
 						sp.getY(),

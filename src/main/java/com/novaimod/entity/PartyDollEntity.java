@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.novaimod.data.ModPersistentState;
+import com.novaimod.data.WorldVirginLedger;
 import com.novaimod.registry.ModEntities;
 import com.novaimod.registry.ModItems;
 import com.novaimod.registry.ModSounds;
@@ -482,6 +483,9 @@ public class PartyDollEntity extends Entity {
 		PartyDollEntity doll = ModEntities.PARTY_DOLL_ENTITY.create(world);
 		if (doll == null) {
 			return null;
+		}
+		if (!WorldVirginLedger.isInStructureGenScope()) {
+			doll.addCommandTag(WorldVirginLedger.TAG_NON_VIRGIN);
 		}
 		doll.refreshPositionAndAngles(supportPos.getX() + 0.5D, y, supportPos.getZ() + 0.5D, yaw, 0.0F);
 		doll.setDollYaw(yaw);

@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.UUID;
 
 import com.novaimod.data.ModPersistentState;
+import com.novaimod.data.WorldVirginLedger;
 import com.novaimod.economy.ItemPricingRegistry;
 import com.novaimod.entity.ModNpcEntity;
 import com.novaimod.entity.NpcRole;
@@ -248,6 +249,7 @@ public final class DetentionManager {
 		if (npc == null) {
 			return null;
 		}
+		npc.addCommandTag(WorldVirginLedger.TAG_NON_VIRGIN);
 		npc.refreshPositionAndAngles(spawnPos.getX() + 0.5D, spawnPos.getY(), spawnPos.getZ() + 0.5D, random.nextFloat() * 360.0F, 0.0F);
 		npc.configureRole(role, "");
 		npc.setTargetPlayerUuid(player.getUuid());
@@ -291,6 +293,7 @@ public final class DetentionManager {
 		for (int i = -1; i <= 1; i++) {
 			ModNpcEntity member = ModEntities.MOD_NPC.create(bureauWorld);
 			if (member != null) {
+				member.addCommandTag(WorldVirginLedger.TAG_NON_VIRGIN);
 				member.refreshPositionAndAngles(cageCenter.getX() + 0.5D, cageCenter.getY(), cageCenter.getZ() + 0.5D + i * 1.1D, -90.0F, 0.0F);
 				member.configureRole(NpcRole.ARMENIAN_BRIGADE, "cage");
 				member.setTargetPlayerUuid(player.getUuid());

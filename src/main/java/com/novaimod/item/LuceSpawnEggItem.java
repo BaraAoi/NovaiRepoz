@@ -2,6 +2,7 @@ package com.novaimod.item;
 
 import java.util.List;
 
+import com.novaimod.data.WorldVirginLedger;
 import com.novaimod.entity.LuceEntity;
 import com.novaimod.registry.ModEntities;
 import com.novaimod.world.LuceWorldManager;
@@ -40,6 +41,7 @@ public class LuceSpawnEggItem extends Item {
 		BlockPos spawnPos = context.getBlockPos().offset(context.getSide());
 		LuceEntity luce = ModEntities.LUCE_ENTITY.create(sw);
 		if (luce != null) {
+			luce.addCommandTag(WorldVirginLedger.TAG_NON_VIRGIN);
 			luce.refreshPositionAndAngles(
 					spawnPos.getX() + 0.5D,
 					spawnPos.getY(),

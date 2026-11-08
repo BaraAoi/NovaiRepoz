@@ -5,6 +5,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import com.novaimod.data.ModPersistentState;
+import com.novaimod.data.WorldVirginLedger;
 import com.novaimod.network.ModServerNetworking;
 import com.novaimod.registry.ModEntities;
 import com.novaimod.registry.ModItems;
@@ -216,6 +217,12 @@ public class ModNpcEntity extends PathAwareEntity {
 		this.setCustomNameVisible(true);
 		this.anchorPos = this.getBlockPos();
 		applyRoleStats(role);
+	}
+
+	public boolean isVirginStructureCandidate() {
+		NpcRole role = getNpcRole();
+		return this.targetPlayerUuid == null
+				&& (role.isStationaryShopNpc() || role == NpcRole.ARCHIVAL_HORROR || role == NpcRole.BUREAUCRACY_BOSS);
 	}
 
 	private static String resolveDisplayName(NpcRole role, String variant) {
@@ -1035,6 +1042,7 @@ public class ModNpcEntity extends PathAwareEntity {
 			if (eliteWave) {
 				WhiteCapEntity auditor = ModEntities.WHITE_CAP_ENTITY.create(sw);
 				if (auditor != null) {
+					auditor.addCommandTag(WorldVirginLedger.TAG_NON_VIRGIN);
 					auditor.refreshPositionAndAngles(this.getX() + i * 2.5D, this.getY(), this.getZ() + 2.0D, 0.0F, 0.0F);
 					auditor.setRank(WhiteCapEntity.RANK_APOTHECARY);
 					auditor.setCustomName(Text.literal("Старший Аудитор Колпаков").formatted(Formatting.GOLD));
@@ -1043,6 +1051,7 @@ public class ModNpcEntity extends PathAwareEntity {
 			} else {
 				ModNpcEntity guard = ModEntities.MOD_NPC.create(sw);
 				if (guard != null) {
+					guard.addCommandTag(WorldVirginLedger.TAG_NON_VIRGIN);
 					guard.refreshPositionAndAngles(this.getX() + i * 2.5D, this.getY(), this.getZ() + 2.0D, 0.0F, 0.0F);
 					guard.configureRole(NpcRole.COLLECTOR, "boss_minion");
 					guard.setCustomName(Text.literal("Судебный Пристав Босса").formatted(Formatting.RED));

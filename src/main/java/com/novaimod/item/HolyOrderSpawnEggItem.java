@@ -2,6 +2,7 @@ package com.novaimod.item;
 
 import java.util.List;
 
+import com.novaimod.data.WorldVirginLedger;
 import com.novaimod.entity.HolyOrderEntity;
 import com.novaimod.registry.ModEntities;
 
@@ -39,6 +40,7 @@ public class HolyOrderSpawnEggItem extends Item {
 		BlockPos pos = context.getBlockPos().offset(context.getSide());
 		HolyOrderEntity member = ModEntities.HOLY_ORDER_ENTITY.create(sw);
 		if (member != null) {
+			member.addCommandTag(WorldVirginLedger.TAG_NON_VIRGIN);
 			boolean boss = context.getPlayer() != null && context.getPlayer().isSneaking();
 			int rank = boss ? HolyOrderEntity.RANK_CARDINAL : sw.random.nextInt(3);
 			member.refreshPositionAndAngles(

@@ -1,5 +1,6 @@
 package com.novaimod.entity;
 
+import com.novaimod.data.WorldVirginLedger;
 import com.novaimod.item.PokeballItem;
 import com.novaimod.registry.ModEntities;
 import com.novaimod.registry.ModItems;
@@ -237,6 +238,10 @@ public class PokeballProjectileEntity extends ThrownItemEntity {
 			if (mobNbt != null && !mobNbt.isEmpty()) {
 				float yaw = owner != null ? owner.getYaw() + 180.0F : sw.random.nextFloat() * 360.0F;
 				Entity restored = EntityType.loadEntityWithPassengers(mobNbt, sw, e -> {
+					e.removeCommandTag(WorldVirginLedger.TAG_VIRGIN_NATIVE);
+					e.removeCommandTag(WorldVirginLedger.TAG_VIRGIN_RECORDED);
+					e.addCommandTag(WorldVirginLedger.TAG_NON_VIRGIN);
+					WorldVirginLedger.stampEntityEpoch(e, sw);
 					e.refreshPositionAndAngles(pos.x, pos.y, pos.z, yaw, 0.0F);
 					return e;
 				});
