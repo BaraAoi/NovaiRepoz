@@ -310,11 +310,11 @@ public class NovaiMod implements ModInitializer {
 			if (world instanceof ServerWorld sw && !player.isCreative() && !player.isSpectator()) {
 				var churchGuards = sw.getEntitiesByClass(HolyOrderEntity.class, new net.minecraft.util.math.Box(pos).expand(14.0D), LivingEntity::isAlive);
 				if (!churchGuards.isEmpty() && !churchGuards.get(0).isCommandedBy(player)) {
-					ModPersistentState state = ModPersistentState.get(sw.getServer());
-					ModPersistentState.PlayerFinanceData acc = state.getAccount(player.getUuid());
+					ModPersistentState pState = ModPersistentState.get(sw.getServer());
+					ModPersistentState.PlayerFinanceData acc = pState.getAccount(player.getUuid());
 					if (!acc.lucePilgrimOathComplete) {
 						acc.holyOrderRep = Math.max(-500, acc.holyOrderRep - 10);
-						state.markDirty();
+						pState.markDirty();
 						churchGuards.get(0).markPlayerEnemy(player, 500);
 						churchGuards.get(0).alertNearbyChurchAgainst(player);
 						if (player instanceof ServerPlayerEntity sp) {

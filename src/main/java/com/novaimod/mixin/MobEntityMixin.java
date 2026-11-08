@@ -40,7 +40,6 @@ import net.minecraft.entity.passive.WolfEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.DyeColor;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
@@ -258,7 +257,6 @@ public abstract class MobEntityMixin extends LivingEntity implements EvolvedMobA
 				if (!santino.isTamed() || !LuceEntity.SANTINO_SACRED_OWNER_UUID.equals(santino.getOwnerUuid())) {
 					santino.setTamed(true, false);
 					santino.setOwnerUuid(LuceEntity.SANTINO_SACRED_OWNER_UUID);
-					santino.setCollarColor(DyeColor.YELLOW);
 					santino.setSitting(false);
 					santino.setInSittingPose(false);
 				}

@@ -250,7 +250,6 @@ public final class LuceWorldManager {
 		wolf.refreshPositionAndAngles(pos.getX() + 0.5D, pos.getY(), pos.getZ() + 0.5D, 0.0F, 0.0F);
 		wolf.setTamed(true, false);
 		wolf.setOwnerUuid(LuceEntity.SANTINO_SACRED_OWNER_UUID);
-		wolf.setCollarColor(DyeColor.YELLOW);
 		wolf.setSitting(false);
 		wolf.setInSittingPose(false);
 		wolf.setCustomName(Text.literal("Сантино (Пёсик Люче)").formatted(Formatting.AQUA, Formatting.BOLD));
