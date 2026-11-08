@@ -358,9 +358,7 @@ public final class WhiteCapWorldManager {
 			world.setBlockState(new BlockPos(cx - 9, y + dy, cz - 5), Blocks.BOOKSHELF.getDefaultState(), FLAGS);
 		}
 
-		// ПРАВОЕ КРЫЛО — Карантинные Клетки с Пленным Эндерменом и Визер-Скелетом!
-		buildPrisonCellWithAbomination(world, new BlockPos(cx + 7, y + 1, cz - 2), true);
-		buildPrisonCellWithAbomination(world, new BlockPos(cx + 7, y + 1, cz + 4), false);
+		// Примечание v4.0.0: все тюремные клетки и изоляторы перенесены в измерение «Бюрократический Ад» (в обычном мире тюрячки не спавнятся!)
 
 		// СЕВЕРНЫЙ ПОМОСТ ВЕРХОВНОГО МАГИСТРА И СОКРОВИЩНИЦА (cz - 8)
 		for (int dx = -4; dx <= 4; dx++) {

@@ -15,6 +15,7 @@ import com.novaimod.item.PlayerTeleporterItem;
 import com.novaimod.item.UberGunItem;
 import com.novaimod.registry.ModItems;
 import com.novaimod.screen.VendingScreenHandler;
+import com.novaimod.world.BureaucraticHellManager;
 import com.novaimod.world.DetentionManager;
 
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
@@ -294,6 +295,7 @@ public final class ModServerNetworking {
 			}
 			acc.balance -= pay;
 			acc.debt -= pay;
+			acc.totalLoanRepaid += pay;
 			if (acc.debt <= 0L) {
 				acc.debt = 0L;
 				acc.mfoLockedHalf = 0L;
@@ -305,6 +307,14 @@ public final class ModServerNetworking {
 						Text.literal("[Кредитор]: Поздравляем! Ваш долг полностью погашен!").formatted(Formatting.GOLD, Formatting.BOLD),
 						false
 				);
+				if (acc.totalLoanRepaid >= 5000L) {
+					acc.totalLoanRepaid = 0L;
+					acc.bureaucracyKeyEarned = true;
+					BureaucraticHellManager.giveBureaucracyKey(
+							player,
+							"🔑 [Кредитор]: Ого... Вы реально закрыли крупный займ (5 000+ ₽) вместо того, чтобы сгнить в подвале! За образцовую платёжеспособность вам выдан «Ключ Бюрократии»! Нажмите им ПКМ по ЛЮБОЙ ДВЕРИ в мире — и она поведёт в измерение «Бюрократический Ад»!"
+					);
+				}
 			} else {
 				acc.mfoLockedHalf = Math.max(1L, (acc.debt + 1L) / 2L);
 				acc.bankPatience = Math.min(100, acc.bankPatience + 15);

@@ -23,7 +23,15 @@ public enum NpcRole {
 	COLLECTOR("collector", "Коллектор", false),
 	ARMENIAN_BRIGADE("brigade", "Бригада армян", false),
 	MASTER_OF_SPORTS("master_of_sports", "Мастер спорта", false),
-	OMON("omon", "ОМОН", false);
+	OMON("omon", "ОМОН", false),
+	// === v4.0.0: Обитатели и Боссы измерения «Бюрократический Ад» ===
+	DEBTOR_IDIOT("debtor_idiot", "Дебил-должник", true),
+	BUREAU_REGISTRAR("bureau_registrar", "Регистраторша Приёмной", true),
+	TIRED_CLERK("tired_clerk", "Выгоревший клерк", true),
+	VIP_BUREAUCRAT("vip_bureaucrat", "Важная Шишка", true),
+	CAFETERIA_BUREAUCRAT("cafeteria_bureaucrat", "Инспектор Столовой", true),
+	ARCHIVAL_HORROR("archival_horror", "Бессмертный Ревизор Архива", false),
+	BUREAUCRACY_BOSS("bureaucracy_boss", "Верховный Председатель Бюрократии", false);
 
 	private final String id;
 	private final String displayName;

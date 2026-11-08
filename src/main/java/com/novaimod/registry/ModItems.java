@@ -6,6 +6,8 @@ import java.util.Map;
 import com.novaimod.NovaiMod;
 import com.novaimod.equipment.UltimateArmorItem;
 import com.novaimod.item.AstralGateItem;
+import com.novaimod.item.BureaucracyKeyItem;
+import com.novaimod.item.BureaucracySealItem;
 import com.novaimod.item.CatgirlSpawnEggItem;
 import com.novaimod.item.CelestialWrathItem;
 import com.novaimod.item.ChronoScepterItem;
@@ -243,6 +245,17 @@ public final class ModItems {
 			new CatgirlSpawnEggItem(new Item.Settings().maxCount(64).rarity(Rarity.EPIC))
 	);
 
+	// === v4.0.0: ИЗМЕРЕНИЕ «БЮРОКРАТИЧЕСКИЙ АД» ===
+	public static final Item BUREAUCRACY_KEY = register(
+			"bureaucracy_key",
+			new BureaucracyKeyItem(new Item.Settings().maxCount(1).rarity(Rarity.EPIC).fireproof())
+	);
+
+	public static final Item BUREAUCRACY_SEAL = register(
+			"bureaucracy_seal",
+			new BureaucracySealItem(new Item.Settings().maxCount(1).rarity(Rarity.EPIC).fireproof())
+	);
+
 	public static final Map<DyeColor, Item> CUSHIONS = new EnumMap<>(DyeColor.class);
 
 	static {
@@ -293,6 +306,8 @@ public final class ModItems {
 						entries.add(WHITE_CAP_FLASK);
 						entries.add(WHITE_CAP_COMPASS);
 						entries.add(POKEBALL);
+						entries.add(BUREAUCRACY_KEY);
+						entries.add(BUREAUCRACY_SEAL);
 						entries.add(WHITE_CAP_SPAWN_EGG);
 						entries.add(WHITE_CAP_BOSS_SPAWN_EGG);
 						entries.add(CATGIRL_SPAWN_EGG);
@@ -317,6 +332,8 @@ public final class ModItems {
 						entries.add(PLAGUE_CANE);
 						entries.add(WHITE_CAP_COMPASS);
 						entries.add(POKEBALL);
+						entries.add(BUREAUCRACY_KEY);
+						entries.add(BUREAUCRACY_SEAL);
 						entries.add(WHITE_CAP_SPAWN_EGG);
 						entries.add(WHITE_CAP_BOSS_SPAWN_EGG);
 						entries.add(CATGIRL_SPAWN_EGG);

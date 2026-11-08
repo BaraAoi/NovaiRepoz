@@ -6,9 +6,12 @@ import java.util.UUID;
 
 import com.novaimod.data.ModPersistentState;
 import com.novaimod.network.ModServerNetworking;
+import com.novaimod.registry.ModEntities;
 import com.novaimod.registry.ModItems;
 import com.novaimod.world.DetentionManager;
 
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.LoreComponent;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.ai.goal.LookAroundGoal;
@@ -17,15 +20,21 @@ import net.minecraft.entity.ai.goal.SwimGoal;
 import net.minecraft.entity.attribute.DefaultAttributeContainer;
 import net.minecraft.entity.attribute.EntityAttributeInstance;
 import net.minecraft.entity.attribute.EntityAttributes;
+import net.minecraft.entity.boss.BossBar;
+import net.minecraft.entity.boss.ServerBossBar;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.damage.DamageTypes;
 import net.minecraft.entity.data.DataTracker;
 import net.minecraft.entity.data.TrackedData;
 import net.minecraft.entity.data.TrackedDataHandlerRegistry;
+import net.minecraft.entity.effect.StatusEffectInstance;
+import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.mob.PathAwareEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -109,15 +118,67 @@ public class ModNpcEntity extends PathAwareEntity {
 			"Давай к нам на танцпол! Если запрыгать под бит диджея, гости даже чаевые за крутые движения кидают!"
 	};
 
+	private static final String[] DEBTOR_IDIOT_LINES = new String[]{
+			"Брат, я взял в МФО «беспроцентный займ» 500 рублей, чтобы поставить всё на ЗЕРО в казино... Прошло две недели по 20% в день — теперь я должен 48 МИЛЛИАРДОВ и левую почку!",
+			"Зазывала кричал: «Полная халява, никаких переплат!» Я на радостях скрафтил алмазную мотыгу и лёг спать... А наутро меня упаковал ОМОН прямо сюда в подвал!",
+			"Мой сокамерник треснул Коллектора палкой, потом наехал на Мастера спорта — теперь сидит тут до 3026 года без права переписки!",
+			"Ходят слухи, что если реально закрыть кредит в МФО по-честному, выдают золотой Ключ Бюрократии... Но кто вообще читает мелкий шрифт?!",
+			"В соседней камере кошкодевочку посадили вообще за то, что у неё нет Справки №38-МЯУ на ношение пушистого хвоста! Открой ей калитку хоть ты!",
+			"Я просил адвоката, а мне из Приёмной спустили бланк заявления на выдачу бланка заявления о предоставлении ручки!"
+	};
+
+	private static final String[] REGISTRAR_LINES = new String[]{
+			"Гражданин, вы куда без бахил и талончика?! За направлением в Окошко №2 сначала возьмите Справку об отсутствии Справки в Окошке №4!",
+			"Навигация по Министерству: [-1 этаж] Подвал и тюрячка должников; [1 этаж] Приёмная и МФО; [2 этаж] Коворкинг и Кабинеты Шишек; [3 этаж] Склад Архива (туда не ходите — там Ревизор!); [4 этаж] Столовая; [5 этаж] Запечатано с XVIII века; [6 этаж] Кабинет Босса!",
+			"Окошко №3 закрыто на обед с 09:00 до 18:00, а с 18:00 до 09:00 — технический перерыв! Пользуйтесь лифтом в северном холле или лестницей!",
+			"Хотите вернуться обратно в свой обычный мир? Просто толкните Парадную Дверь Выхода на южной стене Приёмной!"
+	};
+
+	private static final String[] TIRED_CLERK_LINES = new String[]{
+			"Я перекладываю отчёт №404-Б из левой стопки в правую с 1998 года... Если моргну дольше секунды — лишат квартальной премии в 14 рублей...",
+			"До пенсии мне осталось всего 740 рабочих столетий и две подписи замначальника со второго кабинета...",
+			"В кулере закончилась вода ещё при прошлом тысячелетии... Эх, сейчас бы кружку молока, печеньку или хоть ложку сахара...",
+			"Важные шишки в своих дубовых кабинетах опять крутят казённый бюджет на столе Монетки, а мы тут в коворкинге дышим пылью от принтеров...",
+			"Только не спускайся без дела на 3-й этаж на склад бумаг — там между стеллажами бродит Бессмертный Ревизор Архива, его вообще ничем не убить, можно только прокрасться на корточках!"
+	};
+
+	private static final String[] VIP_BUREAUCRAT_LINES = new String[]{
+			"Вы записывались на приём за 90 рабочих лет?! Ладно, раз уж зашли без стука — взгляните на наш закрытый номенклатурный спецкаталог!",
+			"Видите эти горы папок? Каждая — отказ гражданам по причине неправильного наклона запятой в третьем абзаце!",
+			"На 6-м этаже сидит сам Верховный Председатель... Даже мы заходим к нему в кабинет только на полусогнутых!"
+	};
+
+	private static final String[] CAFETERIA_LINES = new String[]{
+			"Гражданин! Без талона на ложку — вилку не выдаём! А талон на ложку оформляется только при наличии чистой тарелки с печатью Санэпидемстанции!",
+			"Компот из сухофруктов отпускается строго по паспорту и в присутствии двух понятых! Сахар — по письменному ходатайству!",
+			"Что значит «котлета светится в темноте»?! Шеф-повар заверил накладную печатью ГОСТ-666: мясо немного странное, но калорийное!",
+			"Полагается один бесплатный Пайковый Обед в сутки или обмен чистого листа Бумаги (бланка талона) на горячую порцию!"
+	};
+
+	private static final String[] BUREAU_GUARD_LINES = new String[]{
+			"Гражданин, соблюдайте тишину и очерёдность в коридорах Министерства! Не задерживайтесь у режимных камер!",
+			"Мы тут на дежурной смене — все тюрячки и СИЗО теперь перенесены сюда на -1 этаж, чтобы в обычном мире пейзаж не портить!",
+			"Без дела к Боссу на 6-й этаж лучше не суйся — у него характер тяжелее чугунной печати!"
+	};
+
 	private UUID targetPlayerUuid;
 	private BlockPos anchorPos;
 	private boolean fleeing = false;
 	private boolean leavingPeacefully = false;
 	private boolean gidlerTokenGiven = false;
 	private boolean sweetieQuestDone = false;
+	private boolean registrarSlipGiven = false;
+	private boolean bossAggro = false;
+	private int bossPhase = 0;
 	private int hitsFromPlayer = 0;
 	private int actionCooldown = 0;
+	private int specialCooldown = 60;
 	private int lifeTicks = 0;
+	private final ServerBossBar bossBar = new ServerBossBar(
+			Text.literal("ВЕРХОВНЫЙ ПРЕДСЕДАТЕЛЬ БЮРОКРАТИИ — ОТДЕЛ ОКОНЧАТЕЛЬНОГО ОТКАЗА").formatted(Formatting.RED, Formatting.BOLD),
+			BossBar.Color.RED,
+			BossBar.Style.NOTCHED_10
+	);
 
 	public ModNpcEntity(EntityType<? extends PathAwareEntity> entityType, World world) {
 		super(entityType, world);
@@ -161,6 +222,24 @@ public class ModNpcEntity extends PathAwareEntity {
 		if (role == NpcRole.MFO_ELITE_SELLER) {
 			return "2".equals(variant) ? "Элитный антиквар МФО" : "Элитный оружейник МФО";
 		}
+		if (role == NpcRole.DEBTOR_IDIOT) {
+			return switch (variant) {
+				case "1" -> "Дебил-должник Толик (Долг: 48 МЛРД ₽)";
+				case "2" -> "Неплательщик Серёга (Поставил кредит на ЗЕРО)";
+				case "3" -> "Бедолага Васян (Взял займ на мотыгу)";
+				case "queue" -> "Вечный очередник (Ждёт с 2007 г.)";
+				default -> "Злостный неплательщик МФО";
+			};
+		}
+		if (role == NpcRole.VIP_BUREAUCRAT) {
+			return "2".equals(variant) ? "Главный Инспектор Взысканий" : "Начальник Департамента Отписок";
+		}
+		if (role == NpcRole.BUREAU_REGISTRAR) {
+			return "2".equals(variant) ? "Старший Инспектор Окошка №2" : "Регистраторша Раиса Захаровна";
+		}
+		if ("bureau_guard".equals(variant)) {
+			return "Дежурный " + role.getDisplayName();
+		}
 		return role.getDisplayName();
 	}
 
@@ -201,10 +280,29 @@ public class ModNpcEntity extends PathAwareEntity {
 				setAttr(EntityAttributes.GENERIC_MOVEMENT_SPEED, 0.37D);
 				setAttr(EntityAttributes.GENERIC_KNOCKBACK_RESISTANCE, 0.8D);
 			}
+			case ARCHIVAL_HORROR -> {
+				// Бессмертный монстр Склада Бумаг (Уровень 3) — высокий, жуткий и неубиваемый!
+				setAttr(EntityAttributes.GENERIC_MAX_HEALTH, 200.0D);
+				setAttr(EntityAttributes.GENERIC_ARMOR, 24.0D);
+				setAttr(EntityAttributes.GENERIC_ATTACK_DAMAGE, 6.0D);
+				setAttr(EntityAttributes.GENERIC_MOVEMENT_SPEED, 0.31D);
+				setAttr(EntityAttributes.GENERIC_KNOCKBACK_RESISTANCE, 1.0D);
+				setAttr(EntityAttributes.GENERIC_SCALE, 1.42D);
+			}
+			case BUREAUCRACY_BOSS -> {
+				// Финальный Босс 6-го этажа!
+				setAttr(EntityAttributes.GENERIC_MAX_HEALTH, 350.0D);
+				setAttr(EntityAttributes.GENERIC_ARMOR, 14.0D);
+				setAttr(EntityAttributes.GENERIC_ATTACK_DAMAGE, 8.5D);
+				setAttr(EntityAttributes.GENERIC_MOVEMENT_SPEED, 0.32D);
+				setAttr(EntityAttributes.GENERIC_KNOCKBACK_RESISTANCE, 0.65D);
+				setAttr(EntityAttributes.GENERIC_SCALE, 1.22D);
+			}
 			default -> {
 				setAttr(EntityAttributes.GENERIC_MAX_HEALTH, 40.0D);
 				setAttr(EntityAttributes.GENERIC_ARMOR, 10.0D);
 				setAttr(EntityAttributes.GENERIC_MOVEMENT_SPEED, 0.22D);
+				setAttr(EntityAttributes.GENERIC_SCALE, 1.0D);
 			}
 		}
 		this.setHealth(this.getMaxHealth());
@@ -233,6 +331,23 @@ public class ModNpcEntity extends PathAwareEntity {
 		this.anchorPos = pos;
 	}
 
+	public void forceFleeFromSeal() {
+		this.fleeing = true;
+		this.lifeTicks = 0;
+	}
+
+	@Override
+	public void onStoppedTrackingBy(ServerPlayerEntity player) {
+		super.onStoppedTrackingBy(player);
+		this.bossBar.removePlayer(player);
+	}
+
+	@Override
+	public void remove(RemovalReason reason) {
+		this.bossBar.clearPlayers();
+		super.remove(reason);
+	}
+
 	@Override
 	public boolean cannotDespawn() {
 		return true;
@@ -243,8 +358,8 @@ public class ModNpcEntity extends PathAwareEntity {
 		if (damageSource.isOf(DamageTypes.OUT_OF_WORLD) || damageSource.isOf(DamageTypes.GENERIC_KILL)) {
 			return false;
 		}
-		// Стационарные торговцы, бармен, кредитор, зазывала и Гидлер на пляже неуязвимы для мобов/криперов/лавы
-		if (getNpcRole().isStationaryShopNpc()) {
+		// Стационарные торговцы, бармен, кредитор, зазывала, клерки, неплательщики и Гидлер неуязвимы
+		if (getNpcRole().isStationaryShopNpc() || "bureau_guard".equals(getVariant())) {
 			return !(damageSource.getAttacker() instanceof PlayerEntity p && p.isCreative());
 		}
 		if ("cage".equals(getVariant()) && getNpcRole() == NpcRole.ARMENIAN_BRIGADE) {
@@ -328,10 +443,134 @@ public class ModNpcEntity extends PathAwareEntity {
 				sayRandomLine(serverPlayer, "Тусовщица", PARTY_GIRL_LINES, Formatting.LIGHT_PURPLE);
 				return ActionResult.CONSUME;
 			}
+			case DEBTOR_IDIOT -> {
+				sayRandomLine(serverPlayer, resolveDisplayName(role, getVariant()), DEBTOR_IDIOT_LINES, Formatting.GOLD);
+				return ActionResult.CONSUME;
+			}
+			case BUREAU_REGISTRAR -> {
+				handleRegistrarInteraction(serverPlayer);
+				return ActionResult.CONSUME;
+			}
+			case TIRED_CLERK -> {
+				handleTiredClerkInteraction(serverPlayer);
+				return ActionResult.CONSUME;
+			}
+			case VIP_BUREAUCRAT -> {
+				sayRandomLine(serverPlayer, resolveDisplayName(role, getVariant()), VIP_BUREAUCRAT_LINES, Formatting.DARK_PURPLE);
+				String catalog = "2".equals(getVariant()) ? "elite_mfo_2" : "elite_mfo_1";
+				ModServerNetworking.openShopScreen(serverPlayer, "Спецраспределитель Важной Шишки", catalog);
+				return ActionResult.CONSUME;
+			}
+			case CAFETERIA_BUREAUCRAT -> {
+				handleCafeteriaInteraction(serverPlayer);
+				return ActionResult.CONSUME;
+			}
+			case BUREAUCRACY_BOSS -> {
+				if (!this.bossAggro) {
+					ModPersistentState st = ModPersistentState.get(serverPlayer.getServer());
+					long debt = st.getAccount(serverPlayer.getUuid()).debt;
+					String msg = debt > 0L
+							? "О, явился должник! За тобой числится " + debt + " ₽ в моих микрозаймах! Хочешь списать долг? Ударь меня и попробуй пережить Генеральную Проверку — или проваливай вниз в очередь!"
+							: "Добро пожаловать на 6-й этаж, гражданин! Все эти очереди, тюрячки, склады и столовые работают на меня. Осмелишься бросить вызов Системе — ударь меня, и начнётся Генеральная Проверка!";
+					serverPlayer.sendMessage(
+							Text.literal("[Верховный Председатель Бюрократии]: ").formatted(Formatting.DARK_RED, Formatting.BOLD)
+									.append(Text.literal(msg).formatted(Formatting.GOLD)),
+							false
+					);
+					serverPlayer.getServerWorld().playSound(null, this.getBlockPos(), SoundEvents.ENTITY_VILLAGER_NO, SoundCategory.HOSTILE, 1.0F, 0.7F);
+					return ActionResult.CONSUME;
+				}
+				return ActionResult.PASS;
+			}
 			default -> {
+				if ("bureau_guard".equals(getVariant())) {
+					sayRandomLine(serverPlayer, resolveDisplayName(role, getVariant()), BUREAU_GUARD_LINES, Formatting.RED);
+					return ActionResult.CONSUME;
+				}
 				return ActionResult.PASS;
 			}
 		}
+	}
+
+	private void handleRegistrarInteraction(ServerPlayerEntity player) {
+		sayRandomLine(player, resolveDisplayName(NpcRole.BUREAU_REGISTRAR, getVariant()), REGISTRAR_LINES, Formatting.AQUA);
+		if (!this.registrarSlipGiven) {
+			this.registrarSlipGiven = true;
+			ItemStack slip = new ItemStack(Items.PAPER, 1);
+			slip.set(DataComponentTypes.CUSTOM_NAME, Text.literal("Талон-Направление №Ж-994 (С печатью Приёмной)").formatted(Formatting.YELLOW, Formatting.BOLD));
+			slip.set(DataComponentTypes.LORE, new LoreComponent(List.of(
+					Text.literal("Предъявите Инспектору Столовой на 4-м этаже для обмена на горячий обед!").formatted(Formatting.GRAY),
+					Text.literal("«Без бумажки ты букашка, а с бумажкой — человек!»").formatted(Formatting.GOLD)
+			)));
+			if (!player.getInventory().insertStack(slip)) {
+				player.dropItem(slip, false);
+			}
+			player.sendMessage(Text.literal("📄 Выдан «Талон-Направление №Ж-994»!").formatted(Formatting.GREEN), true);
+		}
+	}
+
+	private void handleTiredClerkInteraction(ServerPlayerEntity player) {
+		ItemStack held = player.getMainHandStack();
+		if (held.isOf(Items.COOKIE) || held.isOf(Items.SUGAR) || held.isOf(Items.PUMPKIN_PIE)) {
+			if (!player.isInCreativeMode()) {
+				held.decrement(1);
+			}
+			ModPersistentState st = ModPersistentState.get(player.getServer());
+			ModPersistentState.PlayerFinanceData acc = st.getAccount(player.getUuid());
+			acc.balance += 350L;
+			st.markDirty();
+			ModServerNetworking.syncAccount(player);
+			player.getServerWorld().playSound(null, this.getBlockPos(), SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.PLAYERS, 0.9F, 1.15F);
+			player.sendMessage(
+					Text.literal("[Выгоревший клерк]: ").formatted(Formatting.AQUA, Formatting.BOLD)
+							.append(Text.literal("Спасибо тебе, добрый человек... Я не ел сладкого со времён дефолта! Держи 350 ₽ из моих суточных!").formatted(Formatting.GREEN)),
+					false
+			);
+			return;
+		}
+		sayRandomLine(player, "Выгоревший клерк", TIRED_CLERK_LINES, Formatting.GRAY);
+	}
+
+	private void handleCafeteriaInteraction(ServerPlayerEntity player) {
+		ModPersistentState st = ModPersistentState.get(player.getServer());
+		ModPersistentState.PlayerFinanceData acc = st.getAccount(player.getUuid());
+		long day = player.getServer().getOverworld().getTime() / 24000L;
+		ItemStack held = player.getMainHandStack();
+
+		if (held.isOf(Items.PAPER)) {
+			if (!player.isInCreativeMode()) {
+				held.decrement(1);
+			}
+			ItemStack meal = new ItemStack(Items.COOKED_BEEF, 2);
+			ItemStack pie = new ItemStack(Items.PUMPKIN_PIE, 1);
+			if (!player.getInventory().insertStack(meal)) player.dropItem(meal, false);
+			if (!player.getInventory().insertStack(pie)) player.dropItem(pie, false);
+			player.getServerWorld().playSound(null, this.getBlockPos(), SoundEvents.ENTITY_GENERIC_EAT, SoundCategory.PLAYERS, 1.0F, 1.0F);
+			player.sendMessage(
+					Text.literal("[Инспектор Столовой]: Талон принят и погашен штампом! Получите двойную котлету и пирог по ГОСТу!")
+							.formatted(Formatting.GREEN, Formatting.BOLD),
+					false
+			);
+			return;
+		}
+
+		if (acc.lastCafeteriaRationDay != day) {
+			acc.lastCafeteriaRationDay = day;
+			st.markDirty();
+			ItemStack potato = new ItemStack(Items.BAKED_POTATO, 3);
+			ItemStack strange = new ItemStack(ModItems.STRANGE_MEAT, 1);
+			if (!player.getInventory().insertStack(potato)) player.dropItem(potato, false);
+			if (!player.getInventory().insertStack(strange)) player.dropItem(strange, false);
+			player.getServerWorld().playSound(null, this.getBlockPos(), SoundEvents.ENTITY_VILLAGER_YES, SoundCategory.PLAYERS, 0.9F, 1.0F);
+			player.sendMessage(
+					Text.literal("[Инспектор Столовой]: Выдан суточный Пайковый Обед сотрудника (3 картофелины и 1 фирменная котлета из «Странного мяса»)! Приходите завтра или несите бумажный талон!")
+							.formatted(Formatting.GOLD),
+					false
+			);
+			return;
+		}
+
+		sayRandomLine(player, "Инспектор Столовой", CAFETERIA_LINES, Formatting.YELLOW);
 	}
 
 	private void sayRandomLine(ServerPlayerEntity player, String speaker, String[] pool, Formatting color) {
@@ -411,8 +650,16 @@ public class ModNpcEntity extends PathAwareEntity {
 		}
 
 		NpcRole role = getNpcRole();
-		if (role.isStationaryShopNpc()) {
+		if (role.isStationaryShopNpc() || "bureau_guard".equals(getVariant())) {
 			tickStationaryNpc(role);
+			return;
+		}
+		if (role == NpcRole.ARCHIVAL_HORROR) {
+			tickArchivalHorror();
+			return;
+		}
+		if (role == NpcRole.BUREAUCRACY_BOSS) {
+			tickBureaucracyBoss();
 			return;
 		}
 
@@ -635,11 +882,217 @@ public class ModNpcEntity extends PathAwareEntity {
 		}
 	}
 
+	/**
+	 * Уровень 3 (Склад с бумагами): БЕССМЕРТНЫЙ МОНСТР СКЛАДА — «Ревизор Архива».
+	 * Невозможно убить; патрулирует стеллажи, реагирует на шум шагов (если игрок крадётся на Shift — радиус обнаружения в 3 раза меньше!).
+	 */
+	private void tickArchivalHorror() {
+		if (!(this.getWorld() instanceof ServerWorld sw)) {
+			return;
+		}
+		if (this.lifeTicks % 18 == 0) {
+			sw.spawnParticles(ParticleTypes.ASH, this.getX(), this.getBodyY(0.6D), this.getZ(), 4, 0.35D, 0.5D, 0.35D, 0.01D);
+		}
+		if (this.lifeTicks % 60 == 0) {
+			sw.playSound(null, this.getBlockPos(), SoundEvents.ITEM_BOOK_PAGE_TURN, SoundCategory.HOSTILE, 0.9F, 0.55F);
+		}
+
+		// Никогда не покидает свой этаж склада
+		if (this.anchorPos != null && Math.abs(this.getBlockY() - this.anchorPos.getY()) > 4) {
+			this.refreshPositionAndAngles(this.anchorPos.getX() + 0.5D, this.anchorPos.getY(), this.anchorPos.getZ() + 0.5D, this.getYaw(), 0.0F);
+		}
+
+		ServerPlayerEntity hunted = null;
+		double bestDist = Double.MAX_VALUE;
+		for (ServerPlayerEntity sp : sw.getPlayers()) {
+			if (!sp.isAlive() || sp.isCreative() || sp.isSpectator()) {
+				continue;
+			}
+			if (Math.abs(sp.getY() - this.getY()) > 4.5D) {
+				continue;
+			}
+			double detectRange = sp.isSneaking() ? 5.2D : 15.5D;
+			double dSq = this.squaredDistanceTo(sp);
+			if (dSq <= detectRange * detectRange && dSq < bestDist) {
+				bestDist = dSq;
+				hunted = sp;
+			}
+		}
+
+		if (hunted != null) {
+			this.getLookControl().lookAt(hunted, 35.0F, 35.0F);
+			this.getNavigation().startMovingTo(hunted, 1.18D);
+			if (this.lifeTicks % 24 == 0) {
+				sw.playSound(null, this.getBlockPos(), SoundEvents.ENTITY_WARDEN_STEP, SoundCategory.HOSTILE, 1.1F, 0.7F);
+			}
+			if (bestDist <= 2.8D * 2.8D && this.actionCooldown <= 0) {
+				this.actionCooldown = 36;
+				this.swingHand(Hand.MAIN_HAND);
+				hunted.damage(this.getDamageSources().mobAttack(this), 6.0F);
+				Vec3d push = hunted.getPos().subtract(this.getPos()).normalize().multiply(0.75D);
+				hunted.addVelocity(push.x, 0.25D, push.z);
+				hunted.velocityModified = true;
+				hunted.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, 50, 1));
+				sw.playSound(null, hunted.getBlockPos(), SoundEvents.BLOCK_ANVIL_PLACE, SoundCategory.HOSTILE, 0.85F, 0.6F);
+				hunted.sendMessage(
+						Text.literal("📜 [Ревизор Архива]: ШТРАФ ЗА ШУМ МЕЖДУ СТЕЛЛАЖАМИ! (Присядьте на Shift за полками, чтобы спрятаться!)")
+								.formatted(Formatting.DARK_RED, Formatting.BOLD),
+						true
+				);
+			}
+		} else if (this.anchorPos != null && this.lifeTicks % 55 == 0) {
+			double rx = this.anchorPos.getX() + (this.getRandom().nextInt(25) - 12);
+			double rz = this.anchorPos.getZ() + (this.getRandom().nextInt(25) - 12);
+			this.getNavigation().startMovingTo(rx + 0.5D, this.anchorPos.getY(), rz + 0.5D, 0.82D);
+		}
+	}
+
+	/**
+	 * Уровень 6 (Кабинет Босса): Финальный Босс — «Верховный Председатель Бюрократии».
+	 */
+	private void tickBureaucracyBoss() {
+		if (!(this.getWorld() instanceof ServerWorld sw)) {
+			return;
+		}
+		if (!this.bossAggro) {
+			this.bossBar.setVisible(false);
+			if (this.anchorPos != null && this.getBlockPos().getSquaredDistance(this.anchorPos) > 9.0D) {
+				this.getNavigation().startMovingTo(this.anchorPos.getX() + 0.5D, this.anchorPos.getY(), this.anchorPos.getZ() + 0.5D, 0.9D);
+			}
+			return;
+		}
+
+		this.bossBar.setVisible(true);
+		this.bossBar.setPercent(Math.clamp(this.getHealth() / this.getMaxHealth(), 0.0F, 1.0F));
+		for (ServerPlayerEntity sp : sw.getPlayers()) {
+			if (sp.isAlive() && Math.abs(sp.getY() - this.getY()) <= 9.0D && sp.squaredDistanceTo(this) <= 44.0D * 44.0D) {
+				this.bossBar.addPlayer(sp);
+			} else {
+				this.bossBar.removePlayer(sp);
+			}
+		}
+
+		float hpRatio = this.getHealth() / this.getMaxHealth();
+		if (hpRatio <= 0.60F && this.bossPhase < 1) {
+			this.bossPhase = 1;
+			spawnBossAuditors(sw, false);
+			broadcastToFloor(sw, "📕 [Верховный Председатель]: ВЫЗЫВАЮ ОТДЕЛ АУДИТА И ВНЕПЛАНОВУЮ ПРОВЕРКУ!!");
+		} else if (hpRatio <= 0.28F && this.bossPhase < 2) {
+			this.bossPhase = 2;
+			spawnBossAuditors(sw, true);
+			broadcastToFloor(sw, "⚖ [Верховный Председатель]: ПОДПИСЫВАЮ ЧРЕЗВЫЧАЙНЫЙ УКАЗ О ВАШЕЙ ЛИКВИДАЦИИ!!");
+		}
+
+		ServerPlayerEntity target = null;
+		double minD = Double.MAX_VALUE;
+		for (ServerPlayerEntity sp : sw.getPlayers()) {
+			if (sp.isAlive() && !sp.isCreative() && !sp.isSpectator() && Math.abs(sp.getY() - this.getY()) <= 8.0D) {
+				double d = this.squaredDistanceTo(sp);
+				if (d < minD && d <= 36.0D * 36.0D) {
+					minD = d;
+					target = sp;
+				}
+			}
+		}
+		if (target == null) {
+			return;
+		}
+
+		this.getLookControl().lookAt(target, 30.0F, 30.0F);
+		this.getNavigation().startMovingTo(target, this.bossPhase >= 2 ? 1.28D : 1.12D);
+
+		if (minD <= 3.1D * 3.1D && this.actionCooldown <= 0) {
+			this.actionCooldown = this.bossPhase >= 2 ? 18 : 24;
+			this.swingHand(Hand.MAIN_HAND);
+			target.damage(this.getDamageSources().mobAttack(this), (float) this.getAttributeValue(EntityAttributes.GENERIC_ATTACK_DAMAGE));
+		}
+
+		if (this.specialCooldown > 0) {
+			this.specialCooldown--;
+		} else {
+			this.specialCooldown = this.bossPhase >= 2 ? 75 : 115;
+			// Удар круглой печатью по полу!
+			sw.playSound(null, this.getBlockPos(), SoundEvents.BLOCK_ANVIL_LAND, SoundCategory.HOSTILE, 1.2F, 0.65F);
+			for (int i = 0; i < 28; i++) {
+				double a = (Math.PI * 2.0D * i) / 28.0D;
+				sw.spawnParticles(ParticleTypes.FLAME, this.getX() + Math.cos(a) * 5.0D, this.getY() + 0.2D, this.getZ() + Math.sin(a) * 5.0D, 2, 0.1D, 0.1D, 0.1D, 0.02D);
+			}
+			for (ServerPlayerEntity sp : sw.getPlayers()) {
+				if (sp.isAlive() && !sp.isCreative() && !sp.isSpectator() && sp.squaredDistanceTo(this) <= 6.5D * 6.5D) {
+					sp.damage(this.getDamageSources().mobAttack(this), 7.0F);
+					Vec3d push = sp.getPos().subtract(this.getPos()).normalize().multiply(0.85D);
+					sp.addVelocity(push.x, 0.35D, push.z);
+					sp.velocityModified = true;
+					sp.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, 50, 1));
+				}
+			}
+		}
+	}
+
+	private void spawnBossAuditors(ServerWorld sw, boolean eliteWave) {
+		sw.playSound(null, this.getBlockPos(), SoundEvents.EVENT_RAID_HORN.value(), SoundCategory.HOSTILE, 1.2F, 1.15F);
+		for (int i = -1; i <= 1; i += 2) {
+			if (eliteWave) {
+				WhiteCapEntity auditor = ModEntities.WHITE_CAP_ENTITY.create(sw);
+				if (auditor != null) {
+					auditor.refreshPositionAndAngles(this.getX() + i * 2.5D, this.getY(), this.getZ() + 2.0D, 0.0F, 0.0F);
+					auditor.configureRank(WhiteCapEntity.RANK_DOCTOR);
+					auditor.setCustomName(Text.literal("Старший Аудитор Колпаков").formatted(Formatting.GOLD));
+					sw.spawnEntity(auditor);
+				}
+			} else {
+				ModNpcEntity guard = ModEntities.MOD_NPC.create(sw);
+				if (guard != null) {
+					guard.refreshPositionAndAngles(this.getX() + i * 2.5D, this.getY(), this.getZ() + 2.0D, 0.0F, 0.0F);
+					guard.configureRole(NpcRole.COLLECTOR, "boss_minion");
+					guard.setCustomName(Text.literal("Судебный Пристав Босса").formatted(Formatting.RED));
+					sw.spawnEntity(guard);
+				}
+			}
+		}
+	}
+
+	private void broadcastToFloor(ServerWorld sw, String msg) {
+		Text line = Text.literal(msg).formatted(Formatting.RED, Formatting.BOLD);
+		for (ServerPlayerEntity sp : sw.getPlayers()) {
+			if (Math.abs(sp.getY() - this.getY()) <= 10.0D) {
+				sp.sendMessage(line, false);
+			}
+		}
+	}
+
 	@Override
 	public boolean damage(DamageSource source, float amount) {
+		NpcRole preRole = getNpcRole();
+		if (preRole == NpcRole.ARCHIVAL_HORROR
+				&& !source.isOf(DamageTypes.OUT_OF_WORLD)
+				&& !source.isOf(DamageTypes.GENERIC_KILL)) {
+			if (!this.getWorld().isClient()) {
+				this.getWorld().playSound(null, this.getBlockPos(), SoundEvents.BLOCK_ANVIL_LAND, SoundCategory.HOSTILE, 0.9F, 1.5F);
+				if (source.getAttacker() instanceof ServerPlayerEntity sp) {
+					sp.sendMessage(
+							Text.literal("🚫 [АКТ №000]: Урон отклонён! У вас нет Справки на убийство монстра Склада в 3 экземплярах!")
+									.formatted(Formatting.RED, Formatting.BOLD),
+							true
+					);
+				}
+			}
+			return false;
+		}
+
 		boolean hurt = super.damage(source, amount);
 		if (!hurt || this.getWorld().isClient() || !this.isAlive()) {
 			return hurt;
+		}
+
+		if (preRole == NpcRole.BUREAUCRACY_BOSS && !this.bossAggro && source.getAttacker() instanceof ServerPlayerEntity sp) {
+			this.bossAggro = true;
+			sp.getServerWorld().playSound(null, this.getBlockPos(), SoundEvents.ENTITY_WITHER_SPAWN, SoundCategory.HOSTILE, 0.85F, 0.95F);
+			sp.sendMessage(
+					Text.literal("⚖ [Верховный Председатель]: ТЫ ОСМЕЛИЛСЯ ПОДНЯТЬ РУКУ НА МИНИСТЕРСТВО?! НАЧИНАЕМ ГЕНЕРАЛЬНУЮ ПРОВЕРКУ!!")
+							.formatted(Formatting.DARK_RED, Formatting.BOLD),
+					false
+			);
 		}
 
 		if (source.getAttacker() instanceof ServerPlayerEntity attacker) {
@@ -687,11 +1140,44 @@ public class ModNpcEntity extends PathAwareEntity {
 
 	@Override
 	public void onDeath(DamageSource damageSource) {
+		this.bossBar.clearPlayers();
 		super.onDeath(damageSource);
 		if (this.getWorld().isClient()) {
 			return;
 		}
+		if (getNpcRole() == NpcRole.BUREAUCRACY_BOSS && this.getWorld() instanceof ServerWorld sw) {
+			this.dropStack(new ItemStack(ModItems.BUREAUCRACY_SEAL, 1));
+			this.dropStack(new ItemStack(ModItems.BUREAUCRACY_KEY, 1));
+			this.dropStack(new ItemStack(ModItems.REVIVAL_TOKEN, 1));
+			this.dropStack(new ItemStack(ModItems.POKEBALL, 2));
+			sw.playSound(null, this.getBlockPos(), SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, SoundCategory.PLAYERS, 1.3F, 1.0F);
+
+			ModPersistentState st = ModPersistentState.get(sw.getServer());
+			for (ServerPlayerEntity sp : sw.getPlayers()) {
+				if (Math.abs(sp.getY() - this.getY()) <= 12.0D) {
+					ModPersistentState.PlayerFinanceData acc = st.getAccount(sp.getUuid());
+					acc.debt = 0L;
+					acc.mfoLockedHalf = 0L;
+					acc.daysOverdue = 0;
+					acc.bankPatience = 100;
+					acc.enforcementStage = 0;
+					acc.nextVisitTick = -1L;
+					acc.balance += 50_000L;
+					st.markDirty();
+					ModServerNetworking.syncAccount(sp);
+					sp.sendMessage(
+							Text.literal("👑 ВЕРХОВНЫЙ ПРЕДСЕДАТЕЛЬ ПОВЕРЖЕН! Все ваши долги в МФО аннулированы, на счёт зачислено +50 000 ₽ и выпала «Генеральная Печать Бюрократа»!")
+									.formatted(Formatting.GOLD, Formatting.BOLD),
+							false
+					);
+				}
+			}
+			return;
+		}
 		if (!(damageSource.getAttacker() instanceof ServerPlayerEntity killer) || killer.getServer() == null) {
+			return;
+		}
+		if ("boss_minion".equals(getVariant())) {
 			return;
 		}
 
@@ -771,6 +1257,9 @@ public class ModNpcEntity extends PathAwareEntity {
 		nbt.putBoolean("Fleeing", this.fleeing);
 		nbt.putBoolean("GidlerTokenGiven", this.gidlerTokenGiven);
 		nbt.putBoolean("SweetieQuestDone", this.sweetieQuestDone);
+		nbt.putBoolean("RegistrarSlipGiven", this.registrarSlipGiven);
+		nbt.putBoolean("BossAggro", this.bossAggro);
+		nbt.putInt("BossPhase", this.bossPhase);
 		nbt.putInt("HitsFromPlayer", this.hitsFromPlayer);
 	}
 
@@ -785,9 +1274,7 @@ public class ModNpcEntity extends PathAwareEntity {
 		if (nbt.contains("Variant")) {
 			this.dataTracker.set(VARIANT, nbt.getString("Variant"));
 		}
-		if (getNpcRole() == NpcRole.MFO_ELITE_SELLER) {
-			this.setCustomName(Text.literal(resolveDisplayName(NpcRole.MFO_ELITE_SELLER, getVariant())));
-		}
+		this.setCustomName(Text.literal(resolveDisplayName(getNpcRole(), getVariant())));
 		if (nbt.containsUuid("TargetPlayer")) {
 			this.targetPlayerUuid = nbt.getUuid("TargetPlayer");
 		}
@@ -797,6 +1284,9 @@ public class ModNpcEntity extends PathAwareEntity {
 		this.fleeing = nbt.getBoolean("Fleeing");
 		this.gidlerTokenGiven = nbt.getBoolean("GidlerTokenGiven");
 		this.sweetieQuestDone = nbt.getBoolean("SweetieQuestDone");
+		this.registrarSlipGiven = nbt.getBoolean("RegistrarSlipGiven");
+		this.bossAggro = nbt.getBoolean("BossAggro");
+		this.bossPhase = nbt.getInt("BossPhase");
 		this.hitsFromPlayer = nbt.getInt("HitsFromPlayer");
 	}
 }

@@ -25,6 +25,7 @@ import com.novaimod.registry.ModScreenHandlers;
 import com.novaimod.registry.ModSounds;
 import com.novaimod.world.AbandonedLabManager;
 import com.novaimod.world.ApocalypseEventManager;
+import com.novaimod.world.BureaucraticHellManager;
 import com.novaimod.world.DetentionManager;
 import com.novaimod.world.EgoPartyManager;
 import com.novaimod.world.ModStructureGenerator;
@@ -98,6 +99,10 @@ public class NovaiMod implements ModInitializer {
 					&& PokeballDimensionManager.tryExitFromInsideLatch(sp, pos)) {
 				return ActionResult.SUCCESS;
 			}
+			if (!world.isClient() && player instanceof ServerPlayerEntity sp
+					&& BureaucraticHellManager.handleBlockInteract(sp, hand, pos)) {
+				return ActionResult.SUCCESS;
+			}
 			var cushions = world.getEntitiesByClass(
 					CushionEntity.class,
 					new Box(pos).expand(0.25D, 0.75D, 0.25D),
@@ -169,6 +174,11 @@ public class NovaiMod implements ModInitializer {
 				}
 				return false;
 			}
+			if (world instanceof ServerWorld sw && player instanceof ServerPlayerEntity sp
+					&& BureaucraticHellManager.isProtectedMinistryBlock(sw, sp, pos)) {
+				sp.sendMessage(Text.literal("Стены Министерства неразрушимы без Справки Формы №404-СНОС!").formatted(Formatting.RED), true);
+				return false;
+			}
 			if (!world.isClient() && DetentionManager.isPlayerRestrictedFromBreaking(player)) {
 				if (player instanceof ServerPlayerEntity sp) {
 					sp.sendMessage(Text.literal("Здесь нельзя ломать блоки!").formatted(Formatting.RED), true);
@@ -209,7 +219,7 @@ public class NovaiMod implements ModInitializer {
 				structureCheckTicker = 0;
 				ModStructureGenerator.tickWorldGeneration(server);
 				WhiteCapWorldManager.tickClanWorld(server);
-				AbandonedLabManager.tickLabs(server);
+				BureaucraticHellManager.tickBureaucraticChecks(server);
 			}
 		});
 	}
@@ -288,6 +298,11 @@ public class NovaiMod implements ModInitializer {
 							.then(CommandManager.literal("apocalypse").executes(ctx -> {
 								ServerPlayerEntity p = ctx.getSource().getPlayer();
 								ApocalypseEventManager.startApocalypse(ctx.getSource().getServer(), p);
+								return 1;
+							}))
+							.then(CommandManager.literal("bureaucracy").executes(ctx -> {
+								ServerPlayerEntity p = ctx.getSource().getPlayerOrThrow();
+								BureaucraticHellManager.enterBureaucraticHellViaDoor(p);
 								return 1;
 							}))
 			);

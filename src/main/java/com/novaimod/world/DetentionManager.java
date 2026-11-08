@@ -248,7 +248,8 @@ public final class DetentionManager {
 	}
 
 	/**
-	 * Скручивает виновного и сажает в обезьянник (неприятную землянку) вместе с бригадой.
+	 * Скручивает виновного и сажает в обезьянник на Уровне -1 измерения «Бюрократический Ад» вместе с бригадой
+	 * (в обычном мире тюрячки больше НЕ спавнятся!).
 	 */
 	public static void captureIntoMonkeyCage(ServerPlayerEntity player) {
 		MinecraftServer server = player.getServer();
@@ -258,14 +259,8 @@ public final class DetentionManager {
 			return;
 		}
 
-		ServerWorld overworld = server.getOverworld();
-		int cx = ((int) Math.floor(player.getX()) & ~15) + 8;
-		int cz = ((int) Math.floor(player.getZ()) & ~15) + 8;
-		int topY = overworld.getTopY(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, cx, cz);
-		int cy = Math.max(overworld.getBottomY() + 12, topY - 14);
-		BlockPos cageCenter = new BlockPos(cx, cy, cz);
-
-		buildMonkeyCageDugout(overworld, cageCenter);
+		ServerWorld bureauWorld = BureaucraticHellManager.ensureComplexBuilt(server);
+		BlockPos cageCenter = BureaucraticHellManager.MONKEY_CAGE_POS;
 
 		acc.preCagePos = player.getBlockPos();
 		acc.preCageDim = player.getServerWorld().getRegistryKey().getValue().toString();
@@ -274,62 +269,32 @@ public final class DetentionManager {
 		acc.monkeyCageTimer = 0;
 		state.markDirty();
 
-		// Удаляем уличных членов бригады и ставим 3 бойцов прямо в землянку
+		// Удаляем уличных членов бригады и ставим 3 бойцов прямо в карцер на -1 этаже Бюрократического Ада
 		Box search = player.getBoundingBox().expand(32.0D);
 		for (ModNpcEntity existing : player.getServerWorld().getEntitiesByClass(
 				ModNpcEntity.class,
 				search,
-				e -> e.getNpcRole() == NpcRole.ARMENIAN_BRIGADE
+				e -> e.getNpcRole() == NpcRole.ARMENIAN_BRIGADE && !"cage".equals(e.getVariant())
 		)) {
 			existing.discard();
 		}
 
-		player.teleport(overworld, cx + 0.5D, cy + 1.0D, cz + 0.5D, 0.0F, 0.0F);
+		player.teleport(bureauWorld, cageCenter.getX() + 0.5D, cageCenter.getY(), cageCenter.getZ() + 0.5D, 90.0F, 0.0F);
 		for (int i = -1; i <= 1; i++) {
-			ModNpcEntity member = ModEntities.MOD_NPC.create(overworld);
+			ModNpcEntity member = ModEntities.MOD_NPC.create(bureauWorld);
 			if (member != null) {
-				member.refreshPositionAndAngles(cx + 0.5D + i * 1.2D, cy + 1.0D, cz - 1.2D, 0.0F, 0.0F);
+				member.refreshPositionAndAngles(cageCenter.getX() + 0.5D, cageCenter.getY(), cageCenter.getZ() + 0.5D + i * 1.1D, -90.0F, 0.0F);
 				member.configureRole(NpcRole.ARMENIAN_BRIGADE, "cage");
 				member.setTargetPlayerUuid(player.getUuid());
-				overworld.spawnEntity(member);
+				bureauWorld.spawnEntity(member);
 			}
 		}
 
 		player.sendMessage(
-				Text.literal("[Бригада армян]: Добро пожаловать в обезьянник, уважаемый! Сейчас воспитательную беседу проведём!")
+				Text.literal("[Бригада армян]: Добро пожаловать на -1 этаж Бюрократического Ада — в наш ведомственный обезьянник, уважаемый! Сейчас проведём воспитательную беседу!")
 						.formatted(Formatting.DARK_RED, Formatting.BOLD),
 				false
 		);
-	}
-
-	private static void buildMonkeyCageDugout(ServerWorld world, BlockPos center) {
-		BlockPos.Mutable m = new BlockPos.Mutable();
-		// Неприятная сырая землянка 7x5x7 из грубой земли, грязи, замшелого булыжника, решёток и паутины
-		for (int dx = -3; dx <= 3; dx++) {
-			for (int dy = 0; dy <= 4; dy++) {
-				for (int dz = -3; dz <= 3; dz++) {
-					m.set(center.getX() + dx, center.getY() + dy, center.getZ() + dz);
-					boolean wall = Math.abs(dx) == 3 || Math.abs(dz) == 3 || dy == 0 || dy == 4;
-					if (wall) {
-						if (dy == 0) {
-							world.setBlockState(m, (dx + dz) % 2 == 0 ? Blocks.MUD.getDefaultState() : Blocks.COARSE_DIRT.getDefaultState(), FAST_FLAGS);
-						} else if (dy == 4) {
-							world.setBlockState(m, Blocks.ROOTED_DIRT.getDefaultState(), FAST_FLAGS);
-						} else if (dy == 2 && (Math.abs(dx) <= 1 || Math.abs(dz) <= 1) && (Math.abs(dx) == 3 || Math.abs(dz) == 3)) {
-							world.setBlockState(m, Blocks.IRON_BARS.getDefaultState(), FAST_FLAGS);
-						} else {
-							world.setBlockState(m, (dx * dz + dy) % 2 == 0 ? Blocks.COARSE_DIRT.getDefaultState() : Blocks.MOSSY_COBBLESTONE.getDefaultState(), FAST_FLAGS);
-						}
-					} else {
-						world.setBlockState(m, Blocks.AIR.getDefaultState(), FAST_FLAGS);
-					}
-				}
-			}
-		}
-		// Паутина по углам и тусклый редстоуновый факел на стене
-		world.setBlockState(center.add(-2, 3, -2), Blocks.COBWEB.getDefaultState(), FAST_FLAGS);
-		world.setBlockState(center.add(2, 3, 2), Blocks.COBWEB.getDefaultState(), FAST_FLAGS);
-		world.setBlockState(center.add(0, 3, -2), Blocks.REDSTONE_TORCH.getDefaultState(), FAST_FLAGS);
 	}
 
 	private static void tickMonkeyCagePlayer(
@@ -340,19 +305,19 @@ public final class DetentionManager {
 			ModPersistentState state
 	) {
 		acc.monkeyCageTimer++;
+		ServerWorld bureauWorld = BureaucraticHellManager.ensureComplexBuilt(server);
+		BlockPos cagePos = acc.monkeyCagePos != null ? acc.monkeyCagePos : BureaucraticHellManager.MONKEY_CAGE_POS;
 
-		// Удерживаем игрока внутри обезьянника
-		if (acc.monkeyCagePos != null) {
-			if (player.getServerWorld() != overworld || player.getBlockPos().getSquaredDistance(acc.monkeyCagePos) > 9.0D) {
-				player.teleport(
-						overworld,
-						acc.monkeyCagePos.getX() + 0.5D,
-						acc.monkeyCagePos.getY() + 1.0D,
-						acc.monkeyCagePos.getZ() + 0.5D,
-						player.getYaw(),
-						player.getPitch()
-				);
-			}
+		// Удерживаем игрока внутри карцера-обезьянника на Уровне -1 Бюрократического Ада
+		if (player.getServerWorld() != bureauWorld || player.getBlockPos().getSquaredDistance(cagePos) > 12.0D) {
+			player.teleport(
+					bureauWorld,
+					cagePos.getX() + 0.5D,
+					cagePos.getY(),
+					cagePos.getZ() + 0.5D,
+					player.getYaw(),
+					player.getPitch()
+			);
 		}
 
 		// Если игрок берёт инструмент/оружие в руку — бригада огрызается и выбивает из рук (игрок теряет его навсегда!)
@@ -387,11 +352,9 @@ public final class DetentionManager {
 
 		if (finished) {
 			acc.inMonkeyCage = false;
-			if (acc.monkeyCagePos != null) {
-				Box cageBox = new Box(acc.monkeyCagePos).expand(8.0D);
-				for (ModNpcEntity npc : overworld.getEntitiesByClass(ModNpcEntity.class, cageBox, e -> e.getNpcRole() == NpcRole.ARMENIAN_BRIGADE)) {
-					npc.discard();
-				}
+			Box cageBox = new Box(cagePos).expand(8.0D);
+			for (ModNpcEntity npc : bureauWorld.getEntitiesByClass(ModNpcEntity.class, cageBox, e -> e.getNpcRole() == NpcRole.ARMENIAN_BRIGADE && "cage".equals(e.getVariant()))) {
+				npc.discard();
 			}
 			if (acc.preCagePos != null) {
 				ServerWorld retWorld = MysterySkyManager.resolveWorld(server, acc.preCageDim);
@@ -521,28 +484,36 @@ public final class DetentionManager {
 	}
 
 	/**
-	 * ОМОН при одном ударе вяжет ВСЕХ игроков на сервере в СИЗО на 10 минут!
+	 * ОМОН при одном ударе вяжет ВСЕХ игроков на сервере в СИЗО на Уровне -1 «Бюрократического Ада» на 10 минут
+	 * (в обычном мире тюрячки больше НЕ создаются!).
 	 */
 	public static void arrestEveryoneIntoSizo(ServerPlayerEntity hitTarget) {
 		MinecraftServer server = hitTarget.getServer();
-		ServerWorld overworld = server.getOverworld();
+		ServerWorld bureauWorld = BureaucraticHellManager.ensureComplexBuilt(server);
 		ModPersistentState state = ModPersistentState.get(server);
+		BlockPos sizoCenter = BureaucraticHellManager.SIZO_CELL_POS;
 
-		int sx = ((int) Math.floor(hitTarget.getX()) & ~15) + 8;
-		int sz = ((int) Math.floor(hitTarget.getZ()) & ~15) + 8;
-		int sy = Math.max(overworld.getBottomY() + 20, 40);
-		BlockPos sizoCenter = new BlockPos(sx, sy, sz);
-
-		buildSizoFacility(overworld, sizoCenter);
-
-		// Убираем отряд ОМОНа после задержания
+		// Убираем выездной отряд ОМОНа после задержания
 		Box box = hitTarget.getBoundingBox().expand(48.0D);
-		for (ModNpcEntity omon : hitTarget.getServerWorld().getEntitiesByClass(ModNpcEntity.class, box, e -> e.getNpcRole() == NpcRole.OMON)) {
+		for (ModNpcEntity omon : hitTarget.getServerWorld().getEntitiesByClass(
+				ModNpcEntity.class,
+				box,
+				e -> e.getNpcRole() == NpcRole.OMON && !"bureau_guard".equals(e.getVariant())
+		)) {
 			omon.discard();
 		}
 
+		int arrestedCount = 0;
 		for (ServerPlayerEntity p : server.getPlayerManager().getPlayerList()) {
 			if (!p.isAlive() || p.isSpectator()) {
+				continue;
+			}
+			if (BureaucraticHellManager.hasDiplomaticSealImmunity(p)) {
+				p.sendMessage(
+						Text.literal("[ОМОН]: Виноваты, товарищ с Генеральной Печатью Бюрократа! Дипломатическая неприкосновенность — вас не задерживаем!")
+								.formatted(Formatting.GOLD, Formatting.BOLD),
+						false
+				);
 				continue;
 			}
 			ModPersistentState.PlayerFinanceData acc = state.getAccount(p.getUuid());
@@ -554,48 +525,19 @@ public final class DetentionManager {
 			acc.sizoRemainingTicks = SIZO_DURATION_TICKS;
 			state.markDirty();
 
-			p.teleport(overworld, sx + 0.5D, sy + 1.0D, sz + 0.5D, 0.0F, 0.0F);
+			p.teleport(bureauWorld, sizoCenter.getX() + 0.5D, sizoCenter.getY(), sizoCenter.getZ() + 0.5D, -90.0F, 0.0F);
 			ModServerNetworking.syncAccount(p);
+			arrestedCount++;
 		}
 
-		overworld.playSound(null, sizoCenter, SoundEvents.BLOCK_IRON_DOOR_CLOSE, SoundCategory.HOSTILE, 1.2F, 0.8F);
-		server.getPlayerManager().broadcast(
-				Text.literal("[ОМОН]: Все задержаны и доставлены в СИЗО на 10 минут!")
-						.formatted(Formatting.DARK_RED, Formatting.BOLD),
-				false
-		);
-	}
-
-	private static void buildSizoFacility(ServerWorld world, BlockPos center) {
-		BlockPos.Mutable m = new BlockPos.Mutable();
-		// Камера СИЗО 9x5x9 из каменных кирпичей, полированного андезита и железных решёток
-		for (int dx = -4; dx <= 4; dx++) {
-			for (int dy = 0; dy <= 4; dy++) {
-				for (int dz = -4; dz <= 4; dz++) {
-					m.set(center.getX() + dx, center.getY() + dy, center.getZ() + dz);
-					boolean boundary = Math.abs(dx) == 4 || Math.abs(dz) == 4 || dy == 0 || dy == 4;
-					if (boundary) {
-						if (dy == 0) {
-							world.setBlockState(m, Blocks.POLISHED_ANDESITE.getDefaultState(), FAST_FLAGS);
-						} else if (dy == 4) {
-							world.setBlockState(m, (dx == 0 && dz == 0) ? Blocks.SEA_LANTERN.getDefaultState() : Blocks.STONE_BRICKS.getDefaultState(), FAST_FLAGS);
-						} else if (dz == -4 && Math.abs(dx) <= 2 && dy >= 1 && dy <= 3) {
-							world.setBlockState(m, Blocks.IRON_BARS.getDefaultState(), FAST_FLAGS);
-						} else {
-							world.setBlockState(m, Blocks.STONE_BRICKS.getDefaultState(), FAST_FLAGS);
-						}
-					} else {
-						world.setBlockState(m, Blocks.AIR.getDefaultState(), FAST_FLAGS);
-					}
-				}
-			}
+		if (arrestedCount > 0) {
+			bureauWorld.playSound(null, sizoCenter, SoundEvents.BLOCK_IRON_DOOR_CLOSE, SoundCategory.HOSTILE, 1.2F, 0.8F);
+			server.getPlayerManager().broadcast(
+					Text.literal("[ОМОН]: Задержанные доставлены в СИЗО на Уровень -1 измерения «Бюрократический Ад» на 10 минут!")
+							.formatted(Formatting.DARK_RED, Formatting.BOLD),
+					false
+			);
 		}
-		// Нары (плиты) и раковина-котёл в углу камеры
-		world.setBlockState(center.add(-3, 1, 2), Blocks.SMOOTH_STONE_SLAB.getDefaultState(), FAST_FLAGS);
-		world.setBlockState(center.add(-3, 1, 1), Blocks.SMOOTH_STONE_SLAB.getDefaultState(), FAST_FLAGS);
-		world.setBlockState(center.add(3, 1, 2), Blocks.SMOOTH_STONE_SLAB.getDefaultState(), FAST_FLAGS);
-		world.setBlockState(center.add(3, 1, 1), Blocks.SMOOTH_STONE_SLAB.getDefaultState(), FAST_FLAGS);
-		world.setBlockState(center.add(3, 1, -3), Blocks.CAULDRON.getDefaultState(), FAST_FLAGS);
 	}
 
 	private static void tickSizoPlayer(
@@ -606,17 +548,18 @@ public final class DetentionManager {
 			ModPersistentState state
 	) {
 		acc.sizoRemainingTicks--;
-		if (acc.sizoCellPos != null) {
-			if (player.getServerWorld() != overworld || player.getBlockPos().getSquaredDistance(acc.sizoCellPos) > 14.0D) {
-				player.teleport(
-						overworld,
-						acc.sizoCellPos.getX() + 0.5D,
-						acc.sizoCellPos.getY() + 1.0D,
-						acc.sizoCellPos.getZ() + 0.5D,
-						player.getYaw(),
-						player.getPitch()
-				);
-			}
+		ServerWorld bureauWorld = BureaucraticHellManager.ensureComplexBuilt(server);
+		BlockPos cellPos = BureaucraticHellManager.SIZO_CELL_POS;
+
+		if (player.getServerWorld() != bureauWorld || player.getBlockPos().getSquaredDistance(cellPos) > 14.0D) {
+			player.teleport(
+					bureauWorld,
+					cellPos.getX() + 0.5D,
+					cellPos.getY(),
+					cellPos.getZ() + 0.5D,
+					player.getYaw(),
+					player.getPitch()
+			);
 		}
 
 		if (acc.sizoRemainingTicks % 20 == 0) {
@@ -629,12 +572,20 @@ public final class DetentionManager {
 				ServerWorld retWorld = MysterySkyManager.resolveWorld(server, acc.preSizoDim);
 				player.teleport(retWorld, acc.preSizoPos.getX() + 0.5D, acc.preSizoPos.getY(), acc.preSizoPos.getZ() + 0.5D, player.getYaw(), player.getPitch());
 			}
+			boolean awardKey = !acc.bureaucracyKeyEarned;
+			acc.bureaucracyKeyEarned = true;
 			state.markDirty();
 			ModServerNetworking.syncAccount(player);
 			player.sendMessage(
 					Text.literal("[ОМОН]: Срок заключения в СИЗО (10 минут) истёк. Вы свободны!").formatted(Formatting.GREEN, Formatting.BOLD),
 					false
 			);
+			if (awardKey) {
+				BureaucraticHellManager.giveBureaucracyKey(
+						player,
+						"🔑 [Министерство]: Вы отбыли срок в подвальной тюрячке до звонка и получили легальный «Ключ Бюрократии»! Кликните им ПКМ по любой двери в мире, чтобы посещать Бюрократический Ад!"
+				);
+			}
 		} else if (acc.sizoRemainingTicks % 200 == 0) {
 			state.markDirty();
 		}

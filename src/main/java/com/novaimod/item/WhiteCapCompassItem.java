@@ -59,7 +59,7 @@ public class WhiteCapCompassItem extends Item {
 			case 1 -> "Главная Цитадель Белых Колпаков";
 			case 2 -> "Карантинный Форт-Лаборатория";
 			case 3 -> "Полевые Лагеря Клана";
-			case 4 -> "Заброшенная База Учёных (Проект НЕКО)";
+			case 4 -> "Здание МФО (Получение Ключа Бюрократии)";
 			default -> "Любая база / лагерь Белых Колпаков";
 		};
 	}
@@ -80,13 +80,16 @@ public class WhiteCapCompassItem extends Item {
 	public static ModPersistentState.StructureEntry refreshTrackedTarget(ItemStack stack, ServerWorld sw, ServerPlayerEntity sp) {
 		ModPersistentState state = ModPersistentState.get(sw.getServer());
 		WhiteCapWorldManager.ensureInitialStructuresNearPlayer(sw, sp, state);
-		AbandonedLabManager.ensureInitialLabNearPlayer(sw, sp, state);
 
 		int filter = getFilter(stack);
 		String dimId = sw.getRegistryKey().getValue().toString();
 
 		ModPersistentState.StructureEntry best = null;
 		double bestDistSq = Double.MAX_VALUE;
+		if (filter == 4 && sw.getRegistryKey() == World.OVERWORLD && state.getMfoPos() != null) {
+			best = new ModPersistentState.StructureEntry("mfo", dimId, state.getMfoPos());
+			bestDistSq = best.pos.getSquaredDistance(sp.getBlockPos());
+		}
 		for (ModPersistentState.StructureEntry se : state.getGeneratedStructures()) {
 			if (!dimId.equals(se.dimension) || !matchesFilter(se.type, filter)) {
 				continue;
@@ -189,7 +192,7 @@ public class WhiteCapCompassItem extends Item {
 			case 1 -> "white_cap_citadel".equals(type);
 			case 2 -> "white_cap_outpost".equals(type);
 			case 3 -> "white_cap_camp".equals(type) || "white_cap_nether_camp".equals(type);
-			case 4 -> "abandoned_lab".equals(type);
+			case 4 -> "mfo".equals(type);
 			default -> type.startsWith("white_cap_");
 		};
 	}
@@ -199,7 +202,7 @@ public class WhiteCapCompassItem extends Item {
 			case "white_cap_citadel" -> "Главная Цитадель Белых Колпаков";
 			case "white_cap_outpost" -> "Карантинный Форт Колпаков";
 			case "white_cap_nether_camp" -> "Адский Лагерь Белых Колпаков";
-			case "abandoned_lab" -> "Заброшенная База Учёных (Проект НЕКО)";
+			case "mfo" -> "Здание МФО (Ключ Бюрократии)";
 			default -> "Полевой Лагерь Белых Колпаков";
 		};
 	}

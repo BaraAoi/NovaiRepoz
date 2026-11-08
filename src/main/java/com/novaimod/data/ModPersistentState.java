@@ -70,6 +70,18 @@ public class ModPersistentState extends PersistentState {
 		// Надет ли единый невидимый предмет Альтимейт-брони («Поджопник») в секретный слот инвентаря
 		public boolean seatPadEquipped = false;
 
+		// === v4.0.0: БЮРОКРАТИЧЕСКИЙ АД ===
+		public boolean bureaucracyKeyEarned = false;
+		public boolean taxKeyIssued = false;
+		public long totalLoanRepaid = 0L;
+		public boolean hasPreBureauReturn = false;
+		public String preBureauDim = "minecraft:overworld";
+		public double preBureauX = 0.0D;
+		public double preBureauY = 64.0D;
+		public double preBureauZ = 0.0D;
+		public float preBureauYaw = 0.0F;
+		public long lastCafeteriaRationDay = -1L;
+
 		// Плавное развитие мобов (прогресс игрока и учёт смертей от конкретных типов мобов)
 		public long ticksLivedInWorld = 0L;
 		public int highestGearScore = 0;
@@ -112,6 +124,16 @@ public class ModPersistentState extends PersistentState {
 			tag.putBoolean("rouletteForceNextGreen", rouletteForceNextGreen);
 			tag.putInt("pendingOblivionTicks", pendingOblivionTicks);
 			tag.putBoolean("seatPadEquipped", seatPadEquipped);
+			tag.putBoolean("bureaucracyKeyEarned", bureaucracyKeyEarned);
+			tag.putBoolean("taxKeyIssued", taxKeyIssued);
+			tag.putLong("totalLoanRepaid", totalLoanRepaid);
+			tag.putBoolean("hasPreBureauReturn", hasPreBureauReturn);
+			tag.putString("preBureauDim", preBureauDim);
+			tag.putDouble("preBureauX", preBureauX);
+			tag.putDouble("preBureauY", preBureauY);
+			tag.putDouble("preBureauZ", preBureauZ);
+			tag.putFloat("preBureauYaw", preBureauYaw);
+			tag.putLong("lastCafeteriaRationDay", lastCafeteriaRationDay);
 
 			tag.putLong("ticksLivedInWorld", ticksLivedInWorld);
 			tag.putInt("highestGearScore", highestGearScore);
@@ -169,6 +191,16 @@ public class ModPersistentState extends PersistentState {
 			d.rouletteForceNextGreen = tag.getBoolean("rouletteForceNextGreen");
 			d.pendingOblivionTicks = tag.getInt("pendingOblivionTicks");
 			d.seatPadEquipped = tag.getBoolean("seatPadEquipped");
+			d.bureaucracyKeyEarned = tag.getBoolean("bureaucracyKeyEarned");
+			d.taxKeyIssued = tag.getBoolean("taxKeyIssued");
+			d.totalLoanRepaid = tag.getLong("totalLoanRepaid");
+			d.hasPreBureauReturn = tag.getBoolean("hasPreBureauReturn");
+			if (tag.contains("preBureauDim")) d.preBureauDim = tag.getString("preBureauDim");
+			d.preBureauX = tag.getDouble("preBureauX");
+			d.preBureauY = tag.contains("preBureauY") ? tag.getDouble("preBureauY") : 64.0D;
+			d.preBureauZ = tag.getDouble("preBureauZ");
+			d.preBureauYaw = tag.getFloat("preBureauYaw");
+			d.lastCafeteriaRationDay = tag.contains("lastCafeteriaRationDay") ? tag.getLong("lastCafeteriaRationDay") : -1L;
 
 			d.ticksLivedInWorld = tag.getLong("ticksLivedInWorld");
 			d.highestGearScore = tag.getInt("highestGearScore");
@@ -363,6 +395,7 @@ public class ModPersistentState extends PersistentState {
 	private int apocalypseTicksLeft = 0;
 	private boolean apocalypseDollUsed = false;
 	private boolean globalTimeFrozen = false;
+	private boolean bureaucracyBuilt = false;
 	private final Set<UUID> diedDuringApocalypse = new HashSet<>();
 
 	public ModPersistentState() {
@@ -506,6 +539,15 @@ public class ModPersistentState extends PersistentState {
 		markDirty();
 	}
 
+	public boolean isBureaucracyBuilt() {
+		return bureaucracyBuilt;
+	}
+
+	public void setBureaucracyBuilt(boolean built) {
+		this.bureaucracyBuilt = built;
+		markDirty();
+	}
+
 	public int getPendingArtifactAwakenTicks() {
 		return pendingArtifactAwakenTicks;
 	}
@@ -609,6 +651,7 @@ public class ModPersistentState extends PersistentState {
 		nbt.putInt("apocalypseTicksLeft", apocalypseTicksLeft);
 		nbt.putBoolean("apocalypseDollUsed", apocalypseDollUsed);
 		nbt.putBoolean("globalTimeFrozen", globalTimeFrozen);
+		nbt.putBoolean("bureaucracyBuilt", bureaucracyBuilt);
 		NbtList deadList = new NbtList();
 		for (UUID u : diedDuringApocalypse) {
 			deadList.add(NbtString.of(u.toString()));
@@ -681,6 +724,7 @@ public class ModPersistentState extends PersistentState {
 		state.apocalypseTicksLeft = nbt.getInt("apocalypseTicksLeft");
 		state.apocalypseDollUsed = nbt.getBoolean("apocalypseDollUsed");
 		state.globalTimeFrozen = nbt.getBoolean("globalTimeFrozen");
+		state.bureaucracyBuilt = nbt.getBoolean("bureaucracyBuilt");
 		if (nbt.contains("diedDuringApocalypse", NbtElement.LIST_TYPE)) {
 			NbtList dl = nbt.getList("diedDuringApocalypse", NbtElement.STRING_TYPE);
 			for (int i = 0; i < dl.size(); i++) {
