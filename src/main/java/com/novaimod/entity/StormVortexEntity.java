@@ -54,9 +54,12 @@ public class StormVortexEntity extends Entity {
 					for (int dz = -12; dz <= 12; dz++) {
 						BlockPos bp = center.add(dx, dy, dz);
 						BlockState bs = sw.getBlockState(bp);
-						Oxidizable.getUnaffectedOxidationState(bs.getBlock()).ifPresent(cleanBlock -> {
-							sw.setBlockState(bp, cleanBlock.getStateWithProperties(bs), Block.NOTIFY_ALL);
-						});
+						if (bs.getBlock() instanceof Oxidizable) {
+							BlockState cleanState = Oxidizable.getUnaffectedOxidationState(bs);
+							if (!cleanState.equals(bs)) {
+								sw.setBlockState(bp, cleanState, Block.NOTIFY_ALL);
+							}
+						}
 					}
 				}
 			}
