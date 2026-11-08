@@ -14,6 +14,10 @@ import com.novaimod.item.ChronoScepterItem;
 import com.novaimod.item.CushionItem;
 import com.novaimod.item.DrunkenOblivionItem;
 import com.novaimod.item.InfinityEyeItem;
+import com.novaimod.item.LuceRaincoatItem;
+import com.novaimod.item.LuceRosaryItem;
+import com.novaimod.item.LuceSpawnEggItem;
+import com.novaimod.item.LuceStaffItem;
 import com.novaimod.item.OddsConfiguratorItem;
 import com.novaimod.item.OrbitalLaserItem;
 import com.novaimod.item.PartyDollItem;
@@ -256,6 +260,27 @@ public final class ModItems {
 			new BureaucracySealItem(new Item.Settings().maxCount(1).rarity(Rarity.EPIC).fireproof())
 	);
 
+	// === v4.1.0: ПАЛОМНИЦА ЛЮЧЕ (СИЛА БОГА И АНИМЕ!) ===
+	public static final Item LUCE_RAINCOAT = register(
+			"luce_raincoat",
+			new LuceRaincoatItem(new Item.Settings().maxCount(1).rarity(Rarity.EPIC).fireproof())
+	);
+
+	public static final Item LUCE_STAFF = register(
+			"luce_staff",
+			new LuceStaffItem(new Item.Settings().maxCount(1).rarity(Rarity.EPIC).fireproof())
+	);
+
+	public static final Item LUCE_ROSARY = register(
+			"luce_rosary",
+			new LuceRosaryItem(new Item.Settings().maxCount(1).rarity(Rarity.EPIC).fireproof())
+	);
+
+	public static final Item LUCE_SPAWN_EGG = register(
+			"luce_spawn_egg",
+			new LuceSpawnEggItem(new Item.Settings().maxCount(64).rarity(Rarity.EPIC).fireproof())
+	);
+
 	public static final Map<DyeColor, Item> CUSHIONS = new EnumMap<>(DyeColor.class);
 
 	static {
@@ -308,9 +333,13 @@ public final class ModItems {
 						entries.add(POKEBALL);
 						entries.add(BUREAUCRACY_KEY);
 						entries.add(BUREAUCRACY_SEAL);
+						entries.add(LUCE_RAINCOAT);
+						entries.add(LUCE_STAFF);
+						entries.add(LUCE_ROSARY);
 						entries.add(WHITE_CAP_SPAWN_EGG);
 						entries.add(WHITE_CAP_BOSS_SPAWN_EGG);
 						entries.add(CATGIRL_SPAWN_EGG);
+						entries.add(LUCE_SPAWN_EGG);
 						entries.add(ODDS_CONFIGURATOR);
 						for (DyeColor color : DyeColor.values()) {
 							entries.add(CUSHIONS.get(color));
@@ -334,9 +363,13 @@ public final class ModItems {
 						entries.add(POKEBALL);
 						entries.add(BUREAUCRACY_KEY);
 						entries.add(BUREAUCRACY_SEAL);
+						entries.add(LUCE_RAINCOAT);
+						entries.add(LUCE_STAFF);
+						entries.add(LUCE_ROSARY);
 						entries.add(WHITE_CAP_SPAWN_EGG);
 						entries.add(WHITE_CAP_BOSS_SPAWN_EGG);
 						entries.add(CATGIRL_SPAWN_EGG);
+						entries.add(LUCE_SPAWN_EGG);
 						entries.add(REALITY_RIFT_BLADE);
 						entries.add(ORBITAL_LASER);
 						entries.add(TERRA_HEAVER);

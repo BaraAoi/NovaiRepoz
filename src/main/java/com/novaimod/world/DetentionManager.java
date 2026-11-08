@@ -87,8 +87,16 @@ public final class DetentionManager {
 				} else if (currentDay > acc.lastInterestDay) {
 					long daysPassed = currentDay - acc.lastInterestDay;
 					acc.lastInterestDay = currentDay;
+					boolean hasLuceRosary = false;
+					for (int slotIdx = 0; slotIdx < player.getInventory().size(); slotIdx++) {
+						if (player.getInventory().getStack(slotIdx).isOf(ModItems.LUCE_ROSARY)) {
+							hasLuceRosary = true;
+							break;
+						}
+					}
+					double effectiveRate = hasLuceRosary ? (acc.hiddenDailyRate * 0.5D) : acc.hiddenDailyRate;
 					for (long d = 0; d < daysPassed; d++) {
-						long interest = Math.max(1L, Math.round(acc.debt * acc.hiddenDailyRate));
+						long interest = Math.max(1L, Math.round(acc.debt * effectiveRate));
 						acc.debt = Math.min(Long.MAX_VALUE / 4L, acc.debt + interest);
 						acc.mfoLockedHalf = Math.max(acc.mfoLockedHalf, Math.max(1L, (acc.debt + 1L) / 2L));
 						acc.daysOverdue++;

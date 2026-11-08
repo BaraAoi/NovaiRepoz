@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.novaimod.data.ModPersistentState;
 import com.novaimod.world.AbandonedLabManager;
+import com.novaimod.world.LuceWorldManager;
 import com.novaimod.world.WhiteCapWorldManager;
 
 import net.minecraft.component.DataComponentTypes;
@@ -51,7 +52,7 @@ public class WhiteCapCompassItem extends Item {
 		if (custom == null) {
 			return 0;
 		}
-		return MathHelper.clamp(custom.copyNbt().getInt(KEY_FILTER), 0, 4);
+		return MathHelper.clamp(custom.copyNbt().getInt(KEY_FILTER), 0, 5);
 	}
 
 	public static String filterTitle(int filter) {
@@ -60,6 +61,7 @@ public class WhiteCapCompassItem extends Item {
 			case 2 -> "Карантинный Форт-Лаборатория";
 			case 3 -> "Полевые Лагеря Клана";
 			case 4 -> "Здание МФО (Получение Ключа Бюрократии)";
+			case 5 -> "Часовня Святой Люче (Паломница и Сантино)";
 			default -> "Любая база / лагерь Белых Колпаков";
 		};
 	}
@@ -80,6 +82,7 @@ public class WhiteCapCompassItem extends Item {
 	public static ModPersistentState.StructureEntry refreshTrackedTarget(ItemStack stack, ServerWorld sw, ServerPlayerEntity sp) {
 		ModPersistentState state = ModPersistentState.get(sw.getServer());
 		WhiteCapWorldManager.ensureInitialStructuresNearPlayer(sw, sp, state);
+		LuceWorldManager.tickLuceWorld(sw.getServer());
 
 		int filter = getFilter(stack);
 		String dimId = sw.getRegistryKey().getValue().toString();
@@ -142,7 +145,7 @@ public class WhiteCapCompassItem extends Item {
 		}
 
 		if (sp.isSneaking()) {
-			int next = (getFilter(stack) + 1) % 5;
+			int next = (getFilter(stack) + 1) % 6;
 			NbtComponent custom = stack.get(DataComponentTypes.CUSTOM_DATA);
 			NbtCompound nbt = custom != null ? custom.copyNbt() : new NbtCompound();
 			nbt.putInt(KEY_FILTER, next);
@@ -167,7 +170,7 @@ public class WhiteCapCompassItem extends Item {
 		String label = prettyStructureName(best.type);
 
 		if (sp.isCreative() && sp.getPitch() > 68.0F) {
-			int zOff = "abandoned_lab".equals(best.type) ? 6 : 15;
+			int zOff = "abandoned_lab".equals(best.type) ? 6 : ("luce_shrine".equals(best.type) ? 7 : 15);
 			sp.teleport(sw, dest.getX() + 0.5D, dest.getY() + 1.0D, dest.getZ() + zOff + 0.5D, 180.0F, 0.0F);
 			sw.playSound(null, sp.getBlockPos(), SoundEvents.ENTITY_ENDERMAN_TELEPORT, SoundCategory.PLAYERS, 1.0F, 1.15F);
 			sp.sendMessage(Text.literal("🧭 Перенос ко входу: " + label + "!").formatted(Formatting.GREEN, Formatting.BOLD), true);
@@ -193,6 +196,7 @@ public class WhiteCapCompassItem extends Item {
 			case 2 -> "white_cap_outpost".equals(type);
 			case 3 -> "white_cap_camp".equals(type) || "white_cap_nether_camp".equals(type);
 			case 4 -> "mfo".equals(type);
+			case 5 -> "luce_shrine".equals(type);
 			default -> type.startsWith("white_cap_");
 		};
 	}
@@ -203,6 +207,7 @@ public class WhiteCapCompassItem extends Item {
 			case "white_cap_outpost" -> "Карантинный Форт Колпаков";
 			case "white_cap_nether_camp" -> "Адский Лагерь Белых Колпаков";
 			case "mfo" -> "Здание МФО (Ключ Бюрократии)";
+			case "luce_shrine" -> "Часовня Святой Люче";
 			default -> "Полевой Лагерь Белых Колпаков";
 		};
 	}

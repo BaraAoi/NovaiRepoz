@@ -9,6 +9,7 @@ import com.novaimod.ai.evolution.MobEvolutionManager;
 import com.novaimod.data.ModPersistentState;
 import com.novaimod.economy.CasinoGamesManager;
 import com.novaimod.entity.CushionEntity;
+import com.novaimod.entity.LuceEntity;
 import com.novaimod.entity.PartyDollEntity;
 import com.novaimod.entity.WhiteCapEntity;
 import com.novaimod.equipment.MfoArmorSetManager;
@@ -28,6 +29,7 @@ import com.novaimod.world.ApocalypseEventManager;
 import com.novaimod.world.BureaucraticHellManager;
 import com.novaimod.world.DetentionManager;
 import com.novaimod.world.EgoPartyManager;
+import com.novaimod.world.LuceWorldManager;
 import com.novaimod.world.ModStructureGenerator;
 import com.novaimod.world.MysterySkyManager;
 import com.novaimod.world.PokeballDimensionManager;
@@ -43,6 +45,7 @@ import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.passive.WolfEntity;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -155,6 +158,12 @@ public class NovaiMod implements ModInitializer {
 					return false;
 				}
 			}
+			if (entity instanceof WolfEntity wolf
+					&& wolf.getCommandTags().contains(LuceEntity.TAG_SANTINO_DOG)
+					&& source.getAttacker() instanceof ServerPlayerEntity offender
+					&& !offender.isCreative()) {
+				LuceEntity.onSantinoHurt(wolf, offender);
+			}
 			return true;
 		});
 
@@ -220,6 +229,7 @@ public class NovaiMod implements ModInitializer {
 				ModStructureGenerator.tickWorldGeneration(server);
 				WhiteCapWorldManager.tickClanWorld(server);
 				BureaucraticHellManager.tickBureaucraticChecks(server);
+				LuceWorldManager.tickLuceWorld(server);
 			}
 		});
 	}
@@ -278,6 +288,10 @@ public class NovaiMod implements ModInitializer {
 											case "lab", "abandoned_lab" -> {
 												AbandonedLabManager.buildAbandonedScientistLab(world, pos);
 												ModPersistentState.get(world.getServer()).recordStructure("abandoned_lab", world.getRegistryKey().getValue().toString(), pos);
+											}
+											case "luce", "luce_shrine", "chapel" -> {
+												LuceWorldManager.buildLuceShrine(world, pos);
+												ModPersistentState.get(world.getServer()).recordStructure("luce_shrine", world.getRegistryKey().getValue().toString(), pos);
 											}
 											default -> ModStructureGenerator.buildBiomeCasino(world, pos, "plains");
 										}

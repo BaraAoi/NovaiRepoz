@@ -7,6 +7,7 @@ import com.novaimod.block.TradeMachineBlock;
 import com.novaimod.data.ModPersistentState;
 import com.novaimod.entity.CatgirlEntity;
 import com.novaimod.entity.CushionEntity;
+import com.novaimod.entity.LuceEntity;
 import com.novaimod.entity.ModNpcEntity;
 import com.novaimod.entity.NpcRole;
 import com.novaimod.entity.WhiteCapEntity;
@@ -343,6 +344,19 @@ public final class BureaucraticHellManager {
 				girl.refreshPositionAndAngles(destX + 1.0D, destY, destZ, owner.getYaw(), 0.0F);
 			} else {
 				girl.teleport(toWorld, destX + 1.0D, destY, destZ, java.util.Set.of(), owner.getYaw(), 0.0F);
+			}
+		}
+
+		List<LuceEntity> luces = fromWorld.getEntitiesByClass(
+				LuceEntity.class,
+				search,
+				l -> l.isAlive() && !l.isWrathMode() && l.isFriendOf(owner) && l.getCompanionMode() == LuceEntity.MODE_FOLLOW
+		);
+		for (LuceEntity luce : luces) {
+			if (fromWorld == toWorld) {
+				luce.refreshPositionAndAngles(destX - 1.0D, destY, destZ, owner.getYaw(), 0.0F);
+			} else {
+				luce.teleport(toWorld, destX - 1.0D, destY, destZ, java.util.Set.of(), owner.getYaw(), 0.0F);
 			}
 		}
 	}
@@ -740,8 +754,21 @@ public final class BureaucraticHellManager {
 		);
 		world.setBlockState(new BlockPos(-8, fy + 1, -9), ModBlocks.REPAIR_STATION.getDefaultState(), FLAGS);
 
-		// 5. Мини-кофепоинт Приёмной
+		// 5. Мини-кофепоинт Приёмной и Духовный Уголок Миссии Паломницы Люче
 		buildMiniCoffeeCorner(world, -16, fy, 15, "Кофепоинт Приёмной");
+
+		world.setBlockState(new BlockPos(-6, fy + 1, 16), Blocks.GOLD_BLOCK.getDefaultState(), FLAGS);
+		world.setBlockState(new BlockPos(-6, fy + 2, 16), Blocks.LECTERN.getDefaultState(), FLAGS);
+		world.setBlockState(new BlockPos(-7, fy + 1, 16), Blocks.END_ROD.getDefaultState(), FLAGS);
+		world.setBlockState(new BlockPos(-5, fy + 1, 16), Blocks.END_ROD.getDefaultState(), FLAGS);
+		placeWaxedWallSign(world, new BlockPos(-6, fy + 3, 16), Direction.NORTH, "МИССИЯ ВАТИКАНА", "Люче напоминает:", "Не берите займы", "под 20% в день!");
+		LuceEntity receptionLuce = ModEntities.LUCE_ENTITY.create(world);
+		if (receptionLuce != null) {
+			BlockPos missionPos = new BlockPos(-6, fy + 1, 14);
+			receptionLuce.refreshPositionAndAngles(missionPos.getX() + 0.5D, missionPos.getY(), missionPos.getZ() + 0.5D, 0.0F, 0.0F);
+			receptionLuce.setHomePos(missionPos);
+			world.spawnEntity(receptionLuce);
+		}
 	}
 
 	// =========================================================================

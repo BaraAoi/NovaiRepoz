@@ -7,6 +7,7 @@ import com.novaimod.entity.CelestialOrbEntity;
 import com.novaimod.entity.CushionEntity;
 import com.novaimod.entity.InfinityEyeEntity;
 import com.novaimod.entity.InfinityPearlEntity;
+import com.novaimod.entity.LuceEntity;
 import com.novaimod.entity.ModNpcEntity;
 import com.novaimod.entity.OrbitalLaserEntity;
 import com.novaimod.entity.PartyDollEntity;
@@ -193,6 +194,16 @@ public final class ModEntities {
 					.build("pokeball_entity")
 	);
 
+	public static final EntityType<LuceEntity> LUCE_ENTITY = Registry.register(
+			Registries.ENTITY_TYPE,
+			Identifier.of(NovaiMod.MOD_ID, "luce"),
+			EntityType.Builder.<LuceEntity>create(LuceEntity::new, SpawnGroup.CREATURE)
+					.dimensions(0.58F, 1.85F)
+					.makeFireImmune()
+					.maxTrackingRange(12)
+					.build("luce")
+	);
+
 	private ModEntities() {
 	}
 
@@ -200,5 +211,6 @@ public final class ModEntities {
 		FabricDefaultAttributeRegistry.register(MOD_NPC, ModNpcEntity.createNpcAttributes());
 		FabricDefaultAttributeRegistry.register(WHITE_CAP_ENTITY, WhiteCapEntity.createWhiteCapAttributes());
 		FabricDefaultAttributeRegistry.register(CATGIRL_ENTITY, CatgirlEntity.createCatgirlAttributes());
+		FabricDefaultAttributeRegistry.register(LUCE_ENTITY, LuceEntity.createLuceAttributes());
 	}
 }

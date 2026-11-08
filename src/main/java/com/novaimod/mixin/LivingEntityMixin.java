@@ -7,12 +7,17 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import com.novaimod.ai.evolution.MobEvolutionManager;
 import com.novaimod.equipment.UltimateArmorManager;
+import com.novaimod.registry.ModItems;
 
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.damage.DamageSource;
+import net.minecraft.entity.damage.DamageTypes;
 import net.minecraft.entity.mob.CreeperEntity;
+import net.minecraft.entity.mob.Monster;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.registry.tag.EntityTypeTags;
 import net.minecraft.server.network.ServerPlayerEntity;
 
 /**
@@ -38,6 +43,18 @@ public abstract class LivingEntityMixin {
 			float purePercentOnly = UltimateArmorManager.computePurePercentageDamageOnly(ultimatePlayer, source);
 			cir.setReturnValue(purePercentOnly);
 			return;
+		}
+
+		// ЖЁЛТЫЙ ДОЖДЕВИК ЛЮЧЕ: полная защита от ударов молний и снижение урона от нежити и монстров на 35%!
+		if (player.getEquippedStack(EquipmentSlot.CHEST).isOf(ModItems.LUCE_RAINCOAT)) {
+			if (source.isOf(DamageTypes.LIGHTNING_BOLT)) {
+				cir.setReturnValue(0.0F);
+				return;
+			}
+			if (source.getAttacker() instanceof LivingEntity att
+					&& (att.getType().isIn(EntityTypeTags.UNDEAD) || att instanceof Monster)) {
+				cir.setReturnValue(cir.getReturnValue() * 0.65F);
+			}
 		}
 
 		boolean fromCreeper = (source.getAttacker() instanceof CreeperEntity)

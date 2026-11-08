@@ -8,6 +8,9 @@ import com.novaimod.client.render.CatgirlEntityModel;
 import com.novaimod.client.render.CatgirlEntityRenderer;
 import com.novaimod.client.render.CelestialOrbEntityRenderer;
 import com.novaimod.client.render.CushionEntityRenderer;
+import com.novaimod.client.render.LuceEntityModel;
+import com.novaimod.client.render.LuceEntityRenderer;
+import com.novaimod.client.render.LuceRaincoatArmorRenderer;
 import com.novaimod.client.render.ModNpcRenderer;
 import com.novaimod.client.render.OrbitalLaserEntityRenderer;
 import com.novaimod.client.render.PartyDollEntityRenderer;
@@ -84,6 +87,10 @@ public class NovaiModClient implements ClientModInitializer {
 				CatgirlEntityRenderer.CATGIRL_MODEL_LAYER,
 				CatgirlEntityModel::getTexturedModelData
 		);
+		EntityModelLayerRegistry.registerModelLayer(
+				LuceEntityRenderer.LUCE_MODEL_LAYER,
+				LuceEntityModel::getTexturedModelData
+		);
 		EntityRendererRegistry.register(ModEntities.MOD_NPC, ModNpcRenderer::new);
 		EntityRendererRegistry.register(ModEntities.SEAT_ENTITY, EmptyEntityRenderer::new);
 		EntityRendererRegistry.register(ModEntities.CUSHION_ENTITY, CushionEntityRenderer::new);
@@ -91,8 +98,10 @@ public class NovaiModClient implements ClientModInitializer {
 		EntityRendererRegistry.register(ModEntities.WHITE_CAP_ENTITY, WhiteCapEntityRenderer::new);
 		EntityRendererRegistry.register(ModEntities.PLAGUE_FLASK_ENTITY, ctx -> new FlyingItemEntityRenderer<>(ctx, 1.15F, false));
 		EntityRendererRegistry.register(ModEntities.CATGIRL_ENTITY, CatgirlEntityRenderer::new);
+		EntityRendererRegistry.register(ModEntities.LUCE_ENTITY, LuceEntityRenderer::new);
 		EntityRendererRegistry.register(ModEntities.POKEBALL_PROJECTILE_ENTITY, ctx -> new FlyingItemEntityRenderer<>(ctx, 1.05F, false));
 		ArmorRenderer.register(new WhiteCapHoodArmorRenderer(), ModItems.WHITE_CAP_HOOD);
+		ArmorRenderer.register(new LuceRaincoatArmorRenderer(), ModItems.LUCE_RAINCOAT);
 		EntityRendererRegistry.register(ModEntities.INFINITY_EYE_ENTITY, ctx -> new FlyingItemEntityRenderer<>(ctx, 1.75F, true));
 		EntityRendererRegistry.register(ModEntities.INFINITY_PEARL_ENTITY, ctx -> new FlyingItemEntityRenderer<>(ctx, 1.15F, true));
 		EntityRendererRegistry.register(ModEntities.SINGULARITY_ORB_ENTITY, SingularityOrbEntityRenderer::new);

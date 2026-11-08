@@ -3,6 +3,7 @@ package com.novaimod.world;
 import com.novaimod.block.TradeMachineBlock;
 import com.novaimod.data.ModPersistentState;
 import com.novaimod.entity.CushionEntity;
+import com.novaimod.entity.LuceEntity;
 import com.novaimod.entity.ModNpcEntity;
 import com.novaimod.entity.NpcRole;
 import com.novaimod.entity.PartyDollEntity;
@@ -1113,9 +1114,20 @@ public final class ModStructureGenerator {
 			chest.setStack(1, new ItemStack(ModItems.getCushionItem(DyeColor.LIGHT_BLUE), 4));
 			chest.setStack(2, new ItemStack(ModItems.getCushionItem(DyeColor.RED), 4));
 			chest.setStack(4, new ItemStack(ModItems.STRANGE_MEAT, 3));
+			chest.setStack(6, new ItemStack(ModItems.LUCE_ROSARY, 1));
 			chest.setStack(13, new ItemStack(Items.GOLD_INGOT, 6));
 			chest.markDirty();
 		}
+
+		// Паломница Люче и её пёсик Сантино у алтаря полосатого храма Острова Эго!
+		LuceEntity churchLuce = ModEntities.LUCE_ENTITY.create(world);
+		if (churchLuce != null) {
+			BlockPos luceHome = center.add(0, 2, 1);
+			churchLuce.refreshPositionAndAngles(luceHome.getX() + 0.5D, luceHome.getY(), luceHome.getZ() + 0.5D, 180.0F, 0.0F);
+			churchLuce.setHomePos(luceHome);
+			world.spawnEntity(churchLuce);
+		}
+		LuceWorldManager.spawnSantinoDog(world, center.add(-1, 2, 1));
 	}
 
 	private static void populateKitchenChestWithStrangeMeat(ServerWorld world, BlockPos chestPos) {
