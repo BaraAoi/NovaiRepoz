@@ -1,6 +1,7 @@
 package com.novaimod.client.hud;
 
 import com.novaimod.client.ClientAccountData;
+import com.novaimod.client.TimeOfTheWorldClientState;
 
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.MinecraftClient;
@@ -9,6 +10,8 @@ import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.render.RenderTickCounter;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
+import net.minecraft.util.Util;
+import net.minecraft.util.math.MathHelper;
 
 /**
  * Отрисовывает:
@@ -21,7 +24,14 @@ public class AccountHudOverlay implements HudRenderCallback {
 	@Override
 	public void onHudRender(DrawContext context, RenderTickCounter tickCounter) {
 		MinecraftClient client = MinecraftClient.getInstance();
-		if (client.player == null || client.options.hudHidden) {
+		if (client.player == null) {
+			return;
+		}
+
+		// Полноэкранный эффект Сингулярности и световых потоков «Made in Heaven: Time of the World» (работает даже при F1!)
+		renderMadeInHeavenOverlay(context, client.textRenderer);
+
+		if (client.options.hudHidden) {
 			return;
 		}
 
@@ -95,5 +105,53 @@ public class AccountHudOverlay implements HudRenderCallback {
 		context.fill(baseX + 6, baseY - 34, baseX + 22, baseY - 18, coreColor);
 		context.fill(baseX + 2, baseY - 18, baseX + 26, baseY + 26, coreColor);
 		context.fill(baseX - 4, baseY - 22, baseX + 32, baseY + 32, softColor);
+	}
+
+	private void renderMadeInHeavenOverlay(DrawContext context, TextRenderer tr) {
+		int sw = context.getScaledWindowWidth();
+		int sh = context.getScaledWindowHeight();
+
+		if (TimeOfTheWorldClientState.isAccelerating()) {
+			float prog = TimeOfTheWorldClientState.getNormalizedProgress();
+			if (prog > 0.30F) {
+				// Тонкие золотисто-бирюзовые хроно-полосы по краям экрана (центр неба полностью чист!)
+				float intensity = (prog - 0.30F) / 0.70F;
+				int borderAlpha = MathHelper.clamp((int) (intensity * 95.0F), 0, 110);
+				int goldEdge = (borderAlpha << 24) | 0xFFE688;
+				int cyanEdge = ((borderAlpha * 3 / 4) << 24) | 0x70F0FF;
+
+				int band = 4 + (int) (intensity * 12.0F);
+				context.fill(0, 0, sw, band, goldEdge);
+				context.fill(0, sh - band, sw, sh, goldEdge);
+				context.fill(0, 0, band, sh, cyanEdge);
+				context.fill(sw - band, 0, sw, sh, cyanEdge);
+
+				// Мерцающие скоростные штрихи на периферии экрана
+				long ms = Util.getMeasuringTimeMs();
+				int streaks = 6 + (int) (intensity * 14.0F);
+				for (int i = 0; i < streaks; i++) {
+					int hash = (int) ((ms / 28L + i * 73L) * 2654435761L);
+					int sy = Math.floorMod(hash, Math.max(1, sh - 4));
+					int len = 18 + Math.floorMod(hash >> 8, 46);
+					boolean leftSide = (i % 2 == 0);
+					int sx0 = leftSide ? 0 : (sw - len);
+					int col = (i % 3 == 0) ? goldEdge : cyanEdge;
+					context.fill(sx0, sy, sx0 + len, sy + 1, col);
+				}
+			}
+		}
+
+		float flashAlpha = TimeOfTheWorldClientState.getSingularityFlashAlpha();
+		if (flashAlpha > 0.005F) {
+			int a = MathHelper.clamp(Math.round(flashAlpha * 255.0F), 0, 255);
+			int whiteGold = (a << 24) | 0xFFFDF2;
+			context.fill(0, 0, sw, sh, whiteGold);
+		}
+
+		if (TimeOfTheWorldClientState.isInPostResetBannerWindow()) {
+			Text title = Text.literal("✦ MADE IN HEAVEN — МИР ПЕРЕЗАПУЩЕН ✦").formatted(Formatting.GOLD, Formatting.BOLD);
+			int tw = tr.getWidth(title);
+			context.drawText(tr, title, (sw - tw) / 2, sh / 4, 0xFFF5C0, true);
+		}
 	}
 }

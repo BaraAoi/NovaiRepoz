@@ -34,6 +34,7 @@ import com.novaimod.world.LuceWorldManager;
 import com.novaimod.world.ModStructureGenerator;
 import com.novaimod.world.MysterySkyManager;
 import com.novaimod.world.PokeballDimensionManager;
+import com.novaimod.world.TimeOfTheWorldManager;
 import com.novaimod.world.TimeStopManager;
 import com.novaimod.world.WhiteCapWorldManager;
 
@@ -41,6 +42,7 @@ import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
@@ -131,6 +133,11 @@ public class NovaiMod implements ModInitializer {
 			ServerPlayerEntity player = handler.getPlayer();
 			ModServerNetworking.syncAccount(player);
 			TimeStopManager.onPlayerJoin(player);
+			TimeOfTheWorldManager.onPlayerJoin(player);
+		});
+
+		ServerEntityEvents.ENTITY_LOAD.register((entity, world) -> {
+			TimeOfTheWorldManager.onEntityLoaded(entity, world);
 		});
 
 		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
@@ -333,6 +340,7 @@ public class NovaiMod implements ModInitializer {
 			MobEvolutionManager.tickServer(server);
 			ApocalypseEventManager.tickServer(server);
 			TimeStopManager.tickServer(server);
+			TimeOfTheWorldManager.tickServer(server);
 			EgoPartyManager.tickRaves(server);
 			UltimateArmorManager.tickPlayers(server);
 			ScaleRayItem.tickTelekinesis(server);

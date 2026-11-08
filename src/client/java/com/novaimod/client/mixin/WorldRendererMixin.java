@@ -8,6 +8,12 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import com.novaimod.client.TimeOfTheWorldClientState;
+
+import net.minecraft.client.render.Camera;
+import net.minecraft.client.render.GameRenderer;
+import net.minecraft.client.render.LightmapTextureManager;
+import net.minecraft.client.render.RenderTickCounter;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.render.WorldRenderer;
 import net.minecraft.client.util.math.MatrixStack;
@@ -15,6 +21,7 @@ import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.boss.dragon.EnderDragonEntity;
+import org.joml.Matrix4f;
 
 /**
  * Полностью устраняет любые дёргания и остаточные анимации сущностей (включая крылья, шею и хвост Дракона Края!),
@@ -25,6 +32,29 @@ public abstract class WorldRendererMixin {
 	@Shadow
 	@Nullable
 	private ClientWorld world;
+
+	@Inject(method = "render", at = @At("HEAD"))
+	private void novai$interpolateMadeInHeavenSkyEveryFrame(
+			RenderTickCounter tickCounter,
+			boolean renderBlockOutline,
+			Camera camera,
+			GameRenderer gameRenderer,
+			LightmapTextureManager lightmapTextureManager,
+			Matrix4f matrix4f,
+			Matrix4f matrix4f2,
+			CallbackInfo ci
+	) {
+		if (this.world != null) {
+			if (TimeOfTheWorldClientState.isAccelerating()) {
+				this.world.setTimeOfDay(TimeOfTheWorldClientState.computeSmoothTimeOfDay());
+			} else {
+				Long restored = TimeOfTheWorldClientState.pollPendingRestoredTime();
+				if (restored != null) {
+					this.world.setTimeOfDay(restored);
+				}
+			}
+		}
+	}
 
 	@Inject(method = "tick", at = @At("HEAD"), cancellable = true)
 	private void novai$freezeSkyAndWeatherAnimationOnTimeStop(CallbackInfo ci) {

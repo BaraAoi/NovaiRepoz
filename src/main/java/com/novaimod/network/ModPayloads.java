@@ -633,6 +633,42 @@ public final class ModPayloads {
 		}
 	}
 
+	public record TimeOfTheWorldSyncPayload(
+			boolean active,
+			long initialTimeOfDay,
+			int elapsedTicks,
+			int totalTicks,
+			boolean singularityFlash
+	) implements CustomPayload {
+		public static final CustomPayload.Id<TimeOfTheWorldSyncPayload> ID =
+				new CustomPayload.Id<>(Identifier.of(NovaiMod.MOD_ID, "time_of_the_world_sync"));
+		public static final PacketCodec<RegistryByteBuf, TimeOfTheWorldSyncPayload> CODEC =
+				PacketCodec.of(TimeOfTheWorldSyncPayload::write, TimeOfTheWorldSyncPayload::read);
+
+		private void write(RegistryByteBuf buf) {
+			buf.writeBoolean(active);
+			buf.writeLong(initialTimeOfDay);
+			buf.writeVarInt(elapsedTicks);
+			buf.writeVarInt(totalTicks);
+			buf.writeBoolean(singularityFlash);
+		}
+
+		private static TimeOfTheWorldSyncPayload read(RegistryByteBuf buf) {
+			return new TimeOfTheWorldSyncPayload(
+					buf.readBoolean(),
+					buf.readLong(),
+					buf.readVarInt(),
+					buf.readVarInt(),
+					buf.readBoolean()
+			);
+		}
+
+		@Override
+		public Id<? extends CustomPayload> getId() {
+			return ID;
+		}
+	}
+
 	public record SeatPadSlotActionPayload(int action, int invSlot) implements CustomPayload {
 		public static final CustomPayload.Id<SeatPadSlotActionPayload> ID =
 				new CustomPayload.Id<>(Identifier.of(NovaiMod.MOD_ID, "seat_pad_action"));
@@ -669,6 +705,7 @@ public final class ModPayloads {
 		PayloadTypeRegistry.playS2C().register(SeamlessTeleportPayload.ID, SeamlessTeleportPayload.CODEC);
 		PayloadTypeRegistry.playS2C().register(CelestialLightningBeamPayload.ID, CelestialLightningBeamPayload.CODEC);
 		PayloadTypeRegistry.playS2C().register(SeatPadSyncPayload.ID, SeatPadSyncPayload.CODEC);
+		PayloadTypeRegistry.playS2C().register(TimeOfTheWorldSyncPayload.ID, TimeOfTheWorldSyncPayload.CODEC);
 
 		PayloadTypeRegistry.playC2S().register(LoanActionPayload.ID, LoanActionPayload.CODEC);
 		PayloadTypeRegistry.playC2S().register(ShopBuyPayload.ID, ShopBuyPayload.CODEC);

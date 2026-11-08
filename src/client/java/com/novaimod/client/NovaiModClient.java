@@ -4,9 +4,12 @@ import org.lwjgl.glfw.GLFW;
 
 import com.novaimod.NovaiMod;
 import com.novaimod.client.hud.AccountHudOverlay;
+import com.novaimod.client.render.AuroraPhenomenonEntityRenderer;
+import com.novaimod.client.render.BabylonTreasuryEntityRenderer;
 import com.novaimod.client.render.CatgirlEntityModel;
 import com.novaimod.client.render.CatgirlEntityRenderer;
 import com.novaimod.client.render.CelestialOrbEntityRenderer;
+import com.novaimod.client.render.ChronoAstrolabeEntityRenderer;
 import com.novaimod.client.render.CushionEntityRenderer;
 import com.novaimod.client.render.HolyOrderEntityModel;
 import com.novaimod.client.render.HolyOrderEntityRenderer;
@@ -16,8 +19,10 @@ import com.novaimod.client.render.LuceRaincoatArmorRenderer;
 import com.novaimod.client.render.ModNpcRenderer;
 import com.novaimod.client.render.OrbitalLaserEntityRenderer;
 import com.novaimod.client.render.PartyDollEntityRenderer;
+import com.novaimod.client.render.PrismCathedralEntityRenderer;
 import com.novaimod.client.render.RealitySlashEntityRenderer;
 import com.novaimod.client.render.SingularityOrbEntityRenderer;
+import com.novaimod.client.render.SupernovaStarEntityRenderer;
 import com.novaimod.client.render.WhiteCapEntityModel;
 import com.novaimod.client.render.WhiteCapEntityRenderer;
 import com.novaimod.client.render.WhiteCapHoodArmorRenderer;
@@ -40,6 +45,7 @@ import com.novaimod.registry.ModScreenHandlers;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.ArmorRenderer;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityModelLayerRegistry;
@@ -118,6 +124,11 @@ public class NovaiModClient implements ClientModInitializer {
 		EntityRendererRegistry.register(ModEntities.ORBITAL_LASER_ENTITY, OrbitalLaserEntityRenderer::new);
 		EntityRendererRegistry.register(ModEntities.REALITY_SLASH_ENTITY, RealitySlashEntityRenderer::new);
 		EntityRendererRegistry.register(ModEntities.TERRA_CATACLYSM_ENTITY, EmptyEntityRenderer::new);
+		EntityRendererRegistry.register(ModEntities.CHRONO_ASTROLABE_ENTITY, ChronoAstrolabeEntityRenderer::new);
+		EntityRendererRegistry.register(ModEntities.SUPERNOVA_STAR_ENTITY, SupernovaStarEntityRenderer::new);
+		EntityRendererRegistry.register(ModEntities.BABYLON_TREASURY_ENTITY, BabylonTreasuryEntityRenderer::new);
+		EntityRendererRegistry.register(ModEntities.AURORA_PHENOMENON_ENTITY, AuroraPhenomenonEntityRenderer::new);
+		EntityRendererRegistry.register(ModEntities.PRISM_CATHEDRAL_ENTITY, PrismCathedralEntityRenderer::new);
 
 		// Экран Торгового аппарата
 		HandledScreens.register(ModScreenHandlers.VENDING_SCREEN_HANDLER, VendingScreen::new);
@@ -304,6 +315,20 @@ public class NovaiModClient implements ClientModInitializer {
 
 		ClientPlayNetworking.registerGlobalReceiver(ModPayloads.SeatPadSyncPayload.ID, (payload, context) -> {
 			ClientAccountData.setSeatPadEquipped(payload.equipped());
+		});
+
+		ClientPlayNetworking.registerGlobalReceiver(ModPayloads.TimeOfTheWorldSyncPayload.ID, (payload, context) -> {
+			TimeOfTheWorldClientState.onSyncPacket(
+					payload.active(),
+					payload.initialTimeOfDay(),
+					payload.elapsedTicks(),
+					payload.totalTicks(),
+					payload.singularityFlash()
+			);
+		});
+
+		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
+			TimeOfTheWorldClientState.reset();
 		});
 	}
 }

@@ -1,9 +1,12 @@
 package com.novaimod.registry;
 
 import com.novaimod.NovaiMod;
+import com.novaimod.entity.AuroraPhenomenonEntity;
+import com.novaimod.entity.BabylonTreasuryEntity;
 import com.novaimod.entity.CatgirlEntity;
 import com.novaimod.entity.CelestialMeteorEntity;
 import com.novaimod.entity.CelestialOrbEntity;
+import com.novaimod.entity.ChronoAstrolabeEntity;
 import com.novaimod.entity.CushionEntity;
 import com.novaimod.entity.HolyOrderEntity;
 import com.novaimod.entity.HolyWaterEntity;
@@ -15,9 +18,11 @@ import com.novaimod.entity.OrbitalLaserEntity;
 import com.novaimod.entity.PartyDollEntity;
 import com.novaimod.entity.PlagueFlaskEntity;
 import com.novaimod.entity.PokeballProjectileEntity;
+import com.novaimod.entity.PrismCathedralEntity;
 import com.novaimod.entity.RealitySlashEntity;
 import com.novaimod.entity.SeatEntity;
 import com.novaimod.entity.SingularityOrbEntity;
+import com.novaimod.entity.SupernovaStarEntity;
 import com.novaimod.entity.TerraCataclysmEntity;
 import com.novaimod.entity.WhiteCapEntity;
 
@@ -224,6 +229,57 @@ public final class ModEntities {
 					.maxTrackingRange(8)
 					.trackingTickInterval(3)
 					.build("holy_water_entity")
+	);
+
+	// === v4.3.0: 3D-ФЕНОМЕНЫ НОВЫХ КРЕАТИВНЫХ АРТЕФАКТОВ ===
+	public static final EntityType<ChronoAstrolabeEntity> CHRONO_ASTROLABE_ENTITY = Registry.register(
+			Registries.ENTITY_TYPE,
+			Identifier.of(NovaiMod.MOD_ID, "chrono_astrolabe"),
+			EntityType.Builder.<ChronoAstrolabeEntity>create(ChronoAstrolabeEntity::new, SpawnGroup.MISC)
+					.dimensions(1.0F, 1.0F)
+					.maxTrackingRange(24)
+					.trackingTickInterval(2)
+					.build("chrono_astrolabe")
+	);
+
+	public static final EntityType<SupernovaStarEntity> SUPERNOVA_STAR_ENTITY = Registry.register(
+			Registries.ENTITY_TYPE,
+			Identifier.of(NovaiMod.MOD_ID, "supernova_star"),
+			EntityType.Builder.<SupernovaStarEntity>create(SupernovaStarEntity::new, SpawnGroup.MISC)
+					.dimensions(1.0F, 1.0F)
+					.maxTrackingRange(24)
+					.trackingTickInterval(2)
+					.build("supernova_star")
+	);
+
+	public static final EntityType<BabylonTreasuryEntity> BABYLON_TREASURY_ENTITY = Registry.register(
+			Registries.ENTITY_TYPE,
+			Identifier.of(NovaiMod.MOD_ID, "babylon_treasury"),
+			EntityType.Builder.<BabylonTreasuryEntity>create(BabylonTreasuryEntity::new, SpawnGroup.MISC)
+					.dimensions(1.0F, 1.0F)
+					.maxTrackingRange(20)
+					.trackingTickInterval(1)
+					.build("babylon_treasury")
+	);
+
+	public static final EntityType<AuroraPhenomenonEntity> AURORA_PHENOMENON_ENTITY = Registry.register(
+			Registries.ENTITY_TYPE,
+			Identifier.of(NovaiMod.MOD_ID, "aurora_phenomenon"),
+			EntityType.Builder.<AuroraPhenomenonEntity>create(AuroraPhenomenonEntity::new, SpawnGroup.MISC)
+					.dimensions(1.0F, 1.0F)
+					.maxTrackingRange(24)
+					.trackingTickInterval(4)
+					.build("aurora_phenomenon")
+	);
+
+	public static final EntityType<PrismCathedralEntity> PRISM_CATHEDRAL_ENTITY = Registry.register(
+			Registries.ENTITY_TYPE,
+			Identifier.of(NovaiMod.MOD_ID, "prism_cathedral"),
+			EntityType.Builder.<PrismCathedralEntity>create(PrismCathedralEntity::new, SpawnGroup.MISC)
+					.dimensions(1.0F, 1.0F)
+					.maxTrackingRange(20)
+					.trackingTickInterval(2)
+					.build("prism_cathedral")
 	);
 
 	private ModEntities() {

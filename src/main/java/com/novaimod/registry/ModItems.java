@@ -6,6 +6,7 @@ import java.util.Map;
 import com.novaimod.NovaiMod;
 import com.novaimod.equipment.UltimateArmorItem;
 import com.novaimod.item.AstralGateItem;
+import com.novaimod.item.AuroraWeaverItem;
 import com.novaimod.item.BureaucracyKeyItem;
 import com.novaimod.item.BureaucracySealItem;
 import com.novaimod.item.CatgirlSpawnEggItem;
@@ -14,6 +15,7 @@ import com.novaimod.item.ChronoScepterItem;
 import com.novaimod.item.CrusadeBannerItem;
 import com.novaimod.item.CushionItem;
 import com.novaimod.item.DrunkenOblivionItem;
+import com.novaimod.item.GateOfBabylonItem;
 import com.novaimod.item.HolyOrderSpawnEggItem;
 import com.novaimod.item.HolyWaterItem;
 import com.novaimod.item.InfinityEyeItem;
@@ -21,6 +23,7 @@ import com.novaimod.item.LuceRaincoatItem;
 import com.novaimod.item.LuceRosaryItem;
 import com.novaimod.item.LuceSpawnEggItem;
 import com.novaimod.item.LuceStaffItem;
+import com.novaimod.item.MirrorPrismItem;
 import com.novaimod.item.OddsConfiguratorItem;
 import com.novaimod.item.OrbitalLaserItem;
 import com.novaimod.item.PartyDollItem;
@@ -32,7 +35,9 @@ import com.novaimod.item.RevivalTokenItem;
 import com.novaimod.item.ScaleRayItem;
 import com.novaimod.item.SingularityOrbItem;
 import com.novaimod.item.StrangeMeatItem;
+import com.novaimod.item.SupernovaGenesisItem;
 import com.novaimod.item.TerraHeaverItem;
+import com.novaimod.item.TimeOfTheWorldItem;
 import com.novaimod.item.UberGunItem;
 import com.novaimod.item.UltimateSeatPadItem;
 import com.novaimod.item.UnknownArtifactItem;
@@ -300,6 +305,32 @@ public final class ModItems {
 			new HolyOrderSpawnEggItem(new Item.Settings().maxCount(64).rarity(Rarity.RARE))
 	);
 
+	// === v4.3.0: КОЛЛЕКЦИЯ КРЕАТИВНЫХ АРТЕФАКТОВ С ВАУ-ЭФФЕКТАМИ И «MADE IN HEAVEN: TIME OF THE WORLD» ===
+	public static final Item TIME_OF_THE_WORLD = register(
+			"time_of_the_world",
+			new TimeOfTheWorldItem(new Item.Settings().maxCount(1).rarity(Rarity.EPIC).fireproof())
+	);
+
+	public static final Item SUPERNOVA_GENESIS = register(
+			"supernova_genesis",
+			new SupernovaGenesisItem(new Item.Settings().maxCount(1).rarity(Rarity.EPIC).fireproof())
+	);
+
+	public static final Item GATE_OF_BABYLON = register(
+			"gate_of_babylon",
+			new GateOfBabylonItem(new Item.Settings().maxCount(1).rarity(Rarity.EPIC).fireproof())
+	);
+
+	public static final Item AURORA_WEAVER = register(
+			"aurora_weaver",
+			new AuroraWeaverItem(new Item.Settings().maxCount(1).rarity(Rarity.EPIC).fireproof())
+	);
+
+	public static final Item MIRROR_PRISM = register(
+			"mirror_prism",
+			new MirrorPrismItem(new Item.Settings().maxCount(1).rarity(Rarity.EPIC).fireproof())
+	);
+
 	public static final Map<DyeColor, Item> CUSHIONS = new EnumMap<>(DyeColor.class);
 
 	static {
@@ -352,6 +383,11 @@ public final class ModItems {
 						entries.add(POKEBALL);
 						entries.add(BUREAUCRACY_KEY);
 						entries.add(BUREAUCRACY_SEAL);
+						entries.add(TIME_OF_THE_WORLD);
+						entries.add(SUPERNOVA_GENESIS);
+						entries.add(GATE_OF_BABYLON);
+						entries.add(AURORA_WEAVER);
+						entries.add(MIRROR_PRISM);
 						entries.add(LUCE_RAINCOAT);
 						entries.add(LUCE_STAFF);
 						entries.add(LUCE_ROSARY);
@@ -374,9 +410,14 @@ public final class ModItems {
 			Registries.ITEM_GROUP,
 			Identifier.of(NovaiMod.MOD_ID, "novai_creative_group"),
 			FabricItemGroup.builder()
-					.icon(() -> new ItemStack(ULTIMATE_SEAT_PAD))
+					.icon(() -> new ItemStack(TIME_OF_THE_WORLD))
 					.displayName(Text.translatable("itemGroup.novaimod.novai_creative_group"))
 					.entries((displayContext, entries) -> {
+						entries.add(TIME_OF_THE_WORLD);
+						entries.add(SUPERNOVA_GENESIS);
+						entries.add(GATE_OF_BABYLON);
+						entries.add(AURORA_WEAVER);
+						entries.add(MIRROR_PRISM);
 						entries.add(ULTIMATE_SEAT_PAD);
 						entries.add(SCALE_RAY);
 						entries.add(WHITE_CAP_HOOD);
