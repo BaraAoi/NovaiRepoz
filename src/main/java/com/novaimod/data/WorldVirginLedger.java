@@ -395,6 +395,7 @@ public class WorldVirginLedger extends PersistentState {
 				|| entity instanceof VillagerEntity
 				|| entity instanceof CushionEntity
 				|| entity instanceof PartyDollEntity
+				|| entity.getCommandTags().contains(WhiteCapEntity.TAG_CITADEL_PRISONER)
 				|| (entity instanceof WolfEntity w && w.getCommandTags().contains(LuceEntity.TAG_SANTINO_DOG));
 	}
 
@@ -413,6 +414,9 @@ public class WorldVirginLedger extends PersistentState {
 			return true;
 		}
 		if (entity instanceof WolfEntity w && w.getCommandTags().contains(LuceEntity.TAG_SANTINO_DOG)) {
+			return true;
+		}
+		if (entity.getCommandTags().contains(WhiteCapEntity.TAG_CITADEL_PRISONER)) {
 			return true;
 		}
 		if (entity instanceof HolyOrderEntity ho) {

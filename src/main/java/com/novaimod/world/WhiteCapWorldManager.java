@@ -363,7 +363,9 @@ public final class WhiteCapWorldManager {
 			world.setBlockState(new BlockPos(cx - 9, y + dy, cz - 5), Blocks.BOOKSHELF.getDefaultState(), FLAGS);
 		}
 
-		// Примечание v4.0.0: все тюремные клетки и изоляторы перенесены в измерение «Бюрократический Ад» (в обычном мире тюрячки не спавнятся!)
+		// ПРАВОЕ КРЫЛО — Карантинные Клетки КБК с Пленным Эндерменом и Пленным Скелетом-Иссушителем!
+		buildPrisonCellWithAbomination(world, new BlockPos(cx + 7, y + 1, cz - 2), true);
+		buildPrisonCellWithAbomination(world, new BlockPos(cx + 7, y + 1, cz + 4), false);
 
 		// СЕВЕРНЫЙ ПОМОСТ ВЕРХОВНОГО МАГИСТРА И СОКРОВИЩНИЦА (cz - 8)
 		for (int dx = -4; dx <= 4; dx++) {
@@ -522,6 +524,9 @@ public final class WhiteCapWorldManager {
 
 		placeAndFillClanChest(world, new BlockPos(cx + 5, y + 1, cz - 5), 1);
 		placeAndFillClanChest(world, new BlockPos(cx - 5, y + 11, cz - 5), 1);
+
+		// Юго-западный угол двора Карантинного Форта — Железная Карантинная Клетка КБК с пленным образцом!
+		buildPrisonCellWithAbomination(world, new BlockPos(cx - 6, y + 1, cz + 3), ((cx + cz) & 1) == 0);
 
 		// Гарнизон Форта (6 бойцов)
 		spawnClanMember(world, new BlockPos(cx - 5, y + 11, cz - 4), WhiteCapEntity.RANK_ARBALIST, center, 24);
