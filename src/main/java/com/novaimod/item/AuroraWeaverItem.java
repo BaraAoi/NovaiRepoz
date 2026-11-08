@@ -85,9 +85,10 @@ public class AuroraWeaverItem extends Item {
 
 	@Override
 	public void appendTooltip(ItemStack stack, TooltipContext context, List<Text> tooltip, TooltipType type) {
-		tooltip.add(Text.literal("🌌 КРЕАТИВНЫЙ АРТЕФАКТ НЕБЕСНОЙ КРАСОТЫ 🌌").formatted(Formatting.AQUA, Formatting.BOLD));
-		tooltip.add(Text.literal("ПКМ: Соткать в небе 95-блочные колышущиеся 3D-занавеси").formatted(Formatting.GREEN));
-		tooltip.add(Text.literal("Северного Сияния и живой поток падающих звёзд!").formatted(Formatting.GREEN));
+		tooltip.add(Text.literal("🌌 БЛАГОСЛОВЕНИЕ СЕВЕРНОГО СИЯНИЯ 🌌").formatted(Formatting.AQUA, Formatting.BOLD));
+		tooltip.add(Text.literal("• ПКМ: 92-блочные шёлковые занавеси сияния и падающие звёзды!").formatted(Formatting.GREEN));
+		tooltip.add(Text.literal("• Задачи: Разгоняет грозу, изгоняет Фантомов, лечит жителей/игроков,").formatted(Formatting.YELLOW));
+		tooltip.add(Text.literal("  ускоряет посевы, дарит тягу Элитрам и роняет Звёздные Дары!").formatted(Formatting.YELLOW));
 		tooltip.add(Text.literal("Shift + ПКМ: Сменить палитру (" + paletteTitle(getPalette(stack)) + ")").formatted(Formatting.LIGHT_PURPLE));
 	}
 }

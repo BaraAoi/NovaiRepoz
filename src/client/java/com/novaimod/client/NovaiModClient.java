@@ -11,6 +11,7 @@ import com.novaimod.client.render.CatgirlEntityRenderer;
 import com.novaimod.client.render.CelestialOrbEntityRenderer;
 import com.novaimod.client.render.ChronoAstrolabeEntityRenderer;
 import com.novaimod.client.render.CushionEntityRenderer;
+import com.novaimod.client.render.GenesisProjectorEntityRenderer;
 import com.novaimod.client.render.HolyOrderEntityModel;
 import com.novaimod.client.render.HolyOrderEntityRenderer;
 import com.novaimod.client.render.LuceEntityModel;
@@ -22,6 +23,7 @@ import com.novaimod.client.render.PartyDollEntityRenderer;
 import com.novaimod.client.render.PrismCathedralEntityRenderer;
 import com.novaimod.client.render.RealitySlashEntityRenderer;
 import com.novaimod.client.render.SingularityOrbEntityRenderer;
+import com.novaimod.client.render.StormVortexEntityRenderer;
 import com.novaimod.client.render.SupernovaStarEntityRenderer;
 import com.novaimod.client.render.WhiteCapEntityModel;
 import com.novaimod.client.render.WhiteCapEntityRenderer;
@@ -129,6 +131,8 @@ public class NovaiModClient implements ClientModInitializer {
 		EntityRendererRegistry.register(ModEntities.BABYLON_TREASURY_ENTITY, BabylonTreasuryEntityRenderer::new);
 		EntityRendererRegistry.register(ModEntities.AURORA_PHENOMENON_ENTITY, AuroraPhenomenonEntityRenderer::new);
 		EntityRendererRegistry.register(ModEntities.PRISM_CATHEDRAL_ENTITY, PrismCathedralEntityRenderer::new);
+		EntityRendererRegistry.register(ModEntities.GENESIS_PROJECTOR_ENTITY, GenesisProjectorEntityRenderer::new);
+		EntityRendererRegistry.register(ModEntities.STORM_VORTEX_ENTITY, StormVortexEntityRenderer::new);
 
 		// Экран Торгового аппарата
 		HandledScreens.register(ModScreenHandlers.VENDING_SCREEN_HANDLER, VendingScreen::new);

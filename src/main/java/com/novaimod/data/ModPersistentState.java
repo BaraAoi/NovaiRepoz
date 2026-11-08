@@ -8,6 +8,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import net.minecraft.inventory.Inventories;
+import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtList;
@@ -15,6 +17,7 @@ import net.minecraft.nbt.NbtString;
 import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.collection.DefaultedList;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.PersistentState;
 import net.minecraft.world.World;
@@ -610,6 +613,27 @@ public class ModPersistentState extends PersistentState {
 		return diedDuringApocalypse;
 	}
 
+	// === v4.4.0: Персональная 54-слотовая Небесная Сокровищница «Gate of Babylon» (переживает даже Перезапуск Вселенной!) ===
+	private final Map<UUID, DefaultedList<ItemStack>> babylonVaults = new HashMap<>();
+
+	public DefaultedList<ItemStack> getBabylonVault(UUID playerUuid) {
+		return babylonVaults.computeIfAbsent(playerUuid, k -> DefaultedList.ofSize(54, ItemStack.EMPTY));
+	}
+
+	public int countBabylonVaultRelics(UUID playerUuid) {
+		DefaultedList<ItemStack> list = babylonVaults.get(playerUuid);
+		if (list == null) {
+			return 0;
+		}
+		int filled = 0;
+		for (ItemStack s : list) {
+			if (!s.isEmpty()) {
+				filled++;
+			}
+		}
+		return filled;
+	}
+
 	@Override
 	public NbtCompound writeNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registryLookup) {
 		NbtCompound accountsTag = new NbtCompound();
@@ -671,6 +695,14 @@ public class ModPersistentState extends PersistentState {
 			deadList.add(NbtString.of(u.toString()));
 		}
 		nbt.put("diedDuringApocalypse", deadList);
+
+		NbtCompound vaultsNbt = new NbtCompound();
+		for (Map.Entry<UUID, DefaultedList<ItemStack>> ve : babylonVaults.entrySet()) {
+			NbtCompound singleVault = new NbtCompound();
+			Inventories.writeNbt(singleVault, ve.getValue(), registryLookup);
+			vaultsNbt.put(ve.getKey().toString(), singleVault);
+		}
+		nbt.put("babylonVaults", vaultsNbt);
 		return nbt;
 	}
 
@@ -744,6 +776,18 @@ public class ModPersistentState extends PersistentState {
 			for (int i = 0; i < dl.size(); i++) {
 				try {
 					state.diedDuringApocalypse.add(UUID.fromString(dl.getString(i)));
+				} catch (IllegalArgumentException ignored) {
+				}
+			}
+		}
+		if (nbt.contains("babylonVaults", NbtElement.COMPOUND_TYPE)) {
+			NbtCompound vn = nbt.getCompound("babylonVaults");
+			for (String key : vn.getKeys()) {
+				try {
+					UUID uid = UUID.fromString(key);
+					DefaultedList<ItemStack> stacks = DefaultedList.ofSize(54, ItemStack.EMPTY);
+					Inventories.readNbt(vn.getCompound(key), stacks, registryLookup);
+					state.babylonVaults.put(uid, stacks);
 				} catch (IllegalArgumentException ignored) {
 				}
 			}

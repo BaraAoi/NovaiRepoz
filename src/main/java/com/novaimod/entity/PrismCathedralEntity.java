@@ -25,15 +25,16 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 
 /**
- * 3D-собор кристаллов «Призма Зеркального Измерения» (Mirror Dimension Prism):
- * - Разворачивает вокруг заклинателя вращающийся 20-блочный 3D геодезический купол,
- *   двойные священные мандалы и 24 парящих призматических осколка с преломлением радужных лучей.
- * - Подвешивает всех врагов и вражеские снаряды внутри купола в невесомости,
- *   а на 135-м тике все 24 осколка одновременно поражают захваченные цели схождением призматических лазеров!
+ * 3D-собор кристаллов «Mirror Dimension Prism»:
+ * - Практический непробиваемый силовой купол для защиты базы и союзников (22 секунды):
+ *   1) Дарует игрокам и союзникам внутри Сопротивление IV и Регенерацию III;
+ *   2) Гасит взрывы динамита/криперов/черепов Визера внутри купола и отражает ВСЕ вражеские снаряды
+ *      (стрелы, фаерболы, чумные колбы, трезубцы) обратно в стрелка с удвоенной скоростью!
+ *   3) Подвешивает вторгшихся монстров в невесомости и каждые 70 тиков прожигает их залпом 24 призм!
  */
 public class PrismCathedralEntity extends Entity {
 	public static final int CONVERGENCE_TICK = 135;
-	public static final int TOTAL_TICKS = 180;
+	public static final int TOTAL_TICKS = 400; // 20 секунд силового щита базы!
 	public static final double DOME_RADIUS = 16.0D;
 
 	private static final TrackedData<Optional<UUID>> OWNER_UUID = DataTracker.registerData(
@@ -66,42 +67,67 @@ public class PrismCathedralEntity extends Entity {
 				.map(id -> sw.getServer().getPlayerManager().getPlayer(id))
 				.orElse(null);
 
-		Box domeBox = this.getBoundingBox().expand(DOME_RADIUS, 12.0D, DOME_RADIUS);
+		Box domeBox = this.getBoundingBox().expand(DOME_RADIUS, 13.0D, DOME_RADIUS);
 
-		if (this.age < CONVERGENCE_TICK) {
-			// Невесомый призматический стазис для врагов и вражеских снарядов!
-			for (LivingEntity mob : sw.getEntitiesByClass(LivingEntity.class, domeBox, e -> e.isAlive() && (e instanceof Monster || e instanceof WhiteCapEntity))) {
-				mob.addStatusEffect(new StatusEffectInstance(StatusEffects.LEVITATION, 12, 1, true, false, false));
-				mob.addStatusEffect(new StatusEffectInstance(StatusEffects.GLOWING, 25, 0, true, false, false));
-				mob.setVelocity(mob.getVelocity().x * 0.25D, Math.min(0.08D, mob.getVelocity().y), mob.getVelocity().z * 0.25D);
+		// 1. Защита всех игроков и мирных союзников внутри Зеркального Купола!
+		if (this.age % 20 == 0) {
+			for (PlayerEntity ally : sw.getEntitiesByClass(PlayerEntity.class, domeBox, LivingEntity::isAlive)) {
+				ally.addStatusEffect(new StatusEffectInstance(StatusEffects.RESISTANCE, 50, 3, true, false, true));
+				ally.addStatusEffect(new StatusEffectInstance(StatusEffects.REGENERATION, 50, 2, true, false, true));
 			}
-			for (ProjectileEntity proj : sw.getEntitiesByClass(ProjectileEntity.class, domeBox, p -> p.isAlive() && p.getOwner() != owner)) {
-				proj.setVelocity(Vec3d.ZERO);
-				proj.setNoGravity(true);
-			}
-			if (this.age % 14 == 0) {
-				float pitch = 0.85F + (this.age / (float) CONVERGENCE_TICK) * 0.75F;
-				sw.playSound(null, this.getBlockPos(), SoundEvents.BLOCK_AMETHYST_CLUSTER_STEP, SoundCategory.MASTER, 1.5F, pitch);
-				sw.playSound(null, this.getBlockPos(), SoundEvents.BLOCK_AMETHYST_BLOCK_CHIME, SoundCategory.MASTER, 1.2F, pitch);
-			}
-		} else if (this.age == CONVERGENCE_TICK) {
-			// СИНХРОННОЕ СХОЖДЕНИЕ ВСЕХ 24 ПРИЗМАТИЧЕСКИХ ОСКОЛКОВ!
-			sw.playSound(null, this.getBlockPos(), SoundEvents.BLOCK_GLASS_BREAK, SoundCategory.MASTER, 2.2F, 0.75F);
-			sw.playSound(null, this.getBlockPos(), SoundEvents.BLOCK_AMETHYST_CLUSTER_BREAK, SoundCategory.MASTER, 2.2F, 1.25F);
-			sw.playSound(null, this.getBlockPos(), SoundEvents.ITEM_TRIDENT_THUNDER.value(), SoundCategory.MASTER, 1.5F, 1.45F);
+		}
 
-			sw.spawnParticles(ParticleTypes.FLASH, this.getX(), this.getY() + 3.0D, this.getZ(), 4, 2.5D, 1.5D, 2.5D, 0.0D);
-			sw.spawnParticles(ParticleTypes.END_ROD, this.getX(), this.getY() + 2.0D, this.getZ(), 110, 8.0D, 4.0D, 8.0D, 0.28D);
+		// 2. Зеркальное ОТРАЖЕНИЕ всех вражеских снарядов обратно во врагов + гашение активного ТНТ!
+		for (ProjectileEntity proj : sw.getEntitiesByClass(ProjectileEntity.class, domeBox, p -> p.isAlive() && p.getOwner() != owner)) {
+			if (!proj.getCommandTags().contains("novai_prism_reflected")) {
+				proj.addCommandTag("novai_prism_reflected");
+				Vec3d rev = proj.getVelocity().multiply(-2.2D);
+				proj.setVelocity(rev.x, Math.max(0.15D, rev.y), rev.z);
+				proj.velocityModified = true;
+				if (owner != null) {
+					proj.setOwner(owner);
+				}
+				sw.spawnParticles(ParticleTypes.FLASH, proj.getX(), proj.getY(), proj.getZ(), 1, 0.0D, 0.0D, 0.0D, 0.0D);
+				sw.playSound(null, proj.getBlockPos(), SoundEvents.BLOCK_AMETHYST_BLOCK_CHIME, SoundCategory.MASTER, 1.3F, 1.65F);
+			}
+		}
+		for (net.minecraft.entity.TntEntity tnt : sw.getEntitiesByClass(net.minecraft.entity.TntEntity.class, domeBox, Entity::isAlive)) {
+			sw.spawnParticles(ParticleTypes.END_ROD, tnt.getX(), tnt.getY() + 0.5D, tnt.getZ(), 15, 0.3D, 0.3D, 0.3D, 0.08D);
+			sw.playSound(null, tnt.getBlockPos(), SoundEvents.BLOCK_AMETHYST_CLUSTER_BREAK, SoundCategory.MASTER, 1.2F, 1.4F);
+			tnt.discard(); // Поглощает взрыв динамита в зеркальное измерение!
+		}
+
+		// 3. Невесомый стазис вторгшихся монстров (включая криперов — блокирует детонацию криперов!)
+		for (LivingEntity mob : sw.getEntitiesByClass(LivingEntity.class, domeBox, e -> e.isAlive() && (e instanceof Monster || e instanceof WhiteCapEntity))) {
+			mob.addStatusEffect(new StatusEffectInstance(StatusEffects.LEVITATION, 15, 1, true, false, false));
+			mob.addStatusEffect(new StatusEffectInstance(StatusEffects.GLOWING, 30, 0, true, false, false));
+			mob.setVelocity(mob.getVelocity().x * 0.2D, Math.min(0.08D, mob.getVelocity().y), mob.getVelocity().z * 0.2D);
+			if (mob instanceof net.minecraft.entity.mob.CreeperEntity creeper) {
+				creeper.setFuseSpeed(-1);
+			}
+		}
+
+		if (this.age % 24 == 0) {
+			sw.playSound(null, this.getBlockPos(), SoundEvents.BLOCK_AMETHYST_BLOCK_CHIME, SoundCategory.MASTER, 1.1F, 1.15F);
+		}
+
+		// Каждые 80 тиков и на финале 24 призмы синхронно прожигают всех пойманных монстров!
+		if (this.age == CONVERGENCE_TICK || (this.age > 60 && this.age % 80 == 0)) {
+			sw.playSound(null, this.getBlockPos(), SoundEvents.BLOCK_GLASS_BREAK, SoundCategory.MASTER, 1.8F, 0.85F);
+			sw.playSound(null, this.getBlockPos(), SoundEvents.BLOCK_AMETHYST_CLUSTER_BREAK, SoundCategory.MASTER, 2.0F, 1.3F);
+			sw.spawnParticles(ParticleTypes.FLASH, this.getX(), this.getY() + 3.0D, this.getZ(), 3, 2.0D, 1.2D, 2.0D, 0.0D);
 
 			for (LivingEntity mob : sw.getEntitiesByClass(LivingEntity.class, domeBox, e -> e.isAlive() && (e instanceof Monster || e instanceof WhiteCapEntity))) {
 				if (owner != null) {
-					mob.damage(sw.getDamageSources().playerAttack(owner), 130.0F);
+					mob.damage(sw.getDamageSources().playerAttack(owner), 120.0F);
 				} else {
-					mob.damage(sw.getDamageSources().magic(), 130.0F);
+					mob.damage(sw.getDamageSources().magic(), 120.0F);
 				}
-				sw.spawnParticles(ParticleTypes.FIREWORK, mob.getX(), mob.getBodyY(0.5D), mob.getZ(), 24, 0.4D, 0.6D, 0.4D, 0.16D);
+				sw.spawnParticles(ParticleTypes.FIREWORK, mob.getX(), mob.getBodyY(0.5D), mob.getZ(), 20, 0.4D, 0.6D, 0.4D, 0.15D);
 			}
-		} else if (this.age >= TOTAL_TICKS) {
+		}
+
+		if (this.age >= TOTAL_TICKS) {
 			this.discard();
 		}
 	}

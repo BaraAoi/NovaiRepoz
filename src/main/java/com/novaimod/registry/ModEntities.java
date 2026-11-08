@@ -8,6 +8,7 @@ import com.novaimod.entity.CelestialMeteorEntity;
 import com.novaimod.entity.CelestialOrbEntity;
 import com.novaimod.entity.ChronoAstrolabeEntity;
 import com.novaimod.entity.CushionEntity;
+import com.novaimod.entity.GenesisProjectorEntity;
 import com.novaimod.entity.HolyOrderEntity;
 import com.novaimod.entity.HolyWaterEntity;
 import com.novaimod.entity.InfinityEyeEntity;
@@ -22,6 +23,7 @@ import com.novaimod.entity.PrismCathedralEntity;
 import com.novaimod.entity.RealitySlashEntity;
 import com.novaimod.entity.SeatEntity;
 import com.novaimod.entity.SingularityOrbEntity;
+import com.novaimod.entity.StormVortexEntity;
 import com.novaimod.entity.SupernovaStarEntity;
 import com.novaimod.entity.TerraCataclysmEntity;
 import com.novaimod.entity.WhiteCapEntity;
@@ -280,6 +282,26 @@ public final class ModEntities {
 					.maxTrackingRange(20)
 					.trackingTickInterval(2)
 					.build("prism_cathedral")
+	);
+
+	public static final EntityType<GenesisProjectorEntity> GENESIS_PROJECTOR_ENTITY = Registry.register(
+			Registries.ENTITY_TYPE,
+			Identifier.of(NovaiMod.MOD_ID, "genesis_projector"),
+			EntityType.Builder.<GenesisProjectorEntity>create(GenesisProjectorEntity::new, SpawnGroup.MISC)
+					.dimensions(1.0F, 1.0F)
+					.maxTrackingRange(20)
+					.trackingTickInterval(2)
+					.build("genesis_projector")
+	);
+
+	public static final EntityType<StormVortexEntity> STORM_VORTEX_ENTITY = Registry.register(
+			Registries.ENTITY_TYPE,
+			Identifier.of(NovaiMod.MOD_ID, "storm_vortex"),
+			EntityType.Builder.<StormVortexEntity>create(StormVortexEntity::new, SpawnGroup.MISC)
+					.dimensions(1.0F, 1.0F)
+					.maxTrackingRange(24)
+					.trackingTickInterval(2)
+					.build("storm_vortex")
 	);
 
 	private ModEntities() {

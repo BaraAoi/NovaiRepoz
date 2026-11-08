@@ -16,6 +16,7 @@ import com.novaimod.item.CrusadeBannerItem;
 import com.novaimod.item.CushionItem;
 import com.novaimod.item.DrunkenOblivionItem;
 import com.novaimod.item.GateOfBabylonItem;
+import com.novaimod.item.GenesisCubeItem;
 import com.novaimod.item.HolyOrderSpawnEggItem;
 import com.novaimod.item.HolyWaterItem;
 import com.novaimod.item.InfinityEyeItem;
@@ -34,6 +35,7 @@ import com.novaimod.item.RealityRiftBladeItem;
 import com.novaimod.item.RevivalTokenItem;
 import com.novaimod.item.ScaleRayItem;
 import com.novaimod.item.SingularityOrbItem;
+import com.novaimod.item.StormSovereignItem;
 import com.novaimod.item.StrangeMeatItem;
 import com.novaimod.item.SupernovaGenesisItem;
 import com.novaimod.item.TerraHeaverItem;
@@ -331,6 +333,16 @@ public final class ModItems {
 			new MirrorPrismItem(new Item.Settings().maxCount(1).rarity(Rarity.EPIC).fireproof())
 	);
 
+	public static final Item GENESIS_CUBE = register(
+			"genesis_cube",
+			new GenesisCubeItem(new Item.Settings().maxCount(1).rarity(Rarity.EPIC).fireproof())
+	);
+
+	public static final Item STORM_SOVEREIGN = register(
+			"storm_sovereign",
+			new StormSovereignItem(new Item.Settings().maxCount(1).rarity(Rarity.EPIC).fireproof())
+	);
+
 	public static final Map<DyeColor, Item> CUSHIONS = new EnumMap<>(DyeColor.class);
 
 	static {
@@ -388,6 +400,8 @@ public final class ModItems {
 						entries.add(GATE_OF_BABYLON);
 						entries.add(AURORA_WEAVER);
 						entries.add(MIRROR_PRISM);
+						entries.add(GENESIS_CUBE);
+						entries.add(STORM_SOVEREIGN);
 						entries.add(LUCE_RAINCOAT);
 						entries.add(LUCE_STAFF);
 						entries.add(LUCE_ROSARY);
@@ -418,6 +432,8 @@ public final class ModItems {
 						entries.add(GATE_OF_BABYLON);
 						entries.add(AURORA_WEAVER);
 						entries.add(MIRROR_PRISM);
+						entries.add(GENESIS_CUBE);
+						entries.add(STORM_SOVEREIGN);
 						entries.add(ULTIMATE_SEAT_PAD);
 						entries.add(SCALE_RAY);
 						entries.add(WHITE_CAP_HOOD);

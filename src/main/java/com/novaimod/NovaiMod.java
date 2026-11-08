@@ -7,6 +7,7 @@ import com.mojang.brigadier.arguments.LongArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.novaimod.ai.evolution.MobEvolutionManager;
 import com.novaimod.data.ModPersistentState;
+import com.novaimod.data.WorldVirginLedger;
 import com.novaimod.economy.CasinoGamesManager;
 import com.novaimod.entity.CushionEntity;
 import com.novaimod.entity.HolyOrderEntity;
@@ -137,7 +138,12 @@ public class NovaiMod implements ModInitializer {
 		});
 
 		ServerEntityEvents.ENTITY_LOAD.register((entity, world) -> {
-			TimeOfTheWorldManager.onEntityLoaded(entity, world);
+			WorldVirginLedger.onEntityLoaded(entity, world);
+		});
+
+		ServerLivingEntityEvents.ALLOW_DEATH.register((entity, damageSource, damageAmount) -> {
+			WorldVirginLedger.recordMobBeforeDeath(entity);
+			return true;
 		});
 
 		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
@@ -352,10 +358,12 @@ public class NovaiMod implements ModInitializer {
 			structureCheckTicker++;
 			if (structureCheckTicker >= 40) {
 				structureCheckTicker = 0;
-				ModStructureGenerator.tickWorldGeneration(server);
-				WhiteCapWorldManager.tickClanWorld(server);
-				BureaucraticHellManager.tickBureaucraticChecks(server);
-				LuceWorldManager.tickLuceWorld(server);
+				WorldVirginLedger.runWithBypass(() -> {
+					ModStructureGenerator.tickWorldGeneration(server);
+					WhiteCapWorldManager.tickClanWorld(server);
+					BureaucraticHellManager.tickBureaucraticChecks(server);
+					LuceWorldManager.tickLuceWorld(server);
+				});
 			}
 		});
 	}
