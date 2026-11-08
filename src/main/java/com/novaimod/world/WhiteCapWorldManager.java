@@ -79,14 +79,21 @@ public final class WhiteCapWorldManager {
 		}
 		// Гарантируем появление первой Главной Цитадели и первого Полевого Лагеря в мире недалеко от стартовой зоны игрока!
 		if (!state.hasGeneratedRegion("wc_prime_citadel")) {
-			int cx = player.getBlockX() + 96;
-			int cz = player.getBlockZ() - 88;
-			if (areChunksLoadedRadius(world, cx, cz, 24)) {
-				BlockPos spot = findDryLandSurface(world, cx, cz);
-				if (spot != null) {
-					state.markRegionGenerated("wc_prime_citadel");
-					buildWhiteCapCitadel(world, spot);
-					state.recordStructure("white_cap_citadel", "minecraft:overworld", spot);
+			int[][] dirs = new int[][]{
+					{80, -72}, {-80, -72}, {80, 72}, {-80, 72},
+					{84, 0}, {-84, 0}, {0, 84}, {0, -84}
+			};
+			for (int[] d : dirs) {
+				int cx = player.getBlockX() + d[0];
+				int cz = player.getBlockZ() + d[1];
+				if (areChunksLoadedRadius(world, cx, cz, 16)) {
+					BlockPos spot = findDryLandSurface(world, cx, cz);
+					if (spot != null) {
+						state.markRegionGenerated("wc_prime_citadel");
+						buildWhiteCapCitadel(world, spot);
+						state.recordStructure("white_cap_citadel", "minecraft:overworld", spot);
+						break;
+					}
 				}
 			}
 		}
