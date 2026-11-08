@@ -323,13 +323,20 @@ public final class PokeballDimensionManager {
 			world.setBlockState(new BlockPos(cx - 5, cy, cz + dz), Blocks.WHITE_WOOL.getDefaultState(), FLAGS);
 			world.setBlockState(new BlockPos(cx - 4, cy, cz + dz), Blocks.RED_WOOL.getDefaultState(), FLAGS);
 		}
-		CushionEntity pillow1 = new CushionEntity(world, cx - 4.5D, cy + 1.01D, cz - 0.5D, DyeColor.WHITE);
-		CushionEntity pillow2 = new CushionEntity(world, cx - 4.5D, cy + 1.01D, cz + 1.5D, DyeColor.RED);
+		CushionEntity pillow1 = new CushionEntity(ModEntities.CUSHION_ENTITY, world);
+		pillow1.refreshPositionAndAngles(cx - 4.5D, cy + 1.01D, cz - 0.5D, 0.0F, 0.0F);
+		pillow1.setDyeColor(DyeColor.WHITE);
+		pillow1.setSupportPos(new BlockPos(cx - 5, cy, cz - 1));
 		world.spawnEntity(pillow1);
+
+		CushionEntity pillow2 = new CushionEntity(ModEntities.CUSHION_ENTITY, world);
+		pillow2.refreshPositionAndAngles(cx - 4.5D, cy + 1.01D, cz + 1.5D, 0.0F, 0.0F);
+		pillow2.setDyeColor(DyeColor.RED);
+		pillow2.setSupportPos(new BlockPos(cx - 5, cy, cz + 1));
 		world.spawnEntity(pillow2);
 
 		world.setBlockState(new BlockPos(cx - 5, cy, cz - 2), spruceTrim, FLAGS);
-		world.setBlockState(new BlockPos(cx - 5, cy + 1, cz - 2), Blocks.POTTED_FLOWERING_AZALEA.getDefaultState(), FLAGS);
+		world.setBlockState(new BlockPos(cx - 5, cy + 1, cz - 2), Blocks.POTTED_RED_TULIP.getDefaultState(), FLAGS);
 		for (int dy = 0; dy <= 2; dy++) {
 			world.setBlockState(new BlockPos(cx - 5, cy + dy, cz + 3), Blocks.BOOKSHELF.getDefaultState(), FLAGS);
 			world.setBlockState(new BlockPos(cx - 4, cy + dy, cz + 4), Blocks.BOOKSHELF.getDefaultState(), FLAGS);
