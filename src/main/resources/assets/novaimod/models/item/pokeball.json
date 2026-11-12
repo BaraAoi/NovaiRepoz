@@ -1,0 +1,14 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "novaimod:item/pokeball"
+  },
+  "overrides": [
+    {
+      "predicate": {
+        "novaimod:filled": 1.0
+      },
+      "model": "novaimod:item/pokeball_filled"
+    }
+  ]
+}

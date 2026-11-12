@@ -1,0 +1,32 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "GEB",
+    "SQS",
+    " R "
+  ],
+  "key": {
+    "G": {
+      "item": "minecraft:gold_ingot"
+    },
+    "E": {
+      "item": "minecraft:emerald"
+    },
+    "B": {
+      "item": "minecraft:lapis_lazuli"
+    },
+    "S": {
+      "item": "minecraft:string"
+    },
+    "Q": {
+      "item": "minecraft:quartz"
+    },
+    "R": {
+      "item": "minecraft:redstone"
+    }
+  },
+  "result": {
+    "id": "novaimod:luce_rosary",
+    "count": 1
+  }
+}

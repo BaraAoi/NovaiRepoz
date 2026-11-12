@@ -1,0 +1,16 @@
+{
+	"type": "minecraft:crafting_shaped",
+	"group": "cushion",
+	"pattern": [
+		"###"
+	],
+	"key": {
+		"#": {
+			"item": "minecraft:blue_carpet"
+		}
+	},
+	"result": {
+		"id": "novaimod:blue_cushion",
+		"count": 1
+	}
+}

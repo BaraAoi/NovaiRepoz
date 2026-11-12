@@ -1,0 +1,37 @@
+{
+	"yaris_meme": {
+		"subtitle": "subtitles.novaimod.yaris_meme",
+		"sounds": [
+			{
+				"name": "novaimod:yaris_meme",
+				"stream": false
+			}
+		]
+	},
+	"creeper_bird": {
+		"subtitle": "subtitles.novaimod.creeper_bird",
+		"sounds": [
+			{
+				"name": "novaimod:creeper_bird",
+				"stream": false
+			}
+		]
+	},
+	"creeper_akbar": {
+		"subtitle": "subtitles.novaimod.creeper_akbar",
+		"sounds": [
+			{
+				"name": "novaimod:creeper_akbar_1",
+				"stream": false
+			},
+			{
+				"name": "novaimod:creeper_akbar_2",
+				"stream": false
+			},
+			{
+				"name": "novaimod:creeper_akbar_3",
+				"stream": false
+			}
+		]
+	}
+}

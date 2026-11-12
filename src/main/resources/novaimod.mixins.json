@@ -1,0 +1,24 @@
+{
+	"required": true,
+	"package": "com.novaimod.mixin",
+	"compatibilityLevel": "JAVA_21",
+	"mixins": [
+		"CreeperEntityMixin",
+		"LivingEntityMixin",
+		"AbstractSkeletonEntityMixin",
+		"BowAttackGoalMixin",
+		"MobEntityMixin",
+		"ProjectileEntityMixin",
+		"SmithingTransformRecipeMixin",
+		"ItemStackMixin",
+		"AnvilScreenHandlerMixin",
+		"GrindstoneScreenHandlerMixin",
+		"TickManagerMixin",
+		"EndermanEntityMixin",
+		"WorldMixin",
+		"StructureTemplateMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}

@@ -1,0 +1,8 @@
+{
+	"parent": "minecraft:block/orientable",
+	"textures": {
+		"top": "novaimod:block/fate_machine_top",
+		"front": "novaimod:block/fate_machine_front",
+		"side": "novaimod:block/fate_machine_side"
+	}
+}

@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "novaimod:item/white_cap_compass_15"
+  }
+}
